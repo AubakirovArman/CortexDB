@@ -164,20 +164,20 @@ struct Provider {
 }
 
 impl cortex_aql::BitmapProvider for Provider {
-    fn bitmap(&self, _handle: cortex_aql::BitmapHandle) -> Option<BTreeSet<u32>> {
+    fn bitmap(&self, _handle: cortex_aql::BitmapHandle) -> Option<cortex_aql::RoaringBitmap> {
         None
     }
 
-    fn agent_allowed(&self) -> BTreeSet<u32> {
-        self.allowed.clone()
+    fn agent_allowed(&self) -> cortex_aql::RoaringBitmap {
+        self.allowed.iter().copied().collect()
     }
 
-    fn live(&self) -> BTreeSet<u32> {
-        BTreeSet::new()
+    fn live(&self) -> cortex_aql::RoaringBitmap {
+        cortex_aql::RoaringBitmap::new()
     }
 
-    fn universe(&self) -> BTreeSet<u32> {
-        BTreeSet::new()
+    fn universe(&self) -> cortex_aql::RoaringBitmap {
+        cortex_aql::RoaringBitmap::new()
     }
 }
 

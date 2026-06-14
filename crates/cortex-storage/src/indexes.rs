@@ -1,11 +1,14 @@
 use std::collections::{BTreeMap, BTreeSet};
+use std::io::Cursor;
 use std::path::Path;
+
+use roaring::RoaringBitmap;
 
 use crate::atomic::{append_crc32c, verify_crc32c, write_atomic};
 use crate::error::{StorageError, StorageResult};
 use crate::format::{
-    BITMAP_INDEX_MAGIC, LEGACY_LEXICAL_INDEX_MAGIC, LEGACY_LEXICAL_INDEX_V1_MAGIC,
-    LEGACY_LEXICAL_INDEX_V2_MAGIC, LEXICAL_INDEX_MAGIC,
+    BITMAP_INDEX_MAGIC, LEGACY_BITMAP_INDEX_MAGIC, LEGACY_LEXICAL_INDEX_MAGIC,
+    LEGACY_LEXICAL_INDEX_V1_MAGIC, LEGACY_LEXICAL_INDEX_V2_MAGIC, LEXICAL_INDEX_MAGIC,
 };
 
 mod codec;
@@ -15,9 +18,9 @@ use codec::{
     read_u16, read_u32, read_u64, IndexKind,
 };
 
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct BitmapIndex {
-    pub bitmaps: BTreeMap<u64, BTreeSet<u32>>,
+    pub bitmaps: BTreeMap<u64, RoaringBitmap>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -30,15 +33,26 @@ pub struct LexicalIndex {
 }
 
 impl BitmapIndex {
+    pub fn from_sets(bitmaps: BTreeMap<u64, BTreeSet<u32>>) -> Self {
+        Self {
+            bitmaps: bitmaps
+                .into_iter()
+                .map(|(handle, values)| (handle, values.into_iter().collect()))
+                .collect(),
+        }
+    }
+
     pub fn write(&self, path: impl AsRef<Path>) -> StorageResult<()> {
         let mut out = Vec::from(&BITMAP_INDEX_MAGIC[..]);
         put_u32(&mut out, self.bitmaps.len() as u32);
         for (handle, values) in &self.bitmaps {
             put_u64(&mut out, *handle);
-            put_u32(&mut out, values.len() as u32);
-            for value in values {
-                put_u32(&mut out, *value);
-            }
+            let mut serialized = Vec::with_capacity(values.serialized_size());
+            values
+                .serialize_into(&mut serialized)
+                .map_err(|_| StorageError::InvalidBitmapIndexFile)?;
+            put_u32(&mut out, serialized.len() as u32);
+            out.extend_from_slice(&serialized);
         }
         append_crc32c(&mut out);
         write_atomic(path.as_ref(), &out)?;
@@ -121,20 +135,37 @@ impl LexicalIndex {
 
 fn decode_bitmap(bytes: &[u8]) -> StorageResult<BitmapIndex> {
     let bytes = verify_crc32c(bytes).ok_or(StorageError::InvalidBitmapIndexFile)?;
-    if bytes.len() < 8 || bytes[..4] != BITMAP_INDEX_MAGIC {
+    if bytes.len() < 8
+        || (bytes[..4] != BITMAP_INDEX_MAGIC && bytes[..4] != LEGACY_BITMAP_INDEX_MAGIC)
+    {
         return Err(StorageError::InvalidBitmapIndexFile);
     }
+    let version = &bytes[..4];
     let mut cursor = 4;
     let count = read_u32(bytes, &mut cursor, IndexKind::Bitmap)? as usize;
     let mut bitmaps = BTreeMap::new();
     for _ in 0..count {
         let handle = read_u64(bytes, &mut cursor, IndexKind::Bitmap)?;
-        bitmaps.insert(handle, read_set(bytes, &mut cursor, IndexKind::Bitmap)?);
+        let bitmap = if version == LEGACY_BITMAP_INDEX_MAGIC {
+            read_set(bytes, &mut cursor, IndexKind::Bitmap)?
+                .into_iter()
+                .collect()
+        } else {
+            read_roaring_bitmap(bytes, &mut cursor)?
+        };
+        bitmaps.insert(handle, bitmap);
     }
     if cursor != bytes.len() {
         return Err(StorageError::InvalidBitmapIndexFile);
     }
     Ok(BitmapIndex { bitmaps })
+}
+
+fn read_roaring_bitmap(bytes: &[u8], cursor: &mut usize) -> StorageResult<RoaringBitmap> {
+    let len = read_u32(bytes, cursor, IndexKind::Bitmap)? as usize;
+    let payload = read_bytes(bytes, cursor, len, IndexKind::Bitmap)?;
+    RoaringBitmap::deserialize_from(Cursor::new(payload))
+        .map_err(|_| StorageError::InvalidBitmapIndexFile)
 }
 
 fn decode_lexical(bytes: &[u8]) -> StorageResult<LexicalIndex> {

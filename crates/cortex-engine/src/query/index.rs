@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 
-use cortex_aql::BitmapHandle;
+use cortex_aql::{BitmapHandle, RoaringBitmap};
 use cortex_core::memtable::CellVersion;
 use cortex_core::{CellDescriptor, CellId};
 use cortex_storage::indexes::{BitmapIndex, LexicalIndex};
@@ -85,7 +85,7 @@ impl EngineAqlIndex {
             bitmaps: self
                 .bitmaps
                 .iter()
-                .map(|(handle, values)| (handle.0, values.clone()))
+                .map(|(handle, values)| (handle.0, bitmap_from_set(values)))
                 .collect(),
         }
     }
@@ -218,6 +218,10 @@ impl EngineAqlIndex {
     pub(super) fn rebuild_universe(&mut self) {
         self.universe = self.candidate_to_cell.keys().copied().collect();
     }
+}
+
+fn bitmap_from_set(values: &BTreeSet<u32>) -> RoaringBitmap {
+    values.iter().copied().collect()
 }
 
 #[cfg(test)]

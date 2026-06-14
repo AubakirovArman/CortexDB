@@ -11,7 +11,7 @@ pub(crate) struct CheckpointLoad {
     pub memtable: MemTable,
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub(crate) struct PersistedIndexState {
     pub bitmap: BitmapIndex,
     pub lexical: LexicalIndex,

@@ -4,11 +4,13 @@ use thiserror::Error;
 
 use crate::binder::{BitmapHandle, BitmapOp, BitmapProgram};
 
+pub use roaring::RoaringBitmap;
+
 pub trait BitmapProvider {
-    fn bitmap(&self, handle: BitmapHandle) -> Option<BTreeSet<u32>>;
-    fn agent_allowed(&self) -> BTreeSet<u32>;
-    fn live(&self) -> BTreeSet<u32>;
-    fn universe(&self) -> BTreeSet<u32>;
+    fn bitmap(&self, handle: BitmapHandle) -> Option<RoaringBitmap>;
+    fn agent_allowed(&self) -> RoaringBitmap;
+    fn live(&self) -> RoaringBitmap;
+    fn universe(&self) -> RoaringBitmap;
 }
 
 #[derive(Clone, Debug, Default)]
@@ -33,7 +35,16 @@ pub fn eval_bitmap_program<P: BitmapProvider>(
     program: &BitmapProgram,
     provider: &P,
 ) -> Result<BTreeSet<u32>, BitmapVmError> {
-    let mut stack = Vec::<BTreeSet<u32>>::with_capacity(program.max_stack_depth);
+    Ok(eval_bitmap_program_bitmap(program, provider)?
+        .iter()
+        .collect())
+}
+
+pub fn eval_bitmap_program_bitmap<P: BitmapProvider>(
+    program: &BitmapProgram,
+    provider: &P,
+) -> Result<RoaringBitmap, BitmapVmError> {
+    let mut stack = Vec::<RoaringBitmap>::with_capacity(program.max_stack_depth);
     for op in &program.ops {
         match *op {
             BitmapOp::Push(handle) => stack.push(
@@ -46,17 +57,21 @@ pub fn eval_bitmap_program<P: BitmapProvider>(
             BitmapOp::PushLive => stack.push(provider.live()),
             BitmapOp::And => {
                 let rhs = pop(&mut stack)?;
-                let lhs = pop(&mut stack)?;
-                stack.push(lhs.intersection(&rhs).copied().collect());
+                let mut lhs = pop(&mut stack)?;
+                lhs &= &rhs;
+                stack.push(lhs);
             }
             BitmapOp::Or => {
                 let rhs = pop(&mut stack)?;
-                let lhs = pop(&mut stack)?;
-                stack.push(lhs.union(&rhs).copied().collect());
+                let mut lhs = pop(&mut stack)?;
+                lhs |= &rhs;
+                stack.push(lhs);
             }
             BitmapOp::Not => {
                 let current = pop(&mut stack)?;
-                stack.push(provider.universe().difference(&current).copied().collect());
+                let mut universe = provider.universe();
+                universe -= &current;
+                stack.push(universe);
             }
         }
     }
@@ -67,24 +82,28 @@ pub fn eval_bitmap_program<P: BitmapProvider>(
     }
 }
 
-fn pop(stack: &mut Vec<BTreeSet<u32>>) -> Result<BTreeSet<u32>, BitmapVmError> {
+fn pop(stack: &mut Vec<RoaringBitmap>) -> Result<RoaringBitmap, BitmapVmError> {
     stack.pop().ok_or(BitmapVmError::StackUnderflow)
 }
 
 impl BitmapProvider for MockBitmapProvider {
-    fn bitmap(&self, handle: BitmapHandle) -> Option<BTreeSet<u32>> {
-        self.bitmaps.get(&handle).cloned()
+    fn bitmap(&self, handle: BitmapHandle) -> Option<RoaringBitmap> {
+        self.bitmaps.get(&handle).map(bitmap_from_set)
     }
 
-    fn agent_allowed(&self) -> BTreeSet<u32> {
-        self.agent_allowed.clone()
+    fn agent_allowed(&self) -> RoaringBitmap {
+        bitmap_from_set(&self.agent_allowed)
     }
 
-    fn live(&self) -> BTreeSet<u32> {
-        self.live.clone()
+    fn live(&self) -> RoaringBitmap {
+        bitmap_from_set(&self.live)
     }
 
-    fn universe(&self) -> BTreeSet<u32> {
-        self.universe.clone()
+    fn universe(&self) -> RoaringBitmap {
+        bitmap_from_set(&self.universe)
     }
+}
+
+fn bitmap_from_set(values: &BTreeSet<u32>) -> RoaringBitmap {
+    values.iter().copied().collect()
 }

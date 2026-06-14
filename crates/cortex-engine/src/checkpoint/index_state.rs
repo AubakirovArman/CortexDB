@@ -6,11 +6,11 @@ use super::types::PersistedIndexState;
 
 pub(super) fn merge_bitmap_index(state: &mut PersistedIndexState, src: BitmapIndex) {
     for (handle, values) in src.bitmaps {
-        for candidate in &values {
+        for candidate in values.iter() {
             state
                 .postings
                 .bitmap_handles_by_candidate
-                .entry(*candidate)
+                .entry(candidate)
                 .or_default()
                 .insert(handle);
         }
@@ -102,7 +102,7 @@ fn remove_candidate(state: &mut PersistedIndexState, candidate: u32) {
     {
         for handle in handles {
             if let Some(values) = state.bitmap.bitmaps.get_mut(&handle) {
-                values.remove(&candidate);
+                values.remove(candidate);
                 if values.is_empty() {
                     state.bitmap.bitmaps.remove(&handle);
                 }

@@ -42,7 +42,7 @@ make storage-format-change-note-check
 | --- | --- | --- | --- | --- |
 | ACLOG WAL | `.aclog` | `ACLOGv0\0` | `version = 0` in file header | Breaking changes require a new WAL version. |
 | Segment | `.acs` | `ACS3` | magic carries v3 | `ACS1` and `ACS2` remain read-only compatible. |
-| Bitmap index | `.acb` | `ACB0` | magic carries v0 | Breaking changes require a new magic. |
+| Bitmap index | `.acb` | `ACB1` | magic carries v1 | `ACB0` remains read-only compatible. |
 | Lexical index | `.aci` | `ACI3` | magic carries v3 | `ACI0`, `ACI1`, and `ACI2` remain read-only compatible. |
 | Vector index | `.acv` | `ACV0` | magic carries v0 | Breaking changes require a new magic. |
 | HNSW graph | `.ach` | `ACH0` | magic carries v0 | Breaking changes require a new magic. |
@@ -92,15 +92,17 @@ full `cell_id` access without repeated segment scans.
 ## Bitmap Index `.acb`
 
 ```text
-magic[4] = "ACB0"
+magic[4] = "ACB1"
 bitmap_count u32
 repeat bitmap_count:
   bitmap_handle u64
-  value_count u32
-  repeat value_count:
-    candidate_id u32
+  roaring_payload_len u32
+  roaring bitmap payload bytes
 crc32c u32 over all previous bytes
 ```
+
+`ACB0` is retained as a read-only legacy bitmap format with sorted
+`candidate_id u32` values.
 
 ## Lexical Index `.aci`
 

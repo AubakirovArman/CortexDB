@@ -52,10 +52,21 @@
     },
     {
       "kind": "bitmap_index",
-      "marker": "ACB0",
+      "marker": "ACB1",
       "extension": ".acb",
       "compatibility": "current",
-      "change_policy": "Breaking bitmap-index changes require a new magic, migration note, compatibility matrix update, and historical/direct-upgrade fixture evidence.",
+      "change_policy": "ACB1 stores RoaringBitmap payloads per bitmap handle. ACB0 remains read-only compatible. Breaking bitmap-index changes require a new magic, migration note, compatibility matrix update, and historical/direct-upgrade fixture evidence.",
+      "release_fixture_required": true,
+      "required_docs": ["docs/STORAGE_FORMATS.md", "docs/archive/UPGRADE_MIGRATION.md"],
+      "required_gates": ["make storage-format-freeze-check", "make storage-format-change-note-check", "make migration-policy-check", "make migration-compatibility-check", "make storage-compat-check"],
+      "release_fixture": "fixtures/migration/historical/v0.1.0-core-alpha.5/fixture.json"
+    },
+    {
+      "kind": "bitmap_index",
+      "marker": "ACB0",
+      "extension": ".acb",
+      "compatibility": "read-only compatible",
+      "change_policy": "Legacy bitmap-index ACB0 compatibility must remain documented and covered by bitmap index tests or be removed only through a breaking migration note and release fixture.",
       "release_fixture_required": true,
       "required_docs": ["docs/STORAGE_FORMATS.md", "docs/archive/UPGRADE_MIGRATION.md"],
       "required_gates": ["make storage-format-freeze-check", "make storage-format-change-note-check", "make migration-policy-check", "make migration-compatibility-check", "make storage-compat-check"],

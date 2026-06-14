@@ -203,9 +203,9 @@ impl Database {
             filters,
             cost_model,
             candidate_counts: AqlCandidateCounts {
-                universe: provider.universe().len(),
-                agent_allowed: provider.agent_allowed().len(),
-                live: provider.live().len(),
+                universe: provider.universe().len() as usize,
+                agent_allowed: provider.agent_allowed().len() as usize,
+                live: provider.live().len() as usize,
                 estimated_after_bitmap,
                 after_bitmap,
                 after_quality,

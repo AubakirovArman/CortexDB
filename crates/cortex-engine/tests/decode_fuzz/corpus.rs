@@ -188,11 +188,9 @@ fn write_segment_seed(root: &Path) -> DecodeSeed {
 
 fn write_bitmap_seed(root: &Path) -> DecodeSeed {
     let path = root.join("segment-1.acb");
-    BitmapIndex {
-        bitmaps: BTreeMap::from([(42, BTreeSet::from([1, 2]))]),
-    }
-    .write(&path)
-    .unwrap();
+    BitmapIndex::from_sets(BTreeMap::from([(42, BTreeSet::from([1, 2]))]))
+        .write(&path)
+        .unwrap();
     DecodeSeed {
         name: "bitmap_index",
         kind: SeedKind::Bitmap,

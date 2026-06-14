@@ -118,7 +118,7 @@ fn index_from_persisted(
         bitmaps: bitmap
             .bitmaps
             .into_iter()
-            .map(|(handle, values)| (BitmapHandle(handle), values))
+            .map(|(handle, values)| (BitmapHandle(handle), values.iter().collect()))
             .collect(),
         lexical: lexical.terms,
         lexical_doc_lengths: lexical.doc_lengths,

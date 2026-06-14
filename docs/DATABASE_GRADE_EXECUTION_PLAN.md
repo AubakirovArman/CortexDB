@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-C02` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-B07`, `EPIC-B08`, `EPIC-B09`, `EPIC-B10`, `EPIC-B11`, `EPIC-B12`, `EPIC-B13`, `EPIC-B16`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-C02` is next per the corrected dependency-stage roadmap; `EPIC-B14` remains pending/formal-tail for the later explainability stage. `EPIC-A19` remains partial with an explicit final long-running benchmark tail. `EPIC-C17` remains partial/local-ready with hosted nightly Actions wiring deferred. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing. Large 1M/10M lazy ContextPack latency evidence is tracked by `EPIC-A19`/`EPIC-C17`.
+Current pointer: `EPIC-C08` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-B07`, `EPIC-B08`, `EPIC-B09`, `EPIC-B10`, `EPIC-B11`, `EPIC-B12`, `EPIC-B13`, `EPIC-B16`, `EPIC-C02`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-C08` is next per the corrected dependency-stage roadmap; `EPIC-B14` remains pending/formal-tail for the later explainability stage. `EPIC-A19` remains partial with an explicit final long-running benchmark tail. `EPIC-C17` remains partial/local-ready with hosted nightly Actions wiring deferred. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing. Large 1M/10M lazy ContextPack latency evidence is tracked by `EPIC-A19`/`EPIC-C17`.
 
 Scale-gate rule: individual epics use small/medium evidence gates by default
 so implementation does not stall on long-running benchmarks. Large 1M/10M
@@ -1000,7 +1000,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 - gates: `python3 scripts/policy_rewrite_gate_check.py`; `python3 scripts/descriptor_hot_path_gate_check.py`; `cargo test -p cortex-engine plan --all-features`; `cargo test -p cortex-server agent_view_property --all-features`; `cargo fmt --check`; `make check`; `cargo test --workspace --all-features`; `cargo clippy --workspace --all-targets -- -D warnings`.
 - remaining: none for B16 acceptance; future C02/C09 can improve bitmap representation and pre-pruning performance without changing the policy invariant.
 - risks: `policy-rewrite-gate-check` is a static production-path guard, not a formal verifier for future generated code; new read surfaces must be added to `ReadSurface` plus E09/property coverage.
-- next exit step: move to `EPIC-C02` — Roaring bitmaps in bitmap index and VM per corrected dependency-stage order.
+- next exit step: move to `EPIC-C08` — server-side embedding integration per corrected dependency-stage order.
 
 ### EPIC-B17 — Tool registry как типизированный каталог
 
@@ -1090,20 +1090,20 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-C02 — Roaring bitmaps в bitmap-индексе и VM
 
-- status: `pending`
+- status: `done`
 - meta: Категория: indexing · P1 · 60 days · refactor
 - goal: BTreeSet<u32> для universe/AND/OR не масштабируется к 10M кандидатов.
 - problem: Проблема: bitmap VM и индексы на BTreeSet.
 - tasks:
-  - [ ] 1) crate `roaring`; BitmapIndex и eval_bitmap_program на RoaringBitmap
-  - [ ] 2) сериализация .acb v2
-  - [ ] 3) бенч AND/OR/NOT на 1M/10M.
+  - [x] 1) crate `roaring`; BitmapIndex и eval_bitmap_program на RoaringBitmap — VM теперь работает на RoaringBitmap stack, совместимый BTreeSet wrapper сохранён.
+  - [x] 2) сериализация .acb v2 — current magic `ACB1` writes Roaring payloads; `ACB0` retained read-only.
+  - [x] 3) бенч AND/OR/NOT на 1M/10M — `bitmap_vm_benchmark_check`.
 - acceptance:
-  - [ ] 1) bitmap-операции на 1M < 1ms
-  - [ ] 2) bitmap_vm_tests зелёные
-  - [ ] 3) память ↓ (зафиксировать).
-- files: cortex-aql/src/executor_mock.rs (VM), cortex-storage/indexes.rs.
-- risks: семантика Not в segment-universe — сохранить точную (complement в universe). Зависимости: A20. Эффект: фундамент перм-битмапов B04 и масштаба.
+  - [x] 1) bitmap-операции на 1M < 1ms — release min: AND 0.080608ms, OR 0.075802ms, NOT 0.073914ms.
+  - [x] 2) bitmap_vm_tests зелёные — `cargo test -p cortex-aql --all-features --test bitmap_vm_tests`.
+  - [x] 3) память ↓ (зафиксировать) — 1M ACB bytes 3,333,372 -> 262,452 (-92.127%); 10M 33,333,372 -> 2,509,252 (-92.472%).
+- files: cortex-aql/src/executor_mock.rs (VM), cortex-aql/src/bin/bitmap_vm_benchmark_check.rs, cortex-storage/indexes.rs, cortex-storage/src/format.rs.
+- risks: семантика Not в segment-universe сохранена (complement в universe). Зависимости: A20. Эффект: фундамент перм-битмапов B04 и масштаба.
 
 ### EPIC-C03 — Честный BM25 с полевыми весами
 

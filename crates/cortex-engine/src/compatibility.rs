@@ -248,7 +248,7 @@ mod tests {
             .collect::<Vec<_>>();
         assert_eq!(
             markers,
-            vec!["ACLOGv0", "ACS3", "ACB0", "ACI3", "ACV0", "ACH0", "ACM0"]
+            vec!["ACLOGv0", "ACS3", "ACB1", "ACI3", "ACV0", "ACH0", "ACM0"]
         );
 
         let segment = summary
@@ -261,6 +261,18 @@ mod tests {
         assert_eq!(
             segment.compatibility_rule,
             "ACS1 and ACS2 remain read-only compatible; breaking changes require a new segment magic"
+        );
+
+        let bitmap = summary
+            .storage_formats
+            .iter()
+            .find(|format| format.extension == "acb")
+            .expect("bitmap compatibility should be public");
+        assert_eq!(bitmap.current_version, 1);
+        assert_eq!(bitmap.legacy_magics, vec!["ACB0"]);
+        assert_eq!(
+            bitmap.compatibility_rule,
+            "ACB0 remains read-only compatible"
         );
 
         let lexical = summary

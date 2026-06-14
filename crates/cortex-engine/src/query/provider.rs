@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 
-use cortex_aql::{AgentView, BitmapHandle, BitmapProvider};
+use cortex_aql::{AgentView, BitmapHandle, BitmapProvider, RoaringBitmap};
 use cortex_core::CellId;
 
 use super::metadata::scope_handle;
@@ -45,20 +45,26 @@ impl EngineAqlProvider {
 }
 
 impl BitmapProvider for EngineAqlProvider {
-    fn bitmap(&self, handle: BitmapHandle) -> Option<BTreeSet<u32>> {
-        self.index.bitmap(handle)
+    fn bitmap(&self, handle: BitmapHandle) -> Option<RoaringBitmap> {
+        Some(
+            self.index
+                .bitmaps
+                .get(&handle)
+                .map(set_to_bitmap)
+                .unwrap_or_default(),
+        )
     }
 
-    fn agent_allowed(&self) -> BTreeSet<u32> {
-        self.agent_allowed.clone()
+    fn agent_allowed(&self) -> RoaringBitmap {
+        set_to_bitmap(&self.agent_allowed)
     }
 
-    fn live(&self) -> BTreeSet<u32> {
-        self.index.live()
+    fn live(&self) -> RoaringBitmap {
+        set_to_bitmap(&self.index.universe)
     }
 
-    fn universe(&self) -> BTreeSet<u32> {
-        self.index.universe()
+    fn universe(&self) -> RoaringBitmap {
+        set_to_bitmap(&self.index.universe)
     }
 }
 
@@ -176,4 +182,8 @@ fn candidate_term_score(
     idf_q10
         .saturating_mul(tf_norm_q10)
         .saturating_mul(u64::from(query_weight))
+}
+
+fn set_to_bitmap(values: &BTreeSet<u32>) -> RoaringBitmap {
+    values.iter().copied().collect()
 }

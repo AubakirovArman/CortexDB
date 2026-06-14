@@ -131,7 +131,7 @@ pub fn estimate_bitmap_program_rows<P: BitmapProvider>(
         match op {
             BitmapOp::Push(handle) => stack.push(statistics.estimate_bitmap_cardinality(*handle)),
             BitmapOp::PushUniverse | BitmapOp::PushLive => stack.push(Some(max_rows)),
-            BitmapOp::PushAgentAllowed => stack.push(Some(provider.agent_allowed().len() as u64)),
+            BitmapOp::PushAgentAllowed => stack.push(Some(provider.agent_allowed().len())),
             BitmapOp::And => {
                 let rhs = stack.pop()??;
                 let lhs = stack.pop()??;

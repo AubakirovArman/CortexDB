@@ -1,9 +1,10 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use cortex_storage::format::{
-    storage_format_specs, StorageFormatKind, HNSW_GRAPH_MAGIC, LEGACY_LEXICAL_INDEX_MAGIC,
-    LEGACY_LEXICAL_INDEX_V1_MAGIC, LEGACY_LEXICAL_INDEX_V2_MAGIC, LEGACY_SEGMENT_MAGIC,
-    LEGACY_SEGMENT_V2_MAGIC, LEXICAL_INDEX_MAGIC, SEGMENT_MAGIC,
+    storage_format_specs, StorageFormatKind, BITMAP_INDEX_MAGIC, HNSW_GRAPH_MAGIC,
+    LEGACY_BITMAP_INDEX_MAGIC, LEGACY_LEXICAL_INDEX_MAGIC, LEGACY_LEXICAL_INDEX_V1_MAGIC,
+    LEGACY_LEXICAL_INDEX_V2_MAGIC, LEGACY_SEGMENT_MAGIC, LEGACY_SEGMENT_V2_MAGIC,
+    LEXICAL_INDEX_MAGIC, SEGMENT_MAGIC,
 };
 use cortex_storage::hnsw::HnswGraphIndex;
 use cortex_storage::indexes::{BitmapIndex, LexicalIndex};
@@ -11,6 +12,11 @@ use cortex_storage::manifest::StorageManifest;
 use cortex_storage::segment::{SegmentCell, SegmentWriter};
 use cortex_storage::vectors::VectorIndex;
 use cortex_storage::wal::{DurabilityMode, WalWriter, ACLOG_MAGIC};
+use roaring::RoaringBitmap;
+
+fn roaring_bitmap(values: impl IntoIterator<Item = u32>) -> RoaringBitmap {
+    values.into_iter().collect()
+}
 
 #[test]
 fn storage_format_inventory_lists_current_core_formats() {
@@ -24,6 +30,10 @@ fn storage_format_inventory_lists_current_core_formats() {
         specs[1].legacy_magics,
         &[&LEGACY_SEGMENT_MAGIC, &LEGACY_SEGMENT_V2_MAGIC]
     );
+    assert_eq!(specs[2].kind, StorageFormatKind::BitmapIndex);
+    assert_eq!(specs[2].current_magic, BITMAP_INDEX_MAGIC);
+    assert_eq!(specs[2].current_version, 1);
+    assert_eq!(specs[2].legacy_magics, &[&LEGACY_BITMAP_INDEX_MAGIC]);
     assert_eq!(specs[3].kind, StorageFormatKind::LexicalIndex);
     assert_eq!(specs[3].current_magic, LEXICAL_INDEX_MAGIC);
     assert_eq!(
@@ -54,7 +64,7 @@ fn written_storage_files_match_current_format_inventory() {
     writer.shutdown().unwrap();
     SegmentWriter::write(&segment, &[cell()]).unwrap();
     BitmapIndex {
-        bitmaps: BTreeMap::from([(1, BTreeSet::from([1]))]),
+        bitmaps: BTreeMap::from([(1, roaring_bitmap([1]))]),
     }
     .write(&bitmap)
     .unwrap();

@@ -1,7 +1,8 @@
 use std::collections::BTreeSet;
 
 use cortex_aql::{
-    AqlCatalog, BitmapHandle, BitmapProvider, BrainId, CellTypeId, MemoryType, ScopeId, StatusId,
+    AqlCatalog, BitmapHandle, BitmapProvider, BrainId, CellTypeId, MemoryType, RoaringBitmap,
+    ScopeId, StatusId,
 };
 use cortex_core::CellId;
 
@@ -62,20 +63,22 @@ impl AqlCatalog for EngineAqlIndex {
 }
 
 impl BitmapProvider for EngineAqlIndex {
-    fn bitmap(&self, handle: BitmapHandle) -> Option<BTreeSet<u32>> {
-        Some(self.bitmaps.get(&handle).cloned().unwrap_or_default())
+    fn bitmap(&self, handle: BitmapHandle) -> Option<RoaringBitmap> {
+        Some(set_to_bitmap(
+            &self.bitmaps.get(&handle).cloned().unwrap_or_default(),
+        ))
     }
 
-    fn agent_allowed(&self) -> BTreeSet<u32> {
-        self.universe.clone()
+    fn agent_allowed(&self) -> RoaringBitmap {
+        set_to_bitmap(&self.universe)
     }
 
-    fn live(&self) -> BTreeSet<u32> {
-        self.universe.clone()
+    fn live(&self) -> RoaringBitmap {
+        set_to_bitmap(&self.universe)
     }
 
-    fn universe(&self) -> BTreeSet<u32> {
-        self.universe.clone()
+    fn universe(&self) -> RoaringBitmap {
+        set_to_bitmap(&self.universe)
     }
 }
 
@@ -83,4 +86,8 @@ impl CandidateResolver for EngineAqlIndex {
     fn cell_id_for_candidate(&self, candidate: u32) -> Option<CellId> {
         self.candidate_to_cell.get(&candidate).copied()
     }
+}
+
+fn set_to_bitmap(values: &BTreeSet<u32>) -> RoaringBitmap {
+    values.iter().copied().collect()
 }

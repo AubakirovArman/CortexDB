@@ -11,7 +11,7 @@ pub(super) fn allowed_candidates(bitmap: &BitmapIndex, view: &AgentView) -> BTre
     let policy = PolicyRewrite::new(view);
     for scope in policy.readable_scopes() {
         if let Some(candidates) = bitmap.bitmaps.get(&scope_handle(scope).0) {
-            allowed.extend(candidates.iter().copied());
+            allowed.extend(candidates.iter());
         }
     }
     allowed

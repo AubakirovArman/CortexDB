@@ -96,19 +96,19 @@ WHERE status = "ready" LIMIT 10 CANDIDATES;"#;
 }
 
 impl BitmapProvider for Provider {
-    fn bitmap(&self, handle: BitmapHandle) -> Option<BTreeSet<u32>> {
+    fn bitmap(&self, handle: BitmapHandle) -> Option<cortex_aql::RoaringBitmap> {
         self.bitmap.bitmap(handle)
     }
 
-    fn agent_allowed(&self) -> BTreeSet<u32> {
+    fn agent_allowed(&self) -> cortex_aql::RoaringBitmap {
         self.bitmap.agent_allowed()
     }
 
-    fn live(&self) -> BTreeSet<u32> {
+    fn live(&self) -> cortex_aql::RoaringBitmap {
         self.bitmap.live()
     }
 
-    fn universe(&self) -> BTreeSet<u32> {
+    fn universe(&self) -> cortex_aql::RoaringBitmap {
         self.bitmap.universe()
     }
 }

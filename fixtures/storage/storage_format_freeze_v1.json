@@ -28,10 +28,10 @@
       "kind": "bitmap_index",
       "name": "Bitmap index",
       "extension": "acb",
-      "current_magic": "ACB0",
-      "current_version": 0,
-      "legacy_magics": [],
-      "breaking_change_policy": "breaking changes require a new bitmap magic and migration notes",
+      "current_magic": "ACB1",
+      "current_version": 1,
+      "legacy_magics": ["ACB0"],
+      "breaking_change_policy": "ACB0 remains read-only compatible; breaking changes require a new bitmap magic and migration notes",
       "docs": ["docs/STORAGE_FORMATS.md", "docs/archive/UPGRADE_MIGRATION.md"]
     },
     {

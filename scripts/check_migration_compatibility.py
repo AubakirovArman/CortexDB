@@ -13,6 +13,7 @@ REQUIRED_FORMATS = {
     "ACS3",
     "ACS2",
     "ACS1",
+    "ACB1",
     "ACB0",
     "ACI3",
     "ACI2",

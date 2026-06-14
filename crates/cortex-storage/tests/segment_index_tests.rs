@@ -1,10 +1,16 @@
 use std::collections::{BTreeMap, BTreeSet};
 
+use cortex_storage::format::{BITMAP_INDEX_MAGIC, LEGACY_BITMAP_INDEX_MAGIC};
 use cortex_storage::indexes::{BitmapIndex, LexicalIndex};
 use cortex_storage::manifest::{ManifestSegment, StorageManifest};
 use cortex_storage::segment::{SegmentCell, SegmentCellRef, SegmentReader, SegmentWriter};
 use cortex_storage::vectors::VectorIndex;
 use cortex_storage::StorageError;
+use roaring::RoaringBitmap;
+
+fn roaring_bitmap(values: impl IntoIterator<Item = u32>) -> RoaringBitmap {
+    values.into_iter().collect()
+}
 
 #[test]
 fn acs_segment_roundtrips_cells() {
@@ -122,13 +128,35 @@ fn acb_bitmap_index_roundtrips_sorted_sets() {
     let path = dir.path().join("0001.acb");
     let index = BitmapIndex {
         bitmaps: BTreeMap::from([
-            (10, BTreeSet::from([1, 3, 5])),
-            (20, BTreeSet::from([2, 4])),
+            (10, roaring_bitmap([1, 3, 5])),
+            (20, roaring_bitmap([2, 4])),
         ]),
     };
     index.write(&path).unwrap();
+    let bytes = std::fs::read(&path).unwrap();
+    assert_eq!(&bytes[..4], &BITMAP_INDEX_MAGIC);
     assert_eq!(BitmapIndex::read(&path).unwrap(), index);
     assert!(!dir.path().join("0001.acb.tmp").exists());
+}
+
+#[test]
+fn acb_legacy_bitmap_index_remains_readable() {
+    let dir = tempfile::tempdir().unwrap();
+    let expected = BitmapIndex::from_sets(BTreeMap::from([(99, BTreeSet::from([2, 4, 6]))]));
+    let path = dir.path().join("legacy.acb");
+
+    let mut bytes = Vec::from(&LEGACY_BITMAP_INDEX_MAGIC[..]);
+    bytes.extend_from_slice(&1_u32.to_le_bytes());
+    bytes.extend_from_slice(&99_u64.to_le_bytes());
+    bytes.extend_from_slice(&3_u32.to_le_bytes());
+    for candidate in [2_u32, 4, 6] {
+        bytes.extend_from_slice(&candidate.to_le_bytes());
+    }
+    let checksum = crc32c::crc32c(&bytes);
+    bytes.extend_from_slice(&checksum.to_le_bytes());
+    std::fs::write(&path, bytes).unwrap();
+
+    assert_eq!(BitmapIndex::read(&path).unwrap(), expected);
 }
 
 #[test]
@@ -264,7 +292,7 @@ fn checksum_corruption_is_rejected() {
     )
     .unwrap();
     BitmapIndex {
-        bitmaps: BTreeMap::from([(1, BTreeSet::from([1]))]),
+        bitmaps: BTreeMap::from([(1, roaring_bitmap([1]))]),
     }
     .write(&bitmap)
     .unwrap();

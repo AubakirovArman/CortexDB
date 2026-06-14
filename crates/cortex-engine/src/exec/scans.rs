@@ -52,7 +52,7 @@ impl PhysicalOp for BitmapIndexScan {
 }
 
 pub struct PermissionFilter {
-    agent_allowed: std::collections::BTreeSet<u32>,
+    agent_allowed: cortex_aql::RoaringBitmap,
     candidates: Vec<u32>,
     cursor: usize,
     started: Instant,
@@ -83,7 +83,7 @@ impl PhysicalOp for PermissionFilter {
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(candidate) = self.candidates.get(self.cursor).copied() {
             self.cursor += 1;
-            if self.agent_allowed.contains(&candidate) {
+            if self.agent_allowed.contains(candidate) {
                 self.trace.output_count += 1;
                 return Some(candidate);
             }
