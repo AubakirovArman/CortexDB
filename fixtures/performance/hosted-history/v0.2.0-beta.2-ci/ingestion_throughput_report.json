@@ -1,0 +1,79 @@
+{
+  "batching": {
+    "embedding_batch_size": 128,
+    "embedding_batches": 80,
+    "embedding_write_batches": 80,
+    "ingestion_batch_size": 1000,
+    "ingestion_write_batches": 10,
+    "max_embedding_batch_items": 128
+  },
+  "docs": 10000,
+  "duration_ms": 7801.714,
+  "errors": [],
+  "ok": true,
+  "payload_bytes": 256,
+  "phases": [
+    {
+      "elapsed_ms": 2271.756,
+      "name": "ingest_write_batch",
+      "throughput_per_sec": 4401.882,
+      "units": 10000
+    },
+    {
+      "elapsed_ms": 2267.776,
+      "name": "embedding_backfill_interrupted",
+      "throughput_per_sec": 2204.803,
+      "units": 5000
+    },
+    {
+      "elapsed_ms": 742.244,
+      "name": "reopen_for_resume",
+      "throughput_per_sec": 1.347,
+      "units": 1
+    },
+    {
+      "elapsed_ms": 1992.913,
+      "name": "embedding_backfill_resume",
+      "throughput_per_sec": 2508.89,
+      "units": 5000
+    }
+  ],
+  "quality": {
+    "debt_items": 0,
+    "expected_dimension": 8,
+    "expected_model": "synthetic-c19",
+    "ready_items": 10000,
+    "validation": {
+      "cells_checked": 0,
+      "issues": 0,
+      "manifest_ok": true,
+      "wal_ok": true,
+      "wal_records_checked": 20180
+    }
+  },
+  "resume": {
+    "completed_after_reopen": true,
+    "final_debt_items": 0,
+    "first_run_embedded_items": 5000,
+    "first_run_final_debt_items": 5000,
+    "resume_after_docs": 5000,
+    "resumed_embedded_items": 5000
+  },
+  "schema_version": "cortexdb.ingestion_throughput.v1",
+  "slo_thresholds": {
+    "min_docs_per_sec": 1.0
+  },
+  "storage": {
+    "current_seq": 20000,
+    "durability_mode": "balanced",
+    "durable_storage_bytes": 9136804,
+    "wal_batches_committed": 0,
+    "wal_records_written": 5080
+  },
+  "throughput": {
+    "embedding_docs_per_sec": 2347.038,
+    "end_to_end_docs_per_sec": 1281.777,
+    "ingest_docs_per_sec": 4401.882
+  },
+  "workload_class": "local_ingestion_embedding_throughput"
+}

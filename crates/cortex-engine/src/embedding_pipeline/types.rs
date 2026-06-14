@@ -94,12 +94,20 @@ pub struct EmbeddingBackfillReport {
     pub embedded_items: usize,
     pub failed_items: usize,
     pub skipped_items: usize,
+    pub batch_size: usize,
+    pub embedding_batches: usize,
+    pub write_batches: usize,
+    pub max_batch_items: usize,
     pub final_debt_items: usize,
     pub failure_samples: Vec<String>,
 }
 
 pub trait EmbeddingBackfillProvider {
     fn embed_text(&mut self, text: &str) -> EngineResult<Vec<i16>>;
+
+    fn embed_text_batch(&mut self, texts: &[String]) -> EngineResult<Vec<Vec<i16>>> {
+        texts.iter().map(|text| self.embed_text(text)).collect()
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

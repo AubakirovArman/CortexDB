@@ -217,29 +217,39 @@ impl Database {
     }
 
     fn validate_write_batch(&self, batch: &WriteBatch) -> EngineResult<()> {
-        let mut visible: BTreeSet<CellId> = self
-            .memtable
-            .live_cell_ids(self.read_txn())
-            .into_iter()
-            .collect();
+        let mut batch_puts = BTreeSet::new();
+        let mut batch_tombstones = BTreeSet::new();
         for operation in batch.operations() {
             match operation {
                 WriteBatchOperation::PutCell { cell_id, .. } => {
-                    visible.insert(*cell_id);
+                    batch_tombstones.remove(cell_id);
+                    batch_puts.insert(*cell_id);
                 }
                 WriteBatchOperation::PatchCell { cell_id, .. } => {
-                    if !visible.contains(cell_id) {
+                    if !self.batch_sees_visible_cell(*cell_id, &batch_puts, &batch_tombstones) {
                         return Err(cortex_core::CoreError::CellNotFound(*cell_id).into());
                     }
-                    visible.insert(*cell_id);
                 }
                 WriteBatchOperation::TombstoneCell { cell_id } => {
-                    if !visible.remove(cell_id) {
+                    if !self.batch_sees_visible_cell(*cell_id, &batch_puts, &batch_tombstones) {
                         return Err(cortex_core::CoreError::CellNotFound(*cell_id).into());
                     }
+                    batch_puts.remove(cell_id);
+                    batch_tombstones.insert(*cell_id);
                 }
             }
         }
         Ok(())
+    }
+
+    fn batch_sees_visible_cell(
+        &self,
+        cell_id: CellId,
+        batch_puts: &BTreeSet<CellId>,
+        batch_tombstones: &BTreeSet<CellId>,
+    ) -> bool {
+        !batch_tombstones.contains(&cell_id)
+            && (batch_puts.contains(&cell_id)
+                || self.memtable.read(self.read_txn(), cell_id).is_some())
     }
 }

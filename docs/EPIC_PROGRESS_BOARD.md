@@ -20,17 +20,20 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-C19` — Ingestion throughput + batch embedding pipeline.
+`EPIC-C20` — Baseline comparison with naive stack.
 
-C19 exit steps:
+C20 exit steps:
 
-1. Formalize resumable embedding batching/parallelism.
-2. Route ingestion through WriteBatch where the benchmark path benefits.
-3. Publish an end-to-end docs/sec benchmark and resume-after-interruption test.
+1. Define fair naive baseline stack and workloads.
+2. Compare retrieval/pack/verify latency and quality.
+3. Document honest wins/losses with reproducible evidence.
 
-C19 current state:
+C20 current state:
 
 - next.
+- C19 is closed with resumable batched embedding backfill, WriteBatch ingestion
+  throughput reporting, C17 trend integration, hosted artifact upload, and an
+  explicit 100K target.
 - C18 is closed with a bounded K-readers + 1-writer benchmark, actor-route vs
   WriterPrefRwLock-direct comparison, JSON/Markdown report output, C17 trend
   integration, and hosted artifact upload.
@@ -69,6 +72,23 @@ D05 split state:
 - do not block kernel/database epics on D05.
 
 ## Recently Closed
+
+### EPIC-C19 — Ingestion throughput + batch embedding pipeline
+
+Status: `done`
+
+What closed it:
+
+- Added `EmbeddingBackfillProvider::embed_text_batch` and
+  `backfill_embedding_debt_batched`.
+- Optimized `WriteBatch` validation to avoid rebuilding the full live-id set
+  per patch batch.
+- Added `ingestion_throughput_check` with WriteBatch ingestion, batched
+  embedding backfill, reopen/resume verification, and JSON/Markdown reports.
+- Wired C19 into `performance-trend-check`, hosted benchmark artifacts, and
+  performance history fixtures.
+- Evidence: `make ingestion-throughput-check` passed for 10K docs with
+  `end_to_end_docs_per_sec=1281.777` and `final_debt_items=0`.
 
 ### EPIC-C18 — Concurrent read throughput benchmark
 

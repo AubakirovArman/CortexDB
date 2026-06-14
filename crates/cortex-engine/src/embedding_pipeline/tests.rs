@@ -10,12 +10,18 @@ use crate::search::vector::vector_from_payload;
 struct TestEmbeddingProvider {
     vector: Vec<i16>,
     calls: Vec<String>,
+    batch_sizes: Vec<usize>,
 }
 
 impl EmbeddingBackfillProvider for TestEmbeddingProvider {
     fn embed_text(&mut self, text: &str) -> EngineResult<Vec<i16>> {
         self.calls.push(text.to_owned());
         Ok(self.vector.clone())
+    }
+
+    fn embed_text_batch(&mut self, texts: &[String]) -> EngineResult<Vec<Vec<i16>>> {
+        self.batch_sizes.push(texts.len());
+        texts.iter().map(|text| self.embed_text(text)).collect()
     }
 }
 
@@ -232,6 +238,7 @@ fn database_backfill_embedding_debt_patches_cells_and_clears_debt() {
     let mut provider = TestEmbeddingProvider {
         vector: vec![1, 2, 3],
         calls: Vec::new(),
+        batch_sizes: Vec::new(),
     };
     let config = EmbeddingCoverageConfig {
         expected_dimension: Some(3),
@@ -252,6 +259,10 @@ fn database_backfill_embedding_debt_patches_cells_and_clears_debt() {
     assert_eq!(report.debt_items, 1);
     assert_eq!(report.embedded_items, 1);
     assert_eq!(report.failed_items, 0);
+    assert_eq!(report.batch_size, 1);
+    assert_eq!(report.embedding_batches, 1);
+    assert_eq!(report.write_batches, 1);
+    assert_eq!(report.max_batch_items, 1);
     assert_eq!(report.final_debt_items, 0);
     assert_eq!(provider.calls, vec!["scope=docs\nstatus=ready\n\nAlpha"]);
 
@@ -262,4 +273,114 @@ fn database_backfill_embedding_debt_patches_cells_and_clears_debt() {
     assert_eq!(metadata.status, "ready");
     assert_eq!(metadata.body_text, "Alpha");
     assert_eq!(db.embedding_debt_report(config).debt_items, 0);
+}
+
+#[test]
+fn database_backfill_embedding_debt_batches_patch_writes() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    for index in 1..=5 {
+        db.put_cell(
+            CellId(index),
+            format!("scope=docs\nstatus=ready\n\nDoc {index}").into_bytes(),
+        )
+        .unwrap();
+    }
+    let mut provider = TestEmbeddingProvider {
+        vector: vec![1, 2, 3],
+        calls: Vec::new(),
+        batch_sizes: Vec::new(),
+    };
+    let config = EmbeddingCoverageConfig {
+        expected_dimension: Some(3),
+        min_coverage_basis_points: 10_000,
+        expected_model: Some("bge-m3".to_owned()),
+    };
+
+    let report = db
+        .backfill_embedding_debt_batched(
+            &mut provider,
+            EmbeddingBackfillOptions {
+                config: config.clone(),
+                max_items: None,
+            },
+            2,
+        )
+        .unwrap();
+
+    assert_eq!(report.debt_items, 5);
+    assert_eq!(report.embedded_items, 5);
+    assert_eq!(report.final_debt_items, 0);
+    assert_eq!(report.batch_size, 2);
+    assert_eq!(report.embedding_batches, 3);
+    assert_eq!(report.write_batches, 3);
+    assert_eq!(report.max_batch_items, 2);
+    assert_eq!(provider.batch_sizes, vec![2, 2, 1]);
+    assert_eq!(db.current_seq(), CommitSeq(10));
+    assert_eq!(db.storage_stats().unwrap().wal_writer.batches_committed, 8);
+    assert_eq!(db.embedding_debt_report(config).debt_items, 0);
+}
+
+#[test]
+fn database_backfill_embedding_debt_resumes_after_partial_run() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let mut db = Database::open(dir.path()).unwrap();
+        for index in 1..=4 {
+            db.put_cell(
+                CellId(index),
+                format!("scope=docs\nstatus=ready\n\nDoc {index}").into_bytes(),
+            )
+            .unwrap();
+        }
+        let mut provider = TestEmbeddingProvider {
+            vector: vec![1, 2, 3],
+            calls: Vec::new(),
+            batch_sizes: Vec::new(),
+        };
+        let first = db
+            .backfill_embedding_debt_batched(
+                &mut provider,
+                EmbeddingBackfillOptions {
+                    config: test_embedding_config(),
+                    max_items: Some(2),
+                },
+                2,
+            )
+            .unwrap();
+        assert_eq!(first.embedded_items, 2);
+        assert_eq!(first.skipped_items, 2);
+        assert_eq!(first.final_debt_items, 2);
+        db.close().unwrap();
+    }
+
+    let mut db = Database::open(dir.path()).unwrap();
+    let mut provider = TestEmbeddingProvider {
+        vector: vec![1, 2, 3],
+        calls: Vec::new(),
+        batch_sizes: Vec::new(),
+    };
+    let second = db
+        .backfill_embedding_debt_batched(
+            &mut provider,
+            EmbeddingBackfillOptions {
+                config: test_embedding_config(),
+                max_items: None,
+            },
+            2,
+        )
+        .unwrap();
+
+    assert_eq!(second.debt_items, 2);
+    assert_eq!(second.embedded_items, 2);
+    assert_eq!(second.final_debt_items, 0);
+    assert_eq!(provider.batch_sizes, vec![2]);
+}
+
+fn test_embedding_config() -> EmbeddingCoverageConfig {
+    EmbeddingCoverageConfig {
+        expected_dimension: Some(3),
+        min_coverage_basis_points: 10_000,
+        expected_model: Some("bge-m3".to_owned()),
+    }
 }

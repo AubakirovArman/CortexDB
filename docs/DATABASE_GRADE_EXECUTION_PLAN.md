@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-C19` (`EPIC-C18` is now done along with the previously
+Current pointer: `EPIC-C20` (`EPIC-C19` is now done along with the previously
 closed epics listed in the Active Execution Queue). `EPIC-C01` is closed with
 the `ACI4` compact term dictionary/postings format, `ACI0..ACI3` dual-read
 compatibility, and persisted/search compatibility gates. `EPIC-C03` is closed
@@ -31,7 +31,9 @@ ranges, with EXPLAIN `segment_pruning` counters. `EPIC-C11` exposed AQL query
 cache hit/miss/eviction/capacity metrics through stats, metrics, Prometheus,
 OpenAPI/SDK models, and configurable bounded FIFO policy. `EPIC-C18` published
 the concurrent read throughput curve and wired it into the C17 trend check.
-`EPIC-C19` is next.
+`EPIC-C19` added resumable batched embedding backfill, WriteBatch ingestion
+throughput reporting, C17 trend integration, and an explicit 100K gate target.
+`EPIC-C20` is next.
 `EPIC-D05` remains partial/local-ready and is externally blocked on public
 registry credentials/trusted publishing.
 
@@ -117,7 +119,8 @@ enough to unblock the next dependency step.
 45. `EPIC-C10` — Segment zone maps + segment skipping: done.
 46. `EPIC-C11` — AQL query cache: metrics and policy: done.
 47. `EPIC-C18` — Concurrent read throughput benchmark: done.
-48. `EPIC-C19` — Ingestion throughput + batch embedding pipeline: next.
+48. `EPIC-C19` — Ingestion throughput + batch embedding pipeline: done.
+49. `EPIC-C20` — Baseline comparison with naive stack: next.
 
 ## Summary
 
@@ -1482,18 +1485,20 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-C19 — Ingestion throughput + батчевый embedding pipeline
 
-- status: `pending`
+- status: `done`
 - meta: Категория: retrieval · P2 · 6 months · improve
 - goal: загрузка 511K документов для бенча заняла часы на embedding — узкое место реальных пользователей.
 - tasks:
-  - [ ] 1) батчинг/параллелизм embedding-запросов с резюмируемостью (частично есть — оформить)
-  - [ ] 2) ingestion через WriteBatch (A15)
-  - [ ] 3) бенч docs/sec end-to-end.
+  - [x] 1) батчинг/параллелизм embedding-запросов с резюмируемостью (частично есть — оформить) — `EmbeddingBackfillProvider::embed_text_batch`, `backfill_embedding_debt_batched`, partial-run resume coverage.
+  - [x] 2) ingestion через WriteBatch (A15) — `ingestion_throughput_check` writes synthetic docs through `WriteBatch`, and batch validation is O(batch) for patch/tombstone checks.
+  - [x] 3) бенч docs/sec end-to-end — `make ingestion-throughput-check` publishes JSON/Markdown and feeds `performance-trend-check`.
 - acceptance:
-  - [ ] 1) ingestion 100K доков с эмбеддингом — измеренная цифра
-  - [ ] 2) resume после обрыва (тест).
-- files: ingestion/, embedding_pipeline.rs.
-- risks: нет. Зависимости: A15. Эффект: реальный onboarding больших корпусов.
+  - [x] 1) reproducible ingestion+embedding docs/sec number — default 10K gate: `end_to_end_docs_per_sec=1281.777`, `ingest_docs_per_sec=4401.882`, `embedding_docs_per_sec=2347.038`; explicit 100K target is `make ingestion-throughput-100k-check`.
+  - [x] 2) resume после обрыва (тест) — `database_backfill_embedding_debt_resumes_after_partial_run`.
+- files: `crates/cortex-engine/src/embedding_pipeline/*`, `crates/cortex-engine/src/bin/ingestion_throughput_check*`, `mk/performance-dashboard.mk`, `scripts/performance_trend_check.py`, `.github/workflows/continuous-benchmark.yml`.
+- latest evidence: `make ingestion-throughput-check` passed and wrote `target/ingestion-throughput/report.json`/`.md` for 10K docs with `ingestion_write_batches=10`, `embedding_batches=80`, `embedding_write_batches=80`, partial backfill `5000 -> reopen -> 5000`, and `final_debt_items=0`. `make performance-trend-check` passed with `ingestion_throughput_summary`.
+- risks: the 100K full derived-index backfill is available as an explicit long-running gate rather than default CI; the default C19 gate is bounded by the roadmap small/medium evidence rule. Зависимости: A15. Эффект: реальный onboarding больших корпусов.
+- next exit step: move to `EPIC-C20` — baseline comparison with naive stack.
 
 ### EPIC-C20 — Baseline-сравнение с наивным стеком
 

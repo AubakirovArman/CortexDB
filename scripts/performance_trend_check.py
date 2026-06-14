@@ -14,6 +14,11 @@ LOAD_FLOWS = ("write", "read", "search", "context", "verify")
 ENGINE_FLOWS = ("put_single", "get_latest", "keyword_search", "context_pack", "verify_fact")
 PERCENTILES = ("p50_ms", "p95_ms", "p99_ms")
 CONCURRENT_MODES = ("actor_route_shared", "rwlock_direct")
+INGESTION_THROUGHPUT_FIELDS = (
+    "ingest_docs_per_sec",
+    "embedding_docs_per_sec",
+    "end_to_end_docs_per_sec",
+)
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -224,6 +229,58 @@ def check_concurrent_report(errors: list[str], report: dict[str, Any]) -> None:
         errors.append("concurrent read report missing actor-vs-rwlock comparisons")
 
 
+def check_ingestion_throughput_report(errors: list[str], report: dict[str, Any]) -> None:
+    if report.get("ok") is not True:
+        errors.append("ingestion throughput report is not ok")
+    if report.get("workload_class") != "local_ingestion_embedding_throughput":
+        errors.append(
+            "ingestion throughput report missing local_ingestion_embedding_throughput workload_class"
+        )
+    for field in ("docs", "payload_bytes", "duration_ms"):
+        if not isinstance(report.get(field), (int, float)):
+            errors.append(f"ingestion throughput report missing numeric {field}")
+    batching = report.get("batching")
+    if not isinstance(batching, dict):
+        errors.append("ingestion throughput report missing batching block")
+    else:
+        for field in (
+            "ingestion_batch_size",
+            "embedding_batch_size",
+            "ingestion_write_batches",
+            "embedding_batches",
+            "embedding_write_batches",
+            "max_embedding_batch_items",
+        ):
+            if not isinstance(batching.get(field), (int, float)):
+                errors.append(f"ingestion throughput batching missing numeric {field}")
+    resume = report.get("resume")
+    if not isinstance(resume, dict):
+        errors.append("ingestion throughput report missing resume block")
+    else:
+        if resume.get("completed_after_reopen") is not True:
+            errors.append("ingestion throughput resume did not complete after reopen")
+        if resume.get("final_debt_items") != 0:
+            errors.append("ingestion throughput final embedding debt is non-zero")
+    throughput = report.get("throughput")
+    if not isinstance(throughput, dict):
+        errors.append("ingestion throughput report missing throughput block")
+    else:
+        for field in INGESTION_THROUGHPUT_FIELDS:
+            if not isinstance(throughput.get(field), (int, float)):
+                errors.append(f"ingestion throughput missing numeric throughput.{field}")
+    quality = report.get("quality")
+    if not isinstance(quality, dict):
+        errors.append("ingestion throughput report missing quality block")
+    else:
+        if quality.get("debt_items") != 0:
+            errors.append("ingestion throughput quality.debt_items is non-zero")
+        validation = quality.get("validation")
+        if not isinstance(validation, dict):
+            errors.append("ingestion throughput quality missing validation block")
+        elif validation.get("manifest_ok") is not True or validation.get("wal_ok") is not True:
+            errors.append("ingestion throughput validation is not clean")
+
+
 def collect_history(history_root: Path) -> list[dict[str, Any]]:
     runs: list[dict[str, Any]] = []
     if not history_root.exists():
@@ -232,6 +289,7 @@ def collect_history(history_root: Path) -> list[dict[str, Any]]:
         load_path = release_dir / "load_smoke_report.json"
         engine_path = release_dir / "single_node_performance_report.json"
         concurrent_path = release_dir / "concurrent_read_benchmark_report.json"
+        ingestion_path = release_dir / "ingestion_throughput_report.json"
         if load_path.exists() and engine_path.exists():
             run = {
                 "release": release_dir.name,
@@ -240,6 +298,8 @@ def collect_history(history_root: Path) -> list[dict[str, Any]]:
             }
             if concurrent_path.exists():
                 run["concurrent_read"] = read_json(concurrent_path)
+            if ingestion_path.exists():
+                run["ingestion_throughput"] = read_json(ingestion_path)
             runs.append(run)
     return runs
 
@@ -315,6 +375,28 @@ def compare_concurrent(
     return comparisons
 
 
+def compare_ingestion(
+    current: dict[str, Any], previous: dict[str, Any], *, detailed: bool = False
+) -> dict[str, Any]:
+    current_throughput = current.get("throughput", {})
+    previous_throughput = previous.get("throughput", {})
+    comparisons: dict[str, Any] = {}
+    for field in INGESTION_THROUGHPUT_FIELDS:
+        current_value = float(current_throughput.get(field, 0.0))
+        previous_value = float(previous_throughput.get(field, 0.0))
+        comparisons[field] = (
+            {
+                "current": round(current_value, 6),
+                "previous": round(previous_value, 6),
+                "delta": round(current_value - previous_value, 6),
+                "ratio": ratio(current_value, previous_value),
+            }
+            if detailed
+            else ratio(current_value, previous_value)
+        )
+    return comparisons
+
+
 def current_engine_slo_summary(current: dict[str, Any]) -> dict[str, Any]:
     profiles: dict[str, Any] = {}
     for profile in current.get("profiles", []):
@@ -351,12 +433,27 @@ def current_concurrent_summary(current: dict[str, Any]) -> dict[str, Any]:
     return modes
 
 
+def current_ingestion_summary(current: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "docs": current.get("docs"),
+        "end_to_end_docs_per_sec": current.get("throughput", {}).get("end_to_end_docs_per_sec"),
+        "ingestion_write_batches": current.get("batching", {}).get("ingestion_write_batches"),
+        "embedding_batches": current.get("batching", {}).get("embedding_batches"),
+        "embedding_write_batches": current.get("batching", {}).get("embedding_write_batches"),
+        "completed_after_reopen": current.get("resume", {}).get("completed_after_reopen"),
+        "final_debt_items": current.get("resume", {}).get("final_debt_items"),
+    }
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--load-report", default="target/load-smoke/report.json")
     parser.add_argument("--single-node-report", default="target/single-node-performance/report.json")
     parser.add_argument(
         "--concurrent-read-report", default="target/concurrent-read-benchmark/report.json"
+    )
+    parser.add_argument(
+        "--ingestion-throughput-report", default="target/ingestion-throughput/report.json"
     )
     parser.add_argument("--history-root", default="fixtures/performance/history")
     parser.add_argument("--report", default="target/performance-trends/report.json")
@@ -368,6 +465,7 @@ def main() -> int:
     load_report = read_json(Path(args.load_report))
     single_node_report = read_json(Path(args.single_node_report))
     concurrent_read_report = read_json(Path(args.concurrent_read_report))
+    ingestion_throughput_report = read_json(Path(args.ingestion_throughput_report))
     history = collect_history(Path(args.history_root))
     errors: list[str] = []
     if not history:
@@ -375,9 +473,14 @@ def main() -> int:
     check_load_report(errors, load_report)
     check_engine_report(errors, single_node_report)
     check_concurrent_report(errors, concurrent_read_report)
+    check_ingestion_throughput_report(errors, ingestion_throughput_report)
     latest = history[-1] if history else None
     if latest and "concurrent_read" not in latest:
         errors.append(f"latest release history {latest['release']} missing concurrent read report")
+    if latest and "ingestion_throughput" not in latest:
+        errors.append(
+            f"latest release history {latest['release']} missing ingestion throughput report"
+        )
 
     report = {
         "schema_version": "cortexdb.performance_trends.v1",
@@ -387,6 +490,7 @@ def main() -> int:
             "load_report": args.load_report,
             "single_node_report": args.single_node_report,
             "concurrent_read_report": args.concurrent_read_report,
+            "ingestion_throughput_report": args.ingestion_throughput_report,
         },
         "comparisons_to_latest_history": {
             "release": latest["release"] if latest else None,
@@ -414,9 +518,20 @@ def main() -> int:
             )
             if latest and "concurrent_read" in latest
             else {},
+            "ingestion_throughput_ratio": compare_ingestion(
+                ingestion_throughput_report, latest["ingestion_throughput"]
+            )
+            if latest and "ingestion_throughput" in latest
+            else {},
+            "ingestion_throughput_details": compare_ingestion(
+                ingestion_throughput_report, latest["ingestion_throughput"], detailed=True
+            )
+            if latest and "ingestion_throughput" in latest
+            else {},
         },
         "single_node_slo_summary": current_engine_slo_summary(single_node_report),
         "concurrent_read_summary": current_concurrent_summary(concurrent_read_report),
+        "ingestion_throughput_summary": current_ingestion_summary(ingestion_throughput_report),
         "errors": errors,
     }
     report_path = Path(args.report)
