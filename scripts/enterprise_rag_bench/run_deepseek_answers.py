@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 from deepseek_answers_lib.cli import main
+from deepseek_answers_lib.runner import run
 
 
 if __name__ == "__main__":
