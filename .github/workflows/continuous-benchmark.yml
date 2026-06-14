@@ -36,6 +36,8 @@ jobs:
           path: |
             target/load-smoke/report.json
             target/single-node-performance/report.json
+            target/concurrent-read-benchmark/report.json
+            target/concurrent-read-benchmark/report.md
             target/performance-trends/report.json
             target/scale-bench/**/report.json
             target/scale-bench/trends.json

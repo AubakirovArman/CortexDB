@@ -20,18 +20,20 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-C18` — Concurrent read throughput benchmark.
+`EPIC-C19` — Ingestion throughput + batch embedding pipeline.
 
-C18 exit steps:
+C19 exit steps:
 
-1. Add a benchmark scenario with K readers + 1 writer and latency/throughput
-   curves by thread count.
-2. Compare actor-only versus RwLock read paths.
-3. Publish the curve and include it in the C17 trend workflow.
+1. Formalize resumable embedding batching/parallelism.
+2. Route ingestion through WriteBatch where the benchmark path benefits.
+3. Publish an end-to-end docs/sec benchmark and resume-after-interruption test.
 
-C18 current state:
+C19 current state:
 
 - next.
+- C18 is closed with a bounded K-readers + 1-writer benchmark, actor-route vs
+  WriterPrefRwLock-direct comparison, JSON/Markdown report output, C17 trend
+  integration, and hosted artifact upload.
 - C11 is closed with `/v1/stats`, `/v1/metrics`, Prometheus, OpenAPI/SDK, and
   configured bounded-FIFO AQL query cache metrics/policy.
 - C10 is closed with plan-aware segment pruning from existing manifest zone
@@ -68,6 +70,18 @@ D05 split state:
 
 ## Recently Closed
 
+### EPIC-C18 — Concurrent read throughput benchmark
+
+Status: `done`
+
+What closed it:
+
+- Added `concurrent_read_benchmark_check` with K readers + 1 writer and
+  latency/throughput curves for 1/2/4 reader counts.
+- Published JSON and Markdown reports under `target/concurrent-read-benchmark`.
+- Compared `actor_route_shared` against direct `WriterPrefRwLock` read guards.
+- Wired the report into C17 performance trends and hosted benchmark artifacts.
+
 ### EPIC-C11 — AQL query cache: metrics and policy
 
 Status: `done`
@@ -84,10 +98,6 @@ What closed it:
   invalidation.
 - Regression coverage verifies write-driven invalidation and configured FIFO
   eviction.
-
-Important follow-up:
-
-- C18 should measure concurrent read throughput under mixed reader/writer load.
 
 ### EPIC-C10 — Segment zone maps + segment skipping
 

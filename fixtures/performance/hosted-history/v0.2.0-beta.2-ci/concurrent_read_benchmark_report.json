@@ -1,0 +1,196 @@
+{
+  "cells": 200,
+  "comparisons": [
+    {
+      "actor_read_throughput_per_sec": 80.0,
+      "reader_threads": 1,
+      "rwlock_read_throughput_per_sec": 105.0,
+      "rwlock_vs_actor_read_throughput_ratio": 1.3125
+    },
+    {
+      "actor_read_throughput_per_sec": 82.0,
+      "reader_threads": 2,
+      "rwlock_read_throughput_per_sec": 180.0,
+      "rwlock_vs_actor_read_throughput_ratio": 2.195122
+    },
+    {
+      "actor_read_throughput_per_sec": 84.0,
+      "reader_threads": 4,
+      "rwlock_read_throughput_per_sec": 310.0,
+      "rwlock_vs_actor_read_throughput_ratio": 3.690476
+    }
+  ],
+  "duration_ms": 1000.0,
+  "errors": [],
+  "modes": [
+    {
+      "curve": [
+        {
+          "duration_ms": 125.0,
+          "final_seq": 205,
+          "read_operations": 10,
+          "read_throughput_per_sec": 80.0,
+          "reader_latency": {
+            "count": 10,
+            "max_ms": 15.0,
+            "p50_ms": 9.0,
+            "p95_ms": 13.0,
+            "p99_ms": 13.0
+          },
+          "reader_threads": 1,
+          "total_throughput_per_sec": 120.0,
+          "write_operations": 5,
+          "write_throughput_per_sec": 40.0,
+          "writer_latency": {
+            "count": 5,
+            "max_ms": 9.0,
+            "p50_ms": 7.0,
+            "p95_ms": 8.0,
+            "p99_ms": 8.0
+          }
+        },
+        {
+          "duration_ms": 244.0,
+          "final_seq": 205,
+          "read_operations": 20,
+          "read_throughput_per_sec": 82.0,
+          "reader_latency": {
+            "count": 20,
+            "max_ms": 26.0,
+            "p50_ms": 13.0,
+            "p95_ms": 24.0,
+            "p99_ms": 25.0
+          },
+          "reader_threads": 2,
+          "total_throughput_per_sec": 102.0,
+          "write_operations": 5,
+          "write_throughput_per_sec": 20.0,
+          "writer_latency": {
+            "count": 5,
+            "max_ms": 12.0,
+            "p50_ms": 9.0,
+            "p95_ms": 11.0,
+            "p99_ms": 11.0
+          }
+        },
+        {
+          "duration_ms": 476.0,
+          "final_seq": 205,
+          "read_operations": 40,
+          "read_throughput_per_sec": 84.0,
+          "reader_latency": {
+            "count": 40,
+            "max_ms": 50.0,
+            "p50_ms": 20.0,
+            "p95_ms": 45.0,
+            "p99_ms": 48.0
+          },
+          "reader_threads": 4,
+          "total_throughput_per_sec": 94.0,
+          "write_operations": 5,
+          "write_throughput_per_sec": 10.0,
+          "writer_latency": {
+            "count": 5,
+            "max_ms": 15.0,
+            "p50_ms": 11.0,
+            "p95_ms": 13.0,
+            "p99_ms": 13.0
+          }
+        }
+      ],
+      "description": "HTTP route path through the legacy shared RwLock wrapper",
+      "name": "actor_route_shared"
+    },
+    {
+      "curve": [
+        {
+          "duration_ms": 95.0,
+          "final_seq": 205,
+          "read_operations": 10,
+          "read_throughput_per_sec": 105.0,
+          "reader_latency": {
+            "count": 10,
+            "max_ms": 11.0,
+            "p50_ms": 7.0,
+            "p95_ms": 10.0,
+            "p99_ms": 10.0
+          },
+          "reader_threads": 1,
+          "total_throughput_per_sec": 158.0,
+          "write_operations": 5,
+          "write_throughput_per_sec": 53.0,
+          "writer_latency": {
+            "count": 5,
+            "max_ms": 8.0,
+            "p50_ms": 6.0,
+            "p95_ms": 7.0,
+            "p99_ms": 7.0
+          }
+        },
+        {
+          "duration_ms": 111.0,
+          "final_seq": 205,
+          "read_operations": 20,
+          "read_throughput_per_sec": 180.0,
+          "reader_latency": {
+            "count": 20,
+            "max_ms": 14.0,
+            "p50_ms": 8.0,
+            "p95_ms": 12.0,
+            "p99_ms": 13.0
+          },
+          "reader_threads": 2,
+          "total_throughput_per_sec": 225.0,
+          "write_operations": 5,
+          "write_throughput_per_sec": 45.0,
+          "writer_latency": {
+            "count": 5,
+            "max_ms": 9.0,
+            "p50_ms": 7.0,
+            "p95_ms": 8.0,
+            "p99_ms": 8.0
+          }
+        },
+        {
+          "duration_ms": 129.0,
+          "final_seq": 205,
+          "read_operations": 40,
+          "read_throughput_per_sec": 310.0,
+          "reader_latency": {
+            "count": 40,
+            "max_ms": 16.0,
+            "p50_ms": 9.0,
+            "p95_ms": 14.0,
+            "p99_ms": 15.0
+          },
+          "reader_threads": 4,
+          "total_throughput_per_sec": 349.0,
+          "write_operations": 5,
+          "write_throughput_per_sec": 39.0,
+          "writer_latency": {
+            "count": 5,
+            "max_ms": 10.0,
+            "p50_ms": 8.0,
+            "p95_ms": 9.0,
+            "p99_ms": 9.0
+          }
+        }
+      ],
+      "description": "direct engine reads under WriterPrefRwLock read guards",
+      "name": "rwlock_direct"
+    }
+  ],
+  "ok": true,
+  "read_ops_per_thread": 10,
+  "reader_thread_counts": [
+    1,
+    2,
+    4
+  ],
+  "schema_version": "cortexdb.concurrent_read_benchmark.v1",
+  "slo_thresholds": {
+    "max_p95_ms": 1000.0
+  },
+  "workload_class": "local_concurrent_read_throughput",
+  "writer_ops": 5
+}

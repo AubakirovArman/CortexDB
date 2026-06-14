@@ -1,6 +1,6 @@
 single-node-performance-check:
 	cargo run --release -p cortex-engine --bin single_node_performance_check -- --root "$(SINGLE_NODE_PERF_ROOT)" --report "$(SINGLE_NODE_PERF_REPORT)" --cells "$(SINGLE_NODE_PERF_CELLS)" --max-total-ms "$(SINGLE_NODE_PERF_MAX_TOTAL_MS)" --min-ingest-cells-per-sec "$(SINGLE_NODE_PERF_MIN_INGEST_CELLS_PER_SEC)" --max-rss-bytes "$(SINGLE_NODE_PERF_MAX_RSS_BYTES)"
-.PHONY: verify-performance-check numeric-verify-index-check temporal-validity-index-check graph-index-performance-check
+.PHONY: verify-performance-check numeric-verify-index-check temporal-validity-index-check graph-index-performance-check concurrent-read-benchmark-check
 verify-performance-check:
 	cargo run --release -p cortex-engine --bin verify_performance_check -- --root "$(VERIFY_PERF_ROOT)" --report "$(VERIFY_PERF_REPORT)" --cells "$(VERIFY_PERF_CELLS)" --warmup-samples "$(VERIFY_PERF_WARMUP_SAMPLES)" --samples "$(VERIFY_PERF_SAMPLES)" --max-p95-ms "$(VERIFY_PERF_MAX_P95_MS)"
 numeric-verify-index-check:
@@ -9,6 +9,8 @@ temporal-validity-index-check:
 	cargo run --release -p cortex-engine --bin temporal_validity_gate -- --root "$(TEMPORAL_VALIDITY_INDEX_ROOT)" --report "$(TEMPORAL_VALIDITY_INDEX_REPORT)" --cells "$(TEMPORAL_VALIDITY_INDEX_CELLS)" --batch-size "$(TEMPORAL_VALIDITY_INDEX_BATCH_SIZE)" --payload-residency "$(TEMPORAL_VALIDITY_INDEX_PAYLOAD_RESIDENCY)"
 graph-index-performance-check:
 	cargo run --release -p cortex-engine --bin graph_index_performance_check -- --report "$(GRAPH_INDEX_PERF_REPORT)" --nodes "$(GRAPH_INDEX_PERF_NODES)" --samples "$(GRAPH_INDEX_PERF_SAMPLES)" --max-hops "$(GRAPH_INDEX_PERF_MAX_HOPS)" --visit-budget "$(GRAPH_INDEX_PERF_VISIT_BUDGET)" --max-p95-ms "$(GRAPH_INDEX_PERF_MAX_P95_MS)"
+concurrent-read-benchmark-check:
+	cargo run --release -p cortex-server --bin concurrent_read_benchmark_check -- --root "$(CONCURRENT_READ_BENCH_ROOT)" --report "$(CONCURRENT_READ_BENCH_REPORT)" --markdown "$(CONCURRENT_READ_BENCH_MARKDOWN)" --cells "$(CONCURRENT_READ_BENCH_CELLS)" --reader-threads "$(CONCURRENT_READ_BENCH_READER_THREADS)" --read-ops-per-thread "$(CONCURRENT_READ_BENCH_READ_OPS_PER_THREAD)" --writer-ops "$(CONCURRENT_READ_BENCH_WRITER_OPS)" --max-p95-ms "$(CONCURRENT_READ_BENCH_MAX_P95_MS)"
 
 .PHONY: memory-profile memory-estimate-audit
 memory-profile:
@@ -37,9 +39,9 @@ core-property-random-check:
 	CORTEXDB_CORE_PROPERTY_RANDOM_SEED="$(CORE_PROPERTY_RANDOM_SEED)" cargo test -p cortex-engine --test core_property_tests
 
 performance-trend-check:
-	python3 scripts/performance_trend_check.py --load-report "$(LOAD_SMOKE_REPORT)" --single-node-report "$(SINGLE_NODE_PERF_REPORT)" --history-root "$(PERFORMANCE_HISTORY_ROOT)" --report "$(PERFORMANCE_TREND_REPORT)"
-continuous-benchmark-gate: ; $(MAKE) performance-trend-check && $(MAKE) scale-bench-trends && $(MAKE) memory-estimate-audit && python3 scripts/continuous_benchmark_gate.py --min-regression-delta-ms "$(CONTINUOUS_BENCHMARK_MIN_REGRESSION_DELTA_MS)"
-continuous-benchmark-hosted-gate: ; $(MAKE) load-smoke-check && $(MAKE) single-node-performance-check && $(MAKE) scale-bench-ci && $(MAKE) performance-trend-check PERFORMANCE_HISTORY_ROOT="$(HOSTED_PERFORMANCE_HISTORY_ROOT)" && $(MAKE) scale-bench-trends && $(MAKE) memory-estimate-audit && python3 scripts/continuous_benchmark_gate.py --min-regression-delta-ms "$(HOSTED_BENCHMARK_MIN_REGRESSION_DELTA_MS)" && python3 scripts/continuous_benchmark_gate.py --self-test
+	python3 scripts/performance_trend_check.py --load-report "$(LOAD_SMOKE_REPORT)" --single-node-report "$(SINGLE_NODE_PERF_REPORT)" --concurrent-read-report "$(CONCURRENT_READ_BENCH_REPORT)" --history-root "$(PERFORMANCE_HISTORY_ROOT)" --report "$(PERFORMANCE_TREND_REPORT)"
+continuous-benchmark-gate: ; $(MAKE) concurrent-read-benchmark-check && $(MAKE) performance-trend-check && $(MAKE) scale-bench-trends && $(MAKE) memory-estimate-audit && python3 scripts/continuous_benchmark_gate.py --min-regression-delta-ms "$(CONTINUOUS_BENCHMARK_MIN_REGRESSION_DELTA_MS)"
+continuous-benchmark-hosted-gate: ; $(MAKE) load-smoke-check && $(MAKE) single-node-performance-check && $(MAKE) concurrent-read-benchmark-check && $(MAKE) scale-bench-ci && $(MAKE) performance-trend-check PERFORMANCE_HISTORY_ROOT="$(HOSTED_PERFORMANCE_HISTORY_ROOT)" && $(MAKE) scale-bench-trends && $(MAKE) memory-estimate-audit && python3 scripts/continuous_benchmark_gate.py --min-regression-delta-ms "$(HOSTED_BENCHMARK_MIN_REGRESSION_DELTA_MS)" && python3 scripts/continuous_benchmark_gate.py --self-test
 release-regression-dashboard-check:
 	python3 scripts/release_regression_dashboard.py --baseline "$(RELEASE_REGRESSION_BASELINE)" --backup-report "$(BACKUP_DRILL_REPORT)" --single-node-report "$(SINGLE_NODE_PERF_REPORT)" --retrieval-report "$(RETRIEVAL_QUALITY_REPORT)" --context-report "$(CONTEXT_PACK_QUALITY_REPORT)" --verify-report "$(VERIFICATION_QUALITY_REPORT)" --api-report "$(HTTP_CONTRACT_OPS_REPORT)" --sdk-report "$(SDK_E2E_RELEASE_REPORT)" --report "$(RELEASE_REGRESSION_DASHBOARD_REPORT)" --markdown "$(RELEASE_REGRESSION_DASHBOARD_MARKDOWN)"
 

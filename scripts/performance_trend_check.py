@@ -13,6 +13,7 @@ from typing import Any
 LOAD_FLOWS = ("write", "read", "search", "context", "verify")
 ENGINE_FLOWS = ("put_single", "get_latest", "keyword_search", "context_pack", "verify_fact")
 PERCENTILES = ("p50_ms", "p95_ms", "p99_ms")
+CONCURRENT_MODES = ("actor_route_shared", "rwlock_direct")
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -157,6 +158,72 @@ def check_load_report(errors: list[str], report: dict[str, Any]) -> None:
         errors.append("load smoke observed database_busy/request rejection")
 
 
+def concurrent_phase_latencies(report: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    merged: dict[str, dict[str, Any]] = {}
+    for mode in report.get("modes", []):
+        mode_name = str(mode.get("name", "unknown"))
+        for point in mode.get("curve", []):
+            readers = point.get("reader_threads")
+            if not isinstance(readers, int):
+                continue
+            reader_latency = point.get("reader_latency")
+            writer_latency = point.get("writer_latency")
+            if isinstance(reader_latency, dict):
+                merged[f"{mode_name}.readers_{readers}.read"] = reader_latency
+            if isinstance(writer_latency, dict):
+                merged[f"{mode_name}.readers_{readers}.write"] = writer_latency
+    return merged
+
+
+def check_concurrent_report(errors: list[str], report: dict[str, Any]) -> None:
+    if report.get("ok") is not True:
+        errors.append("concurrent read report is not ok")
+    if report.get("workload_class") != "local_concurrent_read_throughput":
+        errors.append("concurrent read report missing local_concurrent_read_throughput workload_class")
+    thresholds = report.get("slo_thresholds", {})
+    if not isinstance(thresholds, dict) or not isinstance(thresholds.get("max_p95_ms"), (int, float)):
+        errors.append("concurrent read report missing numeric slo_thresholds.max_p95_ms")
+    modes = {
+        mode.get("name"): mode
+        for mode in report.get("modes", [])
+        if isinstance(mode, dict) and isinstance(mode.get("name"), str)
+    }
+    for mode_name in CONCURRENT_MODES:
+        mode = modes.get(mode_name)
+        if not isinstance(mode, dict):
+            errors.append(f"concurrent read report missing mode {mode_name}")
+            continue
+        curve = mode.get("curve")
+        if not isinstance(curve, list) or not curve:
+            errors.append(f"concurrent read report {mode_name} missing scaling curve")
+            continue
+        for point in curve:
+            if not isinstance(point, dict):
+                errors.append(f"concurrent read report {mode_name} has invalid curve point")
+                continue
+            for field in (
+                "reader_threads",
+                "read_operations",
+                "write_operations",
+                "read_throughput_per_sec",
+                "write_throughput_per_sec",
+            ):
+                if not isinstance(point.get(field), (int, float)):
+                    errors.append(f"concurrent read report {mode_name} missing numeric {field}")
+            require_latency(
+                errors,
+                f"concurrent-read:{mode_name}",
+                {
+                    "read": point.get("reader_latency"),
+                    "write": point.get("writer_latency"),
+                },
+                ("read", "write"),
+            )
+    comparisons = report.get("comparisons")
+    if not isinstance(comparisons, list) or not comparisons:
+        errors.append("concurrent read report missing actor-vs-rwlock comparisons")
+
+
 def collect_history(history_root: Path) -> list[dict[str, Any]]:
     runs: list[dict[str, Any]] = []
     if not history_root.exists():
@@ -164,14 +231,16 @@ def collect_history(history_root: Path) -> list[dict[str, Any]]:
     for release_dir in sorted(path for path in history_root.iterdir() if path.is_dir()):
         load_path = release_dir / "load_smoke_report.json"
         engine_path = release_dir / "single_node_performance_report.json"
+        concurrent_path = release_dir / "concurrent_read_benchmark_report.json"
         if load_path.exists() and engine_path.exists():
-            runs.append(
-                {
-                    "release": release_dir.name,
-                    "load": read_json(load_path),
-                    "single_node": read_json(engine_path),
-                }
-            )
+            run = {
+                "release": release_dir.name,
+                "load": read_json(load_path),
+                "single_node": read_json(engine_path),
+            }
+            if concurrent_path.exists():
+                run["concurrent_read"] = read_json(concurrent_path)
+            runs.append(run)
     return runs
 
 
@@ -227,6 +296,25 @@ def compare_engine(
     return comparisons
 
 
+def compare_concurrent(
+    current: dict[str, Any], previous: dict[str, Any], *, detailed: bool = False
+) -> dict[str, Any]:
+    current_flows = concurrent_phase_latencies(current)
+    previous_flows = concurrent_phase_latencies(previous)
+    comparisons: dict[str, Any] = {}
+    for flow, current_latency in current_flows.items():
+        previous_latency = previous_flows.get(flow, {})
+        comparisons[flow] = {
+            metric: comparison_detail(
+                float(current_latency.get(metric, 0.0)), float(previous_latency.get(metric, 0.0))
+            )
+            if detailed
+            else ratio(float(current_latency.get(metric, 0.0)), float(previous_latency.get(metric, 0.0)))
+            for metric in PERCENTILES
+        }
+    return comparisons
+
+
 def current_engine_slo_summary(current: dict[str, Any]) -> dict[str, Any]:
     profiles: dict[str, Any] = {}
     for profile in current.get("profiles", []):
@@ -240,10 +328,36 @@ def current_engine_slo_summary(current: dict[str, Any]) -> dict[str, Any]:
     return profiles
 
 
+def current_concurrent_summary(current: dict[str, Any]) -> dict[str, Any]:
+    modes: dict[str, Any] = {}
+    for mode in current.get("modes", []):
+        mode_name = str(mode.get("name", "unknown"))
+        points: dict[str, Any] = {}
+        for point in mode.get("curve", []):
+            readers = point.get("reader_threads")
+            if not isinstance(readers, int):
+                continue
+            points[str(readers)] = {
+                "read_throughput_per_sec": point.get("read_throughput_per_sec"),
+                "write_throughput_per_sec": point.get("write_throughput_per_sec"),
+                "reader_p95_ms": point.get("reader_latency", {}).get("p95_ms")
+                if isinstance(point.get("reader_latency"), dict)
+                else None,
+                "writer_p95_ms": point.get("writer_latency", {}).get("p95_ms")
+                if isinstance(point.get("writer_latency"), dict)
+                else None,
+            }
+        modes[mode_name] = points
+    return modes
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--load-report", default="target/load-smoke/report.json")
     parser.add_argument("--single-node-report", default="target/single-node-performance/report.json")
+    parser.add_argument(
+        "--concurrent-read-report", default="target/concurrent-read-benchmark/report.json"
+    )
     parser.add_argument("--history-root", default="fixtures/performance/history")
     parser.add_argument("--report", default="target/performance-trends/report.json")
     return parser.parse_args()
@@ -253,14 +367,18 @@ def main() -> int:
     args = parse_args()
     load_report = read_json(Path(args.load_report))
     single_node_report = read_json(Path(args.single_node_report))
+    concurrent_read_report = read_json(Path(args.concurrent_read_report))
     history = collect_history(Path(args.history_root))
     errors: list[str] = []
     if not history:
         errors.append(f"no release performance history found under {args.history_root}")
     check_load_report(errors, load_report)
     check_engine_report(errors, single_node_report)
-
+    check_concurrent_report(errors, concurrent_read_report)
     latest = history[-1] if history else None
+    if latest and "concurrent_read" not in latest:
+        errors.append(f"latest release history {latest['release']} missing concurrent read report")
+
     report = {
         "schema_version": "cortexdb.performance_trends.v1",
         "status": "passed" if not errors else "failed",
@@ -268,6 +386,7 @@ def main() -> int:
         "current": {
             "load_report": args.load_report,
             "single_node_report": args.single_node_report,
+            "concurrent_read_report": args.concurrent_read_report,
         },
         "comparisons_to_latest_history": {
             "release": latest["release"] if latest else None,
@@ -285,8 +404,19 @@ def main() -> int:
             )
             if latest
             else {},
+            "concurrent_read_p50_p95_p99_ratio": compare_concurrent(
+                concurrent_read_report, latest["concurrent_read"]
+            )
+            if latest and "concurrent_read" in latest
+            else {},
+            "concurrent_read_p50_p95_p99_details": compare_concurrent(
+                concurrent_read_report, latest["concurrent_read"], detailed=True
+            )
+            if latest and "concurrent_read" in latest
+            else {},
         },
         "single_node_slo_summary": current_engine_slo_summary(single_node_report),
+        "concurrent_read_summary": current_concurrent_summary(concurrent_read_report),
         "errors": errors,
     }
     report_path = Path(args.report)

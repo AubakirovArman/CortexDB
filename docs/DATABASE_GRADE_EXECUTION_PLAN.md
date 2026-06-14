@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-C18` (`EPIC-C11` is now done along with the previously
+Current pointer: `EPIC-C19` (`EPIC-C18` is now done along with the previously
 closed epics listed in the Active Execution Queue). `EPIC-C01` is closed with
 the `ACI4` compact term dictionary/postings format, `ACI0..ACI3` dual-read
 compatibility, and persisted/search compatibility gates. `EPIC-C03` is closed
@@ -29,7 +29,9 @@ EXPLAIN skipped/opened segment reporting. `EPIC-C10` added plan-aware
 segment-zone pruning for AQL bitmap predicates plus freshness created-at
 ranges, with EXPLAIN `segment_pruning` counters. `EPIC-C11` exposed AQL query
 cache hit/miss/eviction/capacity metrics through stats, metrics, Prometheus,
-OpenAPI/SDK models, and configurable bounded FIFO policy. `EPIC-C18` is next.
+OpenAPI/SDK models, and configurable bounded FIFO policy. `EPIC-C18` published
+the concurrent read throughput curve and wired it into the C17 trend check.
+`EPIC-C19` is next.
 `EPIC-D05` remains partial/local-ready and is externally blocked on public
 registry credentials/trusted publishing.
 
@@ -114,7 +116,8 @@ enough to unblock the next dependency step.
 44. `EPIC-C09` — Permission-aware index pruning: done.
 45. `EPIC-C10` — Segment zone maps + segment skipping: done.
 46. `EPIC-C11` — AQL query cache: metrics and policy: done.
-47. `EPIC-C18` — Concurrent read throughput benchmark: next.
+47. `EPIC-C18` — Concurrent read throughput benchmark: done.
+48. `EPIC-C19` — Ingestion throughput + batch embedding pipeline: next.
 
 ## Summary
 
@@ -1462,18 +1465,20 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-C18 — Concurrent read throughput bench
 
-- status: `next`
+- status: `done`
 - meta: Категория: benchmarks · P1 · 60 days · benchmark
 - goal: A16 без бенча — вера, не факт.
 - tasks:
-  - [ ] 1) нагрузочный сценарий: K читателей + 1 писатель, latency/throughput кривые по потокам
-  - [ ] 2) сравнение actor-only vs RwLock-пути
-  - [ ] 3) включить в trend.
+  - [x] 1) нагрузочный сценарий: K читателей + 1 писатель, latency/throughput кривые по потокам — `concurrent_read_benchmark_check` publishes 1/2/4 reader curves with a writer on each run.
+  - [x] 2) сравнение actor-only vs RwLock-пути — report compares `actor_route_shared` and `rwlock_direct` modes.
+  - [x] 3) включить в trend — `performance_trend_check.py` now validates and compares `target/concurrent-read-benchmark/report.json`.
 - acceptance:
-  - [ ] 1) кривая масштабирования опубликована
-  - [ ] 2) включено в C17.
-- files: cortex-bench.
-- risks: нет. Зависимости: A16. Эффект: доказательство конкурентности.
+  - [x] 1) кривая масштабирования опубликована
+  - [x] 2) включено в C17.
+- files: `crates/cortex-server/src/bin/concurrent_read_benchmark_check.rs`, `crates/cortex-server/src/bin/concurrent_read_benchmark_check/*.rs`, `mk/performance-dashboard.mk`, `mk/vars-ops-release.mk`, `scripts/performance_trend_check.py`, `.github/workflows/continuous-benchmark.yml`, `fixtures/performance/**/concurrent_read_benchmark_report.json`.
+- latest evidence: `make concurrent-read-benchmark-check` passed and wrote `target/concurrent-read-benchmark/report.json`/`.md`; current curve shows `rwlock_direct` read throughput scaling from `223.131` ops/s at 1 reader to `859.410` ops/s at 4 readers while `actor_route_shared` stayed near `214.532` → `191.810` ops/s. `make performance-trend-check` passed and included `concurrent_read_p50_p95_p99_ratio` plus `concurrent_read_summary` in `target/performance-trends/report.json`. Verification passed: `cargo fmt --check`, `cargo test --workspace --all-features`, `cargo clippy --workspace --all-targets -- -D warnings`.
+- risks: default C18 gate is intentionally bounded (200 cells, 1/2/4 readers) and proves concurrency shape, not large-corpus throughput. Зависимости: A16. Эффект: доказательство конкурентности.
+- next exit step: move to `EPIC-C19` — ingestion throughput + batch embedding pipeline.
 
 ### EPIC-C19 — Ingestion throughput + батчевый embedding pipeline
 
