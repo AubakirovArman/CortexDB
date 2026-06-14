@@ -481,12 +481,21 @@ paths:
           - prompt
           - markdown
           default: json
+      - name: embed_query
+        in: query
+        required: false
+        description: Generate a query vector from the task text using the server embedding config.
+        schema:
+          type: boolean
       requestBody:
         required: true
         content:
           text/plain:
             schema:
               type: string
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContextRequest'
       responses:
         '200':
           description: Retrieved cells
@@ -533,6 +542,11 @@ paths:
         in: query
         schema:
           type: string
+      - name: embed_query
+        in: query
+        description: Generate vector from `q` through the server embedding config when `vector` is omitted.
+        schema:
+          type: boolean
       - name: limit
         in: query
         schema:
@@ -619,6 +633,11 @@ paths:
         description: Required for mode=hybrid; optional alternative to q for mode=vector.
         schema:
           type: string
+      - name: embed_query
+        in: query
+        description: Generate vector from `q` through the server embedding config when `vector` is omitted.
+        schema:
+          type: boolean
       - name: limit
         in: query
         schema:
@@ -3002,6 +3021,22 @@ components:
         why_excluded:
           anyOf:
           - type: string
+          - type: 'null'
+    ContextRequest:
+      type: object
+      required:
+      - retrieve_aql
+      properties:
+        retrieve_aql:
+          type: string
+          minLength: 1
+        embed_query:
+          type: boolean
+          default: false
+        query_text:
+          anyOf:
+          - type: string
+            minLength: 1
           - type: 'null'
     ContextTraceRequest:
       type: object

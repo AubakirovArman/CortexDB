@@ -17,6 +17,7 @@ mod context;
 mod dashboard;
 #[cfg(test)]
 mod dashboard_tests;
+mod embedding;
 pub mod external_identity;
 mod handler;
 mod hnsw_profile;

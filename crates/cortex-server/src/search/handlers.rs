@@ -5,6 +5,7 @@ use cortex_engine::{
 };
 
 use crate::authz;
+use crate::embedding;
 use crate::responses::{AnnEvaluationResponse, RouterError};
 use crate::router::{query_param_decoded, query_param_opt_decoded};
 
@@ -35,7 +36,22 @@ pub fn handle_search_shared(
         resolve_no_fallback_rollout_policy(db, query).map_err(RouterError::BadRequest)?;
     let q = query_param_opt_decoded(query, "q")
         .unwrap_or_else(|| String::from_utf8_lossy(body).into_owned());
-    let vector_literal = query_param_opt_decoded(query, "vector");
+    let mut vector_literal = query_param_opt_decoded(query, "vector");
+    let embed_query =
+        embedding::parse_bool_param(query_param_opt_decoded(query, "embed_query"), "embed_query")?;
+    if vector_literal
+        .as_deref()
+        .map(|value| value.trim().is_empty())
+        .unwrap_or(true)
+        && (embed_query || mode == "hybrid")
+    {
+        if embed_query {
+            let vector = embedding::embed_query_from_env(&q)?;
+            vector_literal = Some(embedding::format_vector_literal(&vector));
+        } else {
+            return Err(embedding::missing_vector_or_config_error());
+        }
+    }
     let decision = route_search_query(SearchRouteInput {
         requested_mode: &mode,
         algorithm: &algorithm,

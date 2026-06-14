@@ -1,4 +1,10 @@
 use super::{handle_http, handle_http_with_options, ServerOptions};
+use std::io::{Read, Write};
+use std::net::TcpListener;
+use std::sync::{Mutex, MutexGuard};
+use std::thread;
+
+static EMBEDDING_ENV_LOCK: Mutex<()> = Mutex::new(());
 
 #[test]
 fn v1_ann_evaluate_reports_recall_for_checkpointed_vectors() {
@@ -35,6 +41,65 @@ fn v1_ann_evaluate_reports_unavailable_before_checkpoint() {
     assert!(response.contains("requires_persisted_checkpoint_without_wal_tail"));
 }
 
+#[test]
+fn context_semantic_without_vector_or_embedding_config_errors() {
+    let _env = EmbeddingEnvGuard::without_config();
+    let dir = tempfile::tempdir().unwrap();
+    let request = concat!(
+        "POST /v1/context?scope=project:embed HTTP/1.1\r\n\r\n",
+        "RETRIEVE CONTEXT FOR TASK \"semantic lookup\" IN BRAIN default ",
+        "USING MODE semantic LIMIT 2 CANDIDATES;"
+    );
+
+    let response = handle_http(dir.path(), request);
+
+    assert!(response.contains(r#""code":"bad_request""#));
+    assert!(response.contains("semantic requires vector or embedding config"));
+}
+
+#[test]
+fn context_embed_query_uses_local_embedder() {
+    let dir = tempfile::tempdir().unwrap();
+    put_vector(dir.path(), 1, "project:embed", "100,0");
+    put_vector(dir.path(), 2, "project:embed", "0,100");
+    let (url, server) = spawn_embedder(r#"{"data":[{"embedding":[0,100]}]}"#);
+    let _env = EmbeddingEnvGuard::with_url(&url);
+    let request = concat!(
+        "POST /v1/context?scope=project:embed HTTP/1.1\r\n",
+        "Content-Type: application/json\r\n\r\n",
+        "{\"retrieve_aql\":\"RETRIEVE CONTEXT FOR TASK \\\"semantic lookup\\\" ",
+        "IN BRAIN default USING MODE semantic LIMIT 2 CANDIDATES;\",",
+        "\"embed_query\":true}"
+    );
+
+    let response = handle_http(dir.path(), request);
+
+    let first = response.find(r#""cell_id":2"#).unwrap();
+    let second = response.find(r#""cell_id":1"#).unwrap();
+    assert!(first < second, "{response}");
+    server.join().unwrap();
+}
+
+#[test]
+fn search_embed_query_uses_local_embedder() {
+    let dir = tempfile::tempdir().unwrap();
+    put_vector(dir.path(), 1, "project:embed", "100,0");
+    put_vector(dir.path(), 2, "project:embed", "0,100");
+    let (url, server) = spawn_embedder(r#"{"vector":[0,100]}"#);
+    let _env = EmbeddingEnvGuard::with_url(&url);
+    let request = concat!(
+        "POST /v1/search?scope=project:embed&mode=vector&algorithm=exact",
+        "&q=semantic%20lookup&embed_query=true&limit=2 HTTP/1.1\r\n\r\n"
+    );
+
+    let response = handle_http(dir.path(), request);
+
+    let first = response.find(r#""cell_id":2"#).unwrap();
+    let second = response.find(r#""cell_id":1"#).unwrap();
+    assert!(first < second, "{response}");
+    server.join().unwrap();
+}
+
 fn put_vector(path: &std::path::Path, cell_id: u64, scope: &str, vector: &str) {
     let request = format!(
         "POST /v1/cell?cell_id={cell_id} HTTP/1.1\r\n\r\nscope={scope}\nstatus=ready\nvector={vector}\n\nbody"
@@ -51,6 +116,63 @@ fn put_vector_hnsw(path: &std::path::Path, cell_id: u64, scope: &str, vector: &s
 
 fn handle_hnsw(path: &std::path::Path, request: &str) -> String {
     handle_http_with_options(path, request, &hnsw_options())
+}
+
+struct EmbeddingEnvGuard {
+    _guard: MutexGuard<'static, ()>,
+}
+
+impl EmbeddingEnvGuard {
+    fn without_config() -> Self {
+        let guard = EMBEDDING_ENV_LOCK.lock().unwrap();
+        clear_embedding_env();
+        Self { _guard: guard }
+    }
+
+    fn with_url(url: &str) -> Self {
+        let guard = EMBEDDING_ENV_LOCK.lock().unwrap();
+        clear_embedding_env();
+        std::env::set_var("CORTEXDB_EMBEDDING_URL", url);
+        std::env::set_var("CORTEXDB_EMBEDDING_MODEL", "test-model");
+        std::env::set_var("CORTEXDB_EMBEDDING_API_KEY", "test-key");
+        std::env::set_var("CORTEXDB_EMBEDDING_TIMEOUT_MS", "1000");
+        Self { _guard: guard }
+    }
+}
+
+impl Drop for EmbeddingEnvGuard {
+    fn drop(&mut self) {
+        clear_embedding_env();
+    }
+}
+
+fn clear_embedding_env() {
+    std::env::remove_var("CORTEXDB_EMBEDDING_URL");
+    std::env::remove_var("CORTEXDB_EMBEDDING_MODEL");
+    std::env::remove_var("CORTEXDB_EMBEDDING_API_KEY");
+    std::env::remove_var("CORTEXDB_EMBEDDING_TIMEOUT_MS");
+}
+
+fn spawn_embedder(body: &'static str) -> (String, thread::JoinHandle<()>) {
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let addr = listener.local_addr().unwrap();
+    let handle = thread::spawn(move || {
+        let (mut stream, _) = listener.accept().unwrap();
+        let mut request = [0; 2048];
+        let read = stream.read(&mut request).unwrap();
+        let request = String::from_utf8_lossy(&request[..read]);
+        assert!(request.contains("POST /embed HTTP/1.1"));
+        assert!(request.contains("\"model\":\"test-model\""));
+        assert!(request.contains("\"input\":\"semantic lookup\""));
+        assert!(request.contains("Authorization: Bearer test-key"));
+        let response = format!(
+            "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n{}",
+            body.len(),
+            body
+        );
+        stream.write_all(response.as_bytes()).unwrap();
+    });
+    (format!("http://{addr}/embed"), handle)
 }
 
 fn hnsw_options() -> ServerOptions {

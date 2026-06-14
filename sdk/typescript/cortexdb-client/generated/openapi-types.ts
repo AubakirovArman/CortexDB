@@ -518,6 +518,12 @@ export interface OpenApiContextPackAnomalyResponse {
   why_excluded: string | unknown;
 }
 
+export interface OpenApiContextRequest {
+  embed_query?: boolean;
+  query_text?: string | unknown;
+  retrieve_aql: string;
+}
+
 export interface OpenApiContextTraceRequest {
   retrieve_aql: string;
   verify_aql?: string | unknown;

@@ -1,12 +1,13 @@
-use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
+use cortex_aql::AgentView;
 use cortex_engine::{
-    scope_id, ContextPack, ContextPackExportFormat, ContextPackOptions, ContextPipelineStageTrace,
+    ContextPack, ContextPackExportFormat, ContextPackOptions, ContextPipelineStageTrace,
     ContextPipelineTrace, Database,
 };
 use std::time::Instant;
 
 use crate::auth::AuthRouteContext;
 use crate::authz;
+use crate::embedding;
 use crate::memory;
 use crate::responses::{
     ContextAccessDecisionResponse, ContextPackAnomalyResponse, ContextPackCellResponse,
@@ -16,6 +17,12 @@ use crate::responses::{
 
 use crate::router::{query_param_decoded, query_param_opt_decoded};
 
+mod request;
+mod view;
+
+use request::context_request;
+pub(crate) use view::view_for_scope;
+
 pub fn handle_context_shared(
     db: &Database,
     query: &str,
@@ -24,9 +31,25 @@ pub fn handle_context_shared(
     auth_context: Option<&AuthRouteContext>,
 ) -> Result<String, RouterError> {
     let scope = query_param_decoded(query, "scope").map_err(RouterError::BadRequest)?;
-    let aql = String::from_utf8_lossy(body);
+    let mut request = context_request(query, body)?;
+    if (request.embed_query || embedding::semantic_aql_needs_query_vector(&request.retrieve_aql))
+        && !embedding::aql_task_has_query_vector(&request.retrieve_aql)
+    {
+        let query_text = request
+            .query_text
+            .take()
+            .or_else(|| embedding::retrieve_task_text(&request.retrieve_aql))
+            .ok_or_else(|| {
+                RouterError::BadRequest(
+                    "embed_query requires RETRIEVE CONTEXT FOR TASK AQL".to_owned(),
+                )
+            })?;
+        let vector = embedding::embed_query_from_env(&query_text)?;
+        request.retrieve_aql = embedding::inject_query_vector(&request.retrieve_aql, &vector)?;
+    }
     let view = authz::read_view_for_scope(&scope, authenticated_view)?;
-    let pack = db.context_pack_from_aql(&aql, &view, ContextPackOptions::default())?;
+    let pack =
+        db.context_pack_from_aql(&request.retrieve_aql, &view, ContextPackOptions::default())?;
 
     match context_output_format(query).as_str() {
         "json" => Ok(serde_json::to_string(&map_context_pack(
@@ -163,29 +186,6 @@ fn context_output_format(query: &str) -> String {
         .unwrap_or_else(|| "json".to_owned())
         .trim()
         .to_ascii_lowercase()
-}
-
-pub(crate) fn view_for_scope(scope: &str) -> AgentView {
-    AgentView {
-        agent_id: AgentId(1),
-        label: Some("local-http".to_owned()),
-        readable_brains: std::collections::BTreeSet::from([BrainId(1)]),
-        readable_scopes: std::collections::BTreeSet::from([scope_id(scope)]),
-        writable_scopes: std::collections::BTreeSet::new(),
-        allowed_modes: std::collections::BTreeSet::from([RetrievalMode::Balanced]),
-        allowed_memory_types: std::collections::BTreeSet::from([MemoryType::Decision]),
-        max_context_budget_tokens: 4_000,
-        default_context_budget_tokens: 1_000,
-        max_candidate_limit: 100,
-        default_candidate_limit: 20,
-        min_required_confidence_q16: Q16_ZERO,
-        max_ttl_seconds: Some(3_600),
-        allow_remember: false,
-        allow_verify_fact: false,
-        allow_audit_mode: false,
-        require_citations_by_default: false,
-        private_scope: None,
-    }
 }
 
 pub(crate) fn map_context_pack(

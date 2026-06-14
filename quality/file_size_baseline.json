@@ -63,6 +63,13 @@
       "soft_limit": 300,
       "warning_limit": 600
     },
+    "crates/cortex-aql/src/bin/bitmap_vm_benchmark_check.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 305,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
     "crates/cortex-aql/src/binder.rs": {
       "hard_limit": 1000,
       "kind": "source",
@@ -136,7 +143,7 @@
     "crates/cortex-aql/src/executor_mock.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 90,
+      "lines": 109,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -248,7 +255,7 @@
     "crates/cortex-aql/tests/bitmap_vm_tests.rs": {
       "hard_limit": 2000,
       "kind": "test",
-      "lines": 82,
+      "lines": 131,
       "soft_limit": 600,
       "warning_limit": 1200
     },
@@ -1788,7 +1795,7 @@
     "crates/cortex-engine/src/compatibility.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 317,
+      "lines": 329,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -1914,7 +1921,7 @@
     "crates/cortex-engine/src/context/pack/access.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 45,
+      "lines": 46,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -2075,7 +2082,7 @@
     "crates/cortex-engine/src/embedding_pipeline.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 21,
+      "lines": 22,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -2117,7 +2124,7 @@
     "crates/cortex-engine/src/embedding_pipeline/types.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 125,
+      "lines": 146,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -2383,7 +2390,7 @@
     "crates/cortex-engine/src/lib.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 183,
+      "lines": 184,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -2460,14 +2467,21 @@
     "crates/cortex-engine/src/plan/mod.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 229,
+      "lines": 188,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-engine/src/plan/policy.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 141,
       "soft_limit": 300,
       "warning_limit": 600
     },
     "crates/cortex-engine/src/plan/tests.rs": {
       "hard_limit": 2000,
       "kind": "test",
-      "lines": 109,
+      "lines": 151,
       "soft_limit": 600,
       "warning_limit": 1200
     },
@@ -2495,7 +2509,7 @@
     "crates/cortex-engine/src/query/catalog.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 86,
+      "lines": 93,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -2523,7 +2537,7 @@
     "crates/cortex-engine/src/query/index.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 260,
+      "lines": 264,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -2614,7 +2628,7 @@
     "crates/cortex-engine/src/query/provider.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 177,
+      "lines": 189,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -2880,7 +2894,7 @@
     "crates/cortex-engine/src/search/access.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 16,
+      "lines": 18,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -3125,7 +3139,7 @@
     "crates/cortex-engine/src/search/database/context_store.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 162,
+      "lines": 163,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -3146,7 +3160,7 @@
     "crates/cortex-engine/src/search/database/live_store.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 119,
+      "lines": 122,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -3181,7 +3195,7 @@
     "crates/cortex-engine/src/search/database/snapshot.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 143,
+      "lines": 144,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -3685,7 +3699,7 @@
     "crates/cortex-engine/src/session/index/record.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 79,
+      "lines": 80,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -3706,14 +3720,14 @@
     "crates/cortex-engine/src/tool_registry.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 317,
+      "lines": 318,
       "soft_limit": 300,
       "warning_limit": 600
     },
     "crates/cortex-engine/src/tool_registry/index.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 68,
+      "lines": 69,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -3783,7 +3797,7 @@
     "crates/cortex-engine/src/verification/conflict_index/store.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 302,
+      "lines": 303,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -3797,7 +3811,7 @@
     "crates/cortex-engine/src/verification/evidence.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 153,
+      "lines": 154,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -3818,7 +3832,7 @@
     "crates/cortex-engine/src/verification/graph.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 305,
+      "lines": 306,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -3832,14 +3846,14 @@
     "crates/cortex-engine/src/verification/guards.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 176,
+      "lines": 177,
       "soft_limit": 300,
       "warning_limit": 600
     },
     "crates/cortex-engine/src/verification/numeric/fact_claim.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 232,
+      "lines": 233,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -3888,7 +3902,7 @@
     "crates/cortex-engine/src/verification/operator/candidates.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 154,
+      "lines": 155,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -3930,7 +3944,7 @@
     "crates/cortex-engine/src/verification/temporal_index/store.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 115,
+      "lines": 116,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -4308,7 +4322,7 @@
     "crates/cortex-engine/tests/decode_fuzz/corpus.rs": {
       "hard_limit": 2000,
       "kind": "test",
-      "lines": 291,
+      "lines": 289,
       "soft_limit": 600,
       "warning_limit": 1200
     },
@@ -5470,7 +5484,7 @@
     "crates/cortex-server/src/authz.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 125,
+      "lines": 127,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -5488,6 +5502,20 @@
       "soft_limit": 300,
       "warning_limit": 600
     },
+    "crates/cortex-server/src/context/request.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 55,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/context/view.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 28,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
     "crates/cortex-server/src/dashboard.rs": {
       "hard_limit": 1000,
       "kind": "source",
@@ -5501,6 +5529,34 @@
       "lines": 439,
       "soft_limit": 600,
       "warning_limit": 1200
+    },
+    "crates/cortex-server/src/embedding.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 12,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/embedding/aql.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 118,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/embedding/client.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 241,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "crates/cortex-server/src/embedding/config.rs": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 83,
+      "soft_limit": 300,
+      "warning_limit": 600
     },
     "crates/cortex-server/src/external_identity.rs": {
       "hard_limit": 1000,
@@ -5610,7 +5666,7 @@
     "crates/cortex-server/src/lib.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 53,
+      "lines": 54,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -5841,14 +5897,14 @@
     "crates/cortex-server/src/search/explain.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 216,
+      "lines": 232,
       "soft_limit": 300,
       "warning_limit": 600
     },
     "crates/cortex-server/src/search/handlers.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 166,
+      "lines": 182,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -5876,7 +5932,7 @@
     "crates/cortex-server/src/search_tests.rs": {
       "hard_limit": 2000,
       "kind": "test",
-      "lines": 65,
+      "lines": 187,
       "soft_limit": 600,
       "warning_limit": 1200
     },
@@ -6163,7 +6219,7 @@
     "crates/cortex-storage/src/format.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 108,
+      "lines": 109,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -6177,7 +6233,7 @@
     "crates/cortex-storage/src/indexes.rs": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 257,
+      "lines": 288,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -6317,7 +6373,7 @@
     "crates/cortex-storage/tests/format_tests.rs": {
       "hard_limit": 2000,
       "kind": "test",
-      "lines": 110,
+      "lines": 120,
       "soft_limit": 600,
       "warning_limit": 1200
     },
@@ -6345,7 +6401,7 @@
     "crates/cortex-storage/tests/segment_index_tests.rs": {
       "hard_limit": 2000,
       "kind": "test",
-      "lines": 329,
+      "lines": 357,
       "soft_limit": 600,
       "warning_limit": 1200
     },
@@ -6611,7 +6667,7 @@
     "mk/core.mk": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 36,
+      "lines": 39,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -7178,14 +7234,14 @@
     "scripts/check_migration_compatibility.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 167,
+      "lines": 168,
       "soft_limit": 300,
       "warning_limit": 600
     },
     "scripts/check_migration_policy.py": {
       "hard_limit": 1000,
       "kind": "source",
-      "lines": 119,
+      "lines": 120,
       "soft_limit": 300,
       "warning_limit": 600
     },
@@ -9244,6 +9300,13 @@
       "hard_limit": 1000,
       "kind": "source",
       "lines": 118,
+      "soft_limit": 300,
+      "warning_limit": 600
+    },
+    "scripts/policy_rewrite_gate_check.py": {
+      "hard_limit": 1000,
+      "kind": "source",
+      "lines": 97,
       "soft_limit": 300,
       "warning_limit": 600
     },

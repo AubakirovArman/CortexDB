@@ -745,6 +745,16 @@ OpenApiContextPackAnomalyResponse = TypedDict(
     total=False,
 )
 
+OpenApiContextRequest = TypedDict(
+    'OpenApiContextRequest',
+    {
+        'embed_query': 'bool',
+        'query_text': 'str | Any',
+        'retrieve_aql': 'str',
+    },
+    total=False,
+)
+
 OpenApiContextTraceRequest = TypedDict(
     'OpenApiContextTraceRequest',
     {

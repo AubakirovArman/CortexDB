@@ -16,6 +16,7 @@ pub use debt::{embedding_debt_report_from_versions, embedding_expected_items_fro
 pub use payload::embedding_text_hash;
 pub use types::{
     EmbeddingBackfillOptions, EmbeddingBackfillProvider, EmbeddingBackfillReport,
-    EmbeddingCoverageConfig, EmbeddingCoverageReport, EmbeddingDebtItem, EmbeddingDebtReport,
-    EmbeddingExpectedItem, DEFAULT_MIN_EMBEDDING_COVERAGE_BPS, EMBEDDING_PIPELINE_REPORT_SCHEMA,
+    EmbeddingClientConfig, EmbeddingCoverageConfig, EmbeddingCoverageReport, EmbeddingDebtItem,
+    EmbeddingDebtReport, EmbeddingExpectedItem, QueryEmbeddingProvider,
+    DEFAULT_MIN_EMBEDDING_COVERAGE_BPS, EMBEDDING_PIPELINE_REPORT_SCHEMA,
 };

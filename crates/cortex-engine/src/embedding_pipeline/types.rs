@@ -102,11 +102,32 @@ pub trait EmbeddingBackfillProvider {
     fn embed_text(&mut self, text: &str) -> EngineResult<Vec<i16>>;
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct EmbeddingClientConfig {
+    pub url: String,
+    pub model: Option<String>,
+    pub api_key: Option<String>,
+    pub timeout_ms: u64,
+}
+
+pub trait QueryEmbeddingProvider {
+    fn embed_query(&mut self, text: &str) -> EngineResult<Vec<i16>>;
+}
+
 impl<F> EmbeddingBackfillProvider for F
 where
     F: FnMut(&str) -> EngineResult<Vec<i16>>,
 {
     fn embed_text(&mut self, text: &str) -> EngineResult<Vec<i16>> {
+        self(text)
+    }
+}
+
+impl<F> QueryEmbeddingProvider for F
+where
+    F: FnMut(&str) -> EngineResult<Vec<i16>>,
+{
+    fn embed_query(&mut self, text: &str) -> EngineResult<Vec<i16>> {
         self(text)
     }
 }
