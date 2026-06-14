@@ -11,7 +11,7 @@ use crate::query::EngineAqlIndex;
 
 use super::candidates::{candidate_from_ordinal, segment_cell_count, CandidateAllocator};
 use super::profiles::ensure_checkpoint_profiles;
-use super::stats::segment_stats_from_cell_refs;
+use super::stats::segment_stats_from_cell_refs_with_analyzer;
 use super::{
     bitmap_path, hnsw, hnsw_path, lexical_path, manifest_hnsw_profile, segment_path, vector,
     vector_path,
@@ -39,11 +39,18 @@ impl Database {
             .experimental_hnsw
             .then(|| manifest_hnsw_profile(self.hnsw_build_config))
             .transpose()?;
+        let analyzer = self.text_analyzer();
+        let text_analyzer_profile = self.text_analyzer_config.manifest_profile();
         let vector_profile = {
             let cells = self.checkpoint_delta_cell_refs(base_seq, &candidate_map, &tombstones)?;
             vector::vector_profile_for_cell_refs(&cells, self.hnsw_build_config)
         }?;
-        ensure_checkpoint_profiles(&self.manifest, hnsw_profile, vector_profile)?;
+        ensure_checkpoint_profiles(
+            &self.manifest,
+            hnsw_profile,
+            vector_profile,
+            text_analyzer_profile,
+        )?;
 
         let archived_wal = self.writer.rotate().map_err(|e| {
             EngineError::Storage(cortex_storage::StorageError::Io(std::io::Error::other(
@@ -55,10 +62,12 @@ impl Database {
         let segment_path = segment_path(&self.segments_path, segment_id);
         let (cells_flushed, segment_stats) = {
             let cells = self.checkpoint_delta_cell_refs(base_seq, &candidate_map, &tombstones)?;
-            let segment_stats = segment_stats_from_cell_refs(segment_id, &cells);
+            let segment_stats =
+                segment_stats_from_cell_refs_with_analyzer(segment_id, &cells, &analyzer);
             SegmentWriter::write_refs(&segment_path, &cells)?;
 
-            let index = EngineAqlIndex::try_from_segment_cell_refs(&cells)?;
+            let index =
+                EngineAqlIndex::try_from_segment_cell_refs_with_analyzer(&cells, &analyzer)?;
             index
                 .bitmap_index()
                 .write(bitmap_path(&self.segments_path, segment_id))?;
@@ -83,6 +92,7 @@ impl Database {
         });
         self.manifest.set_segment_stats(segment_stats);
         self.manifest.hnsw_profile = hnsw_profile;
+        self.manifest.text_analyzer_profile = Some(text_analyzer_profile);
         if let Some(profile) = vector_profile {
             self.manifest.vector_profile = Some(profile);
         }
@@ -103,6 +113,8 @@ impl Database {
             .experimental_hnsw
             .then(|| manifest_hnsw_profile(self.hnsw_build_config))
             .transpose()?;
+        let analyzer = self.text_analyzer();
+        let text_analyzer_profile = self.text_analyzer_config.manifest_profile();
         if self.memtable.visible_iter(self.read_txn()).next().is_none() {
             self.publish_checkpoint_corpus_synonym_dictionary()?;
             return Ok(CheckpointStats {
@@ -114,6 +126,12 @@ impl Database {
         let records = self.full_snapshot_segment_records()?;
         let cells = segment_record_refs(&records);
         let vector_profile = vector::vector_profile_for_cell_refs(&cells, self.hnsw_build_config)?;
+        ensure_checkpoint_profiles(
+            &self.manifest,
+            hnsw_profile,
+            vector_profile,
+            text_analyzer_profile,
+        )?;
 
         let archived_wal = self.writer.rotate().map_err(|e| {
             EngineError::Storage(cortex_storage::StorageError::Io(std::io::Error::other(
@@ -123,11 +141,13 @@ impl Database {
         fs::create_dir_all(&self.segments_path)?;
         let segment_id = self.manifest.generation + 1;
         let segment_path = segment_path(&self.segments_path, segment_id);
-        let segment_stats = segment_stats_from_cell_refs(segment_id, &cells);
+        let segment_stats =
+            segment_stats_from_cell_refs_with_analyzer(segment_id, &cells, &analyzer);
         let cells_flushed = {
             SegmentWriter::write_records(&segment_path, &records)?;
 
-            let index = EngineAqlIndex::try_from_segment_cell_refs(&cells)?;
+            let index =
+                EngineAqlIndex::try_from_segment_cell_refs_with_analyzer(&cells, &analyzer)?;
             index
                 .bitmap_index()
                 .write(bitmap_path(&self.segments_path, segment_id))?;
@@ -153,6 +173,7 @@ impl Database {
         self.manifest.set_segment_stats(segment_stats);
         self.manifest.hnsw_profile = hnsw_profile;
         self.manifest.vector_profile = vector_profile;
+        self.manifest.text_analyzer_profile = Some(text_analyzer_profile);
         self.manifest.store(&self.manifest_path)?;
         let _ = std::fs::remove_file(&archived_wal);
         self.memtable.gc_versions_before(self.gc_horizon());

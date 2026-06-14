@@ -32,7 +32,9 @@ mod types;
 pub(crate) mod vector;
 mod vector_index;
 
-pub use analyzer::{mean_reciprocal_rank_q16, Language, TextAnalyzer};
+pub use analyzer::{
+    mean_reciprocal_rank_q16, Language, TextAnalyzer, TextAnalyzerConfig, TEXT_ANALYZER_VERSION,
+};
 pub use ann::{
     AnnEvaluationReport, AnnFallbackReason, AnnMetrics, AnnSearchPath, AnnSearchPolicy,
     AnnSearchReport, AnnSloViolation, MIN_ANN_RECALL_Q16,
@@ -92,7 +94,8 @@ pub use intent::{
 };
 pub use lexical::Bm25Index;
 pub use query_understanding::{
-    analyze_search_query, QueryAnchor, QueryAnchorKind, SearchQueryUnderstanding,
+    analyze_search_query, analyze_search_query_with_analyzer, QueryAnchor, QueryAnchorKind,
+    SearchQueryUnderstanding,
 };
 pub use rerank::{
     calibrated_hybrid_rrf_weights, rerank_calibration_profile, HybridRrfWeights,

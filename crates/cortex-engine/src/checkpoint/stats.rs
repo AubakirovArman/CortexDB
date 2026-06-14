@@ -7,12 +7,14 @@ use cortex_storage::manifest::{
 use cortex_storage::segment::SegmentCellRef;
 
 use crate::query::CellMetadata;
+use crate::search::TextAnalyzer;
 
 const TOP_TERM_LIMIT: usize = 32;
 
-pub(crate) fn segment_stats_from_cell_refs(
+pub(crate) fn segment_stats_from_cell_refs_with_analyzer(
     segment_id: u64,
     cells: &[SegmentCellRef<'_>],
+    analyzer: &TextAnalyzer,
 ) -> ManifestSegmentStats {
     let mut stats = SegmentStatsBuilder::new(segment_id, cells.len() as u64);
     for cell in cells {
@@ -20,7 +22,7 @@ pub(crate) fn segment_stats_from_cell_refs(
             continue;
         }
         let metadata = cell_metadata(cell);
-        stats.add_metadata(&metadata);
+        stats.add_metadata(&metadata, analyzer);
     }
     stats.finish()
 }
@@ -62,7 +64,7 @@ impl SegmentStatsBuilder {
         }
     }
 
-    fn add_metadata(&mut self, metadata: &CellMetadata) {
+    fn add_metadata(&mut self, metadata: &CellMetadata, analyzer: &TextAnalyzer) {
         increment(&mut self.scope_counts, &metadata.scope);
         increment(&mut self.status_counts, &metadata.status);
         increment(&mut self.type_counts, &metadata.cell_type);
@@ -77,9 +79,12 @@ impl SegmentStatsBuilder {
             );
         }
 
-        let unique_terms = metadata.terms.iter().collect::<BTreeSet<_>>();
+        let unique_terms = analyzer
+            .tokenize(&metadata.body_text)
+            .into_iter()
+            .collect::<BTreeSet<_>>();
         for term in unique_terms {
-            increment(&mut self.term_document_frequencies, term);
+            increment(&mut self.term_document_frequencies, &term);
         }
     }
 
@@ -155,7 +160,7 @@ mod tests {
             },
         ];
 
-        let stats = segment_stats_from_cell_refs(7, &cells);
+        let stats = segment_stats_from_cell_refs_with_analyzer(7, &cells, &TextAnalyzer::default());
 
         assert_eq!(stats.segment_id, 7);
         assert_eq!(stats.row_count, 4);
@@ -179,7 +184,7 @@ mod tests {
             b"scope=legacy\nstatus=ready\ntype=fact\ncreated_unix_seconds=44\n\nlegacy body";
         let cells = [cell(1, None, payload)];
 
-        let stats = segment_stats_from_cell_refs(9, &cells);
+        let stats = segment_stats_from_cell_refs_with_analyzer(9, &cells, &TextAnalyzer::default());
 
         assert_eq!(count_for(&stats.scope_counts, "legacy"), Some(1));
         assert_eq!(stats.min_created_unix_seconds, Some(44));

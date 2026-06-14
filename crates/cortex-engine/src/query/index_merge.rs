@@ -9,6 +9,7 @@ use super::candidates::{increment_candidate, next_candidate_after, reverse_candi
 use super::metadata::CellMetadata;
 use super::{AqlDeltaIndex, EngineAqlIndex};
 use crate::error::EngineResult;
+use crate::search::TextAnalyzer;
 
 impl EngineAqlIndex {
     pub fn from_persisted(
@@ -27,6 +28,24 @@ impl EngineAqlIndex {
         candidate_to_cell: BTreeMap<u32, CellId>,
         current: impl IntoIterator<Item = &'a CellVersion>,
         changed: &[CellId],
+    ) -> EngineResult<Self> {
+        Self::from_persisted_refs_with_analyzer(
+            bitmap,
+            lexical,
+            candidate_to_cell,
+            current,
+            changed,
+            &TextAnalyzer::default(),
+        )
+    }
+
+    pub(crate) fn from_persisted_refs_with_analyzer<'a>(
+        bitmap: BitmapIndex,
+        lexical: LexicalIndex,
+        candidate_to_cell: BTreeMap<u32, CellId>,
+        current: impl IntoIterator<Item = &'a CellVersion>,
+        changed: &[CellId],
+        analyzer: &TextAnalyzer,
     ) -> EngineResult<Self> {
         let cell_to_candidate = reverse_candidate_map(&candidate_to_cell)?;
         let changed_candidates = changed
@@ -62,16 +81,17 @@ impl EngineAqlIndex {
                 version.cell_id,
             ));
         }
-        index.extend_cells(changed_current)?;
+        index.extend_cells_with_analyzer(changed_current, analyzer)?;
         index.rebuild_universe();
         Ok(index)
     }
 
-    pub(crate) fn from_persisted_delta(
+    pub(crate) fn from_persisted_delta_with_analyzer(
         bitmap: BitmapIndex,
         lexical: LexicalIndex,
         candidate_to_cell: BTreeMap<u32, CellId>,
         delta: &AqlDeltaIndex,
+        analyzer: &TextAnalyzer,
     ) -> EngineResult<Self> {
         let cell_to_candidate = reverse_candidate_map(&candidate_to_cell)?;
         let changed_candidates = delta
@@ -102,7 +122,7 @@ impl EngineAqlIndex {
             )?;
             changed_current.push((candidate, metadata.clone(), cell_id));
         }
-        index.extend_cells(changed_current)?;
+        index.extend_cells_with_analyzer(changed_current, analyzer)?;
         index.rebuild_universe();
         Ok(index)
     }

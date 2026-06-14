@@ -29,7 +29,8 @@ impl Database {
             "snapshot search rebuild begin mode={:?} limit={}",
             query.mode, query.limit
         ));
-        let mut indexes = SearchIndexes::default();
+        let analyzer = self.text_analyzer();
+        let mut indexes = SearchIndexes::with_text_analyzer_config(self.text_analyzer_config);
         let mut cells = BTreeMap::new();
         let mut traces = BTreeMap::<u32, SearchViewTrace>::new();
         let mut vector_candidates = 0usize;
@@ -40,7 +41,10 @@ impl Database {
         {
             let candidate_id =
                 u32::try_from(index + 1).map_err(|_| EngineError::CandidateIdOverflow)?;
-            indexes.add_field_terms(candidate_id, record.metadata.lexical_field_terms());
+            indexes.add_field_terms(
+                candidate_id,
+                record.metadata.lexical_field_terms_with_analyzer(&analyzer),
+            );
             if let Some(best) = record.best_vector.as_ref() {
                 if let Some(trace) = record.trace(candidate_id) {
                     traces.insert(candidate_id, trace);

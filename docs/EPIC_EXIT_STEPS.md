@@ -410,7 +410,7 @@ Exit steps:
 1. Define tokenizer contract for Unicode and optional stemming.
 2. Update index and query tokenization consistently.
 3. Add RU/KZ/EN and punctuation tests.
-4. Mark done when tokenizer changes are backward-compatible or migrated; then move to C03.
+4. Mark done when tokenizer changes are backward-compatible or migrated; then move to C05.
 
 ### EPIC-C05 — Disk-resident vector storage
 

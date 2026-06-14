@@ -7,7 +7,7 @@ mod scoring;
 
 use super::{
     bm25_idf_q16, bm25_term_score_with_idf_q16, hnsw::DistanceMetric, query_understanding, ranked,
-    Bm25TermInput, ScoredCandidate,
+    Bm25TermInput, ScoredCandidate, TextAnalyzer,
 };
 use scoring::{average_field_len_q16, average_len_q16};
 
@@ -26,6 +26,7 @@ pub(super) fn search_persisted_lexical(
     query: &str,
     allowed: &BTreeSet<u32>,
     limit: usize,
+    analyzer: &TextAnalyzer,
 ) -> Vec<ScoredCandidate> {
     let doc_count = doc_count(index.doc_lengths, allowed);
     if doc_count == 0 {
@@ -34,7 +35,7 @@ pub(super) fn search_persisted_lexical(
     let avg_len_q16 = average_len_q16(index.doc_lengths, allowed);
     let mut scores = BTreeMap::<u32, u64>::new();
     let all_allowed = !index.doc_lengths.is_empty() && allowed.len() == index.doc_lengths.len();
-    let selected_terms = selected_query_terms(index.terms, query, allowed, all_allowed);
+    let selected_terms = selected_query_terms(index.terms, query, allowed, all_allowed, analyzer);
     trace_persisted_lexical(&format!(
         "query_terms selected=[{}] doc_count={} allowed={} all_allowed={}",
         selected_terms
@@ -113,9 +114,10 @@ fn selected_query_terms(
     query: &str,
     allowed: &BTreeSet<u32>,
     all_allowed: bool,
+    analyzer: &TextAnalyzer,
 ) -> Vec<QueryTermStats> {
     let mut seen = BTreeSet::new();
-    let mut selected = query_understanding::analyze_search_query(query)
+    let mut selected = query_understanding::analyze_search_query_with_analyzer(query, analyzer)
         .weighted_terms
         .into_iter()
         .filter(|(term, _)| seen.insert(term.clone()))

@@ -1,7 +1,7 @@
 use cortex_storage::wal::DurabilityMode;
 
 use crate::ingestion::IngestionBackpressurePolicy;
-use crate::search::HnswBuildConfig;
+use crate::search::{HnswBuildConfig, TextAnalyzerConfig};
 
 /// Thresholds and limits that govern when the background compactor selects a
 /// subset of live segments for an incremental merge.
@@ -138,6 +138,7 @@ pub struct DatabaseOptions {
     pub feature_flags: EngineFeatureFlags,
     pub ingestion_backpressure: IngestionBackpressurePolicy,
     pub compaction_policy: CompactionPolicy,
+    pub text_analyzer: TextAnalyzerConfig,
 }
 
 impl Default for DatabaseOptions {
@@ -153,6 +154,7 @@ impl Default for DatabaseOptions {
             feature_flags: EngineFeatureFlags::production_safe(),
             ingestion_backpressure: IngestionBackpressurePolicy::default(),
             compaction_policy: CompactionPolicy::default(),
+            text_analyzer: TextAnalyzerConfig::default(),
         }
     }
 }

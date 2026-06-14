@@ -50,6 +50,7 @@ impl Database {
         let allowed = allowed_candidates(&state.bitmap, view);
         let expanded_query_text = self.corpus_synonym_expanded_query_text(query.text)?;
         let lexical_query_text = expanded_query_text.as_deref().unwrap_or(query.text);
+        let analyzer = self.text_analyzer();
         let mut ann_report = None;
         let ranked = match query.mode {
             SearchMode::Keyword => search_persisted_lexical(
@@ -63,6 +64,7 @@ impl Database {
                 lexical_query_text,
                 &allowed,
                 query.limit,
+                &analyzer,
             )
             .into_iter()
             .map(PersistedSearchCandidate::from_lexical)
@@ -222,6 +224,7 @@ impl Database {
                         lexical_query_text,
                         &allowed,
                         depth,
+                        &analyzer,
                     );
                     let vector =
                         search_persisted_vectors(&index.vectors, vector, &allowed, depth, &metric);
@@ -238,6 +241,7 @@ impl Database {
                         lexical_query_text,
                         &allowed,
                         depth,
+                        &analyzer,
                     )
                     .into_iter()
                     .map(PersistedSearchCandidate::from_lexical)

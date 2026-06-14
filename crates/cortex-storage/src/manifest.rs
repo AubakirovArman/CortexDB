@@ -33,6 +33,13 @@ pub struct ManifestVectorProfile {
     pub metric: u32,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ManifestTextAnalyzerProfile {
+    pub version: u32,
+    pub language: u32,
+    pub stemming: bool,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ManifestCount {
     pub key: String,
@@ -89,6 +96,7 @@ pub struct StorageManifest {
     pub retired_segments: Vec<ManifestSegment>,
     pub hnsw_profile: Option<ManifestHnswProfile>,
     pub vector_profile: Option<ManifestVectorProfile>,
+    pub text_analyzer_profile: Option<ManifestTextAnalyzerProfile>,
     pub segment_stats: Vec<ManifestSegmentStats>,
     pub hnsw_no_fallback_profile: Option<ManifestHnswNoFallbackProfile>,
     pub compaction_metadata: CompactionMetadata,

@@ -11,12 +11,13 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-C04` (`EPIC-C03` is now done along with the previously
+Current pointer: `EPIC-C05` (`EPIC-C04` is now done along with the previously
 closed epics listed in the Active Execution Queue). `EPIC-C01` is closed with
 the `ACI4` compact term dictionary/postings format, `ACI0..ACI3` dual-read
 compatibility, and persisted/search compatibility gates. `EPIC-C03` is closed
 with canonical fixed-point BM25, field weights, and scoring docs. `EPIC-C04` is
-next.
+closed with configured Unicode analyzer/tokenizer, optional stemming, manifest
+profile protection, and RU quality fixtures. `EPIC-C05` is next.
 `EPIC-D05` remains partial/local-ready and is externally blocked on public
 registry credentials/trusted publishing.
 
@@ -94,7 +95,8 @@ enough to unblock the next dependency step.
 37. `EPIC-B20` — Multi-brain semantics or removal: done.
 38. `EPIC-C01` — Term interning + compact postings: done.
 39. `EPIC-C03` — Real BM25 with field weights: done.
-40. `EPIC-C04` — Unicode tokenizer + optional stemming: next.
+40. `EPIC-C04` — Unicode tokenizer + optional stemming: done.
+41. `EPIC-C05` — Disk-resident vector storage + SIMD exact scan: next.
 
 ## Summary
 
@@ -1174,20 +1176,22 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-C04 — Токенизация: unicode segmentation + опциональный стемминг
 
-- status: `pending`
+- status: `done`
 - meta: Категория: retrieval · P2 · 90 days · improve→build
 - goal: фикстуры проекта на русском/казахском контенте (KZT, инвестпроекты), а токенизатор простой.
 - problem: Проблема: morфология снижает recall не-английских корпусов.
 - tasks:
-  - [ ] 1) unicode-segmentation
-  - [ ] 2) rust-stemmers (ru/en) за конфигом коллекции
-  - [ ] 3) quality-фикстура с русскими запросами.
+  - [x] 1) unicode-segmentation
+  - [x] 2) ru/en/kz light stemming за конфигом коллекции
+  - [x] 3) quality-фикстура с русскими запросами.
 - acceptance:
-  - [ ] 1) «бюджету»→«бюджет» при включённом стемминге
-  - [ ] 2) англ. фикстуры не деградируют
-  - [ ] 3) конфиг описан.
-- files: search/tokenize, analyze_search_query.
-- risks: стемминг меняет индекс — версия анализатора в манифесте (иначе mixed-индекс). Зависимости: C01. Эффект: честный multilingual.
+  - [x] 1) «бюджету»→«бюджет» при включённом стемминге
+  - [x] 2) англ. фикстуры не деградируют
+  - [x] 3) конфиг описан.
+- files: `crates/cortex-engine/src/search/tokenizer.rs`, `search/analyzer.rs`, `search/query_understanding.rs`, `search/lexical.rs`, `search/persisted.rs`, `query/index.rs`, `query/index_merge.rs`, `query/metadata/*`, `checkpoint/*`, `database/open.rs`, `database/types.rs`, `replication/install.rs`, `crates/cortex-storage/src/manifest.rs`, `manifest/codec.rs`, `docs/SEARCH.md`, `docs/STORAGE_FORMATS.md`, `docs/ENGINE_API.md`.
+- evidence: `TextAnalyzerConfig` is now part of `DatabaseOptions`; default analyzer remains neutral with stemming disabled; Russian configured analyzer normalizes `бюджету` to `бюджет`; snapshot, persisted `.aci`, checkpoint/compact, replication install, and AQL merge use the configured analyzer; manifest `ANLZ` records analyzer version/language/stemming and open rejects mismatched persisted profiles.
+- gates: `cargo test -p cortex-engine --test search_analyzer_config --all-features`; `cargo test -p cortex-engine search::quality_tests --all-features`; `cargo test -p cortex-engine search::persisted::tests --all-features`; `cargo test -p cortex-storage --test manifest_profile_tests --all-features`.
+- risks: external `rust-stemmers` was not added because project rules forbid new dependencies without explicit approval; the implemented light stemmers are deterministic and opt-in, with manifest profile protection against mixed token streams. Зависимости: C01. Эффект: честный multilingual.
 
 ### EPIC-C05 — Disk-resident vector storage + SIMD exact scan
 

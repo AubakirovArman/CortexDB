@@ -4,7 +4,7 @@ use std::collections::BTreeMap;
 use super::{
     rerank, routed_candidate_limit, routed_result_limit, Bm25Index, HybridRrfWeights,
     ScoredCandidate, SearchMode, SearchQuery, SearchRerankInput, SearchReranker, SearchResult,
-    VectorIndex, WeightedScoreReranker,
+    TextAnalyzerConfig, VectorIndex, WeightedScoreReranker,
 };
 
 #[derive(Clone, Debug, Default)]
@@ -14,6 +14,13 @@ pub struct SearchIndexes {
 }
 
 impl SearchIndexes {
+    pub fn with_text_analyzer_config(analyzer_config: TextAnalyzerConfig) -> Self {
+        Self {
+            lexical: Bm25Index::with_analyzer_config(analyzer_config),
+            vector: VectorIndex::default(),
+        }
+    }
+
     pub fn add_document(&mut self, cell_id: u32, text: &str) {
         self.lexical.add_document(cell_id, text);
     }

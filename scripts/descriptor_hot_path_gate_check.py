@@ -362,7 +362,7 @@ def main() -> None:
     )
     require(
         replication_install,
-        "EngineAqlIndex::try_from_segment_cell_refs(&cell_refs)",
+        "EngineAqlIndex::try_from_segment_cell_refs_with_analyzer(&cell_refs, &analyzer)",
         "replication snapshot install descriptor-backed AQL index",
     )
     require(

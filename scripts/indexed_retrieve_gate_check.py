@@ -54,17 +54,17 @@ def main() -> None:
     )
     require(
         index_merge,
-        "pub(crate) fn from_persisted_delta",
+        "pub(crate) fn from_persisted_delta_with_analyzer",
         "maintained delta AQL index merge",
     )
     require(
         query,
-        "EngineAqlIndex::try_from_delta(&self.aql_delta_index)",
+        "EngineAqlIndex::try_from_delta_with_analyzer(&self.aql_delta_index, &analyzer)",
         "empty-persisted AQL index from maintained delta index",
     )
     require(
         query,
-        "EngineAqlIndex::from_persisted_delta(",
+        "EngineAqlIndex::from_persisted_delta_with_analyzer(",
         "persisted AQL index merge from maintained delta index",
     )
     forbid(

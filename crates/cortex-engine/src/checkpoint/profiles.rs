@@ -1,4 +1,6 @@
-use cortex_storage::manifest::{ManifestHnswProfile, ManifestVectorProfile, StorageManifest};
+use cortex_storage::manifest::{
+    ManifestHnswProfile, ManifestTextAnalyzerProfile, ManifestVectorProfile, StorageManifest,
+};
 
 use crate::error::{EngineError, EngineResult};
 use crate::search::HnswBuildConfig;
@@ -18,6 +20,7 @@ pub(crate) fn ensure_checkpoint_profiles(
     manifest: &StorageManifest,
     hnsw_profile: Option<ManifestHnswProfile>,
     vector_profile: Option<ManifestVectorProfile>,
+    text_analyzer_profile: ManifestTextAnalyzerProfile,
 ) -> EngineResult<()> {
     if manifest.live_segments.is_empty() {
         return Ok(());
@@ -35,6 +38,14 @@ pub(crate) fn ensure_checkpoint_profiles(
             return Err(EngineError::StorageInvariant(format!(
                 "checkpoint vector profile {:?} does not match existing manifest profile {:?}; run compact with a consistent vector collection profile first",
                 next, existing
+            )));
+        }
+    }
+    if let Some(existing) = manifest.text_analyzer_profile {
+        if existing != text_analyzer_profile {
+            return Err(EngineError::StorageInvariant(format!(
+                "checkpoint text analyzer profile {:?} does not match existing manifest profile {:?}; rebuild or compact with one analyzer profile",
+                text_analyzer_profile, existing
             )));
         }
     }

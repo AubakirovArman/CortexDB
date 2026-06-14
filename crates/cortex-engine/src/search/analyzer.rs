@@ -1,9 +1,14 @@
 use std::collections::{BTreeMap, BTreeSet};
 
+use cortex_storage::manifest::ManifestTextAnalyzerProfile;
+
 use super::{tokenize, Bm25Index};
+
+pub const TEXT_ANALYZER_VERSION: u32 = 2;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TextAnalyzer {
+    config: TextAnalyzerConfig,
     field_weights: BTreeMap<String, u32>,
     stopwords: BTreeSet<String>,
     lemmas: BTreeMap<String, String>,
@@ -11,11 +16,19 @@ pub struct TextAnalyzer {
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct TextAnalyzerConfig {
+    pub language: Language,
+    pub stemming: bool,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum Language {
     #[default]
-    English,
-    Russian,
-    Kazakh,
+    Neutral = 0,
+    English = 1,
+    Russian = 2,
+    Kazakh = 3,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -29,7 +42,62 @@ enum Stemmer {
 
 impl Default for TextAnalyzer {
     fn default() -> Self {
+        Self::with_config(TextAnalyzerConfig::default())
+    }
+}
+
+impl TextAnalyzerConfig {
+    pub const fn with_stemming(mut self, stemming: bool) -> Self {
+        self.stemming = stemming;
+        self
+    }
+
+    pub const fn for_language(language: Language) -> Self {
         Self {
+            language,
+            stemming: true,
+        }
+    }
+
+    pub fn manifest_profile(self) -> ManifestTextAnalyzerProfile {
+        ManifestTextAnalyzerProfile {
+            version: TEXT_ANALYZER_VERSION,
+            language: self.language as u32,
+            stemming: self.stemming,
+        }
+    }
+
+    pub fn from_manifest_profile(profile: ManifestTextAnalyzerProfile) -> Option<Self> {
+        if profile.version != TEXT_ANALYZER_VERSION {
+            return None;
+        }
+        Some(Self {
+            language: Language::from_profile_value(profile.language)?,
+            stemming: profile.stemming,
+        })
+    }
+}
+
+impl Language {
+    fn from_profile_value(value: u32) -> Option<Self> {
+        match value {
+            0 => Some(Self::Neutral),
+            1 => Some(Self::English),
+            2 => Some(Self::Russian),
+            3 => Some(Self::Kazakh),
+            _ => None,
+        }
+    }
+}
+
+impl TextAnalyzer {
+    pub fn with_config(config: TextAnalyzerConfig) -> Self {
+        let stopwords = language_stopwords(config.language)
+            .iter()
+            .map(|word| (*word).to_owned())
+            .collect();
+        Self {
+            config,
             field_weights: BTreeMap::from([
                 ("title".to_owned(), 8),
                 ("path".to_owned(), 5),
@@ -42,27 +110,18 @@ impl Default for TextAnalyzer {
                 ("source".to_owned(), 4),
                 ("chunk_id".to_owned(), 2),
             ]),
-            stopwords: BTreeSet::new(),
+            stopwords,
             lemmas: BTreeMap::new(),
-            stemmer: Stemmer::None,
+            stemmer: stemmer_for_config(config),
         }
     }
-}
 
-impl TextAnalyzer {
     pub fn for_language(language: Language) -> Self {
-        Self {
-            stopwords: language_stopwords(language)
-                .iter()
-                .map(|word| (*word).to_owned())
-                .collect(),
-            stemmer: match language {
-                Language::English => Stemmer::EnglishLight,
-                Language::Russian => Stemmer::RussianLight,
-                Language::Kazakh => Stemmer::KazakhLight,
-            },
-            ..Self::default()
-        }
+        Self::with_config(TextAnalyzerConfig::for_language(language))
+    }
+
+    pub fn config(&self) -> TextAnalyzerConfig {
+        self.config
     }
 
     pub fn with_stopwords(mut self, stopwords: impl IntoIterator<Item = String>) -> Self {
@@ -75,6 +134,14 @@ impl TextAnalyzer {
         self
     }
 
+    pub fn tokenize(&self, text: &str) -> Vec<String> {
+        tokenize(text)
+            .into_iter()
+            .map(|term| self.normalize_term(term))
+            .filter(|term| !self.stopwords.contains(term))
+            .collect()
+    }
+
     pub fn weighted_terms<'a>(
         &self,
         fields: impl IntoIterator<Item = (&'a str, &'a str)>,
@@ -82,11 +149,8 @@ impl TextAnalyzer {
         let mut terms = BTreeMap::new();
         for (field, text) in fields {
             let weight = self.field_weights.get(field).copied().unwrap_or(1);
-            for term in tokenize(text) {
-                let term = self.normalize_term(term);
-                if !self.stopwords.contains(&term) {
-                    *terms.entry(term).or_default() += weight;
-                }
+            for term in self.tokenize(text) {
+                *terms.entry(term).or_default() += weight;
             }
         }
         terms
@@ -108,8 +172,8 @@ impl TextAnalyzer {
             Stemmer::RussianLight => light_suffix_stem(
                 term,
                 &[
-                    "ами", "ями", "ого", "ему", "ами", "ов", "ев", "ый", "ая", "ое", "ые", "а",
-                    "ы", "и",
+                    "ами", "ями", "ого", "ему", "ому", "ам", "ям", "ах", "ях", "ом", "ем", "ов",
+                    "ев", "ый", "ая", "ое", "ые", "а", "ы", "и", "у", "е",
                 ],
             ),
             Stemmer::KazakhLight => light_suffix_stem(
@@ -147,9 +211,22 @@ fn reciprocal_rank_q16(index: &Bm25Index, query: &str, relevant: u32, limit: usi
 
 fn language_stopwords(language: Language) -> &'static [&'static str] {
     match language {
+        Language::Neutral => &[],
         Language::English => &["a", "an", "and", "for", "of", "the", "to"],
         Language::Russian => &["в", "и", "на", "по", "с", "за"],
         Language::Kazakh => &["және", "мен", "үшін", "бұл"],
+    }
+}
+
+fn stemmer_for_config(config: TextAnalyzerConfig) -> Stemmer {
+    if !config.stemming {
+        return Stemmer::None;
+    }
+    match config.language {
+        Language::Neutral => Stemmer::None,
+        Language::English => Stemmer::EnglishLight,
+        Language::Russian => Stemmer::RussianLight,
+        Language::Kazakh => Stemmer::KazakhLight,
     }
 }
 

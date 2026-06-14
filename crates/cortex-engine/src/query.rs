@@ -51,15 +51,17 @@ impl Database {
     }
 
     pub fn try_aql_index(&self) -> EngineResult<EngineAqlIndex> {
+        let analyzer = self.text_analyzer();
         if self.manifest().live_segments.is_empty() {
-            return EngineAqlIndex::try_from_delta(&self.aql_delta_index);
+            return EngineAqlIndex::try_from_delta_with_analyzer(&self.aql_delta_index, &analyzer);
         }
         let persisted = self.persisted_index_state_cached()?;
-        EngineAqlIndex::from_persisted_delta(
+        EngineAqlIndex::from_persisted_delta_with_analyzer(
             persisted.bitmap.clone(),
             persisted.lexical.clone(),
             persisted.candidate_to_cell.clone(),
             &self.aql_delta_index,
+            &analyzer,
         )
     }
 

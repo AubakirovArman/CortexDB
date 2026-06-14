@@ -13,6 +13,7 @@ use super::metadata::{
 };
 use super::{AqlDeltaIndex, EngineAqlIndex};
 use crate::error::{EngineError, EngineResult};
+use crate::search::TextAnalyzer;
 
 impl EngineAqlIndex {
     pub fn try_from_versions(versions: &[CellVersion]) -> EngineResult<Self> {
@@ -21,6 +22,13 @@ impl EngineAqlIndex {
 
     pub(crate) fn try_from_version_refs<'a>(
         versions: impl IntoIterator<Item = &'a CellVersion>,
+    ) -> EngineResult<Self> {
+        Self::try_from_version_refs_with_analyzer(versions, &TextAnalyzer::default())
+    }
+
+    pub(crate) fn try_from_version_refs_with_analyzer<'a>(
+        versions: impl IntoIterator<Item = &'a CellVersion>,
+        analyzer: &TextAnalyzer,
     ) -> EngineResult<Self> {
         let mut sorted = versions.into_iter().collect::<Vec<_>>();
         sorted.sort_by_key(|version| version.cell_id);
@@ -38,10 +46,13 @@ impl EngineAqlIndex {
                 ))
             })
             .collect::<EngineResult<Vec<_>>>()?;
-        Self::try_from_cells(cells)
+        Self::try_from_cells_with_analyzer(cells, analyzer)
     }
 
-    pub(crate) fn try_from_delta(delta: &AqlDeltaIndex) -> EngineResult<Self> {
+    pub(crate) fn try_from_delta_with_analyzer(
+        delta: &AqlDeltaIndex,
+        analyzer: &TextAnalyzer,
+    ) -> EngineResult<Self> {
         let cells = delta
             .live_cells()
             .enumerate()
@@ -49,7 +60,7 @@ impl EngineAqlIndex {
                 Ok((candidate_from_ordinal(index)?, metadata.clone(), cell_id))
             })
             .collect::<EngineResult<Vec<_>>>()?;
-        Self::try_from_cells(cells)
+        Self::try_from_cells_with_analyzer(cells, analyzer)
     }
 
     pub fn try_from_segment_cells(cells: &[SegmentCell]) -> EngineResult<Self> {
@@ -63,21 +74,31 @@ impl EngineAqlIndex {
     }
 
     pub fn try_from_segment_cell_refs(cells: &[SegmentCellRef<'_>]) -> EngineResult<Self> {
-        Self::try_from_cells(cells.iter().filter_map(|cell| {
-            let metadata = cell
-                .descriptor
-                .as_deref()
-                .and_then(CellDescriptor::decode_section_v1)
-                .map(|descriptor| {
-                    CellMetadata::from_payload_with_descriptor(cell.payload, &descriptor)
-                })
-                .unwrap_or_else(|| CellMetadata::from_payload(cell.payload));
-            cell.deleted_seq.is_none().then_some((
-                cell.candidate_id,
-                metadata,
-                CellId(cell.cell_id),
-            ))
-        }))
+        Self::try_from_segment_cell_refs_with_analyzer(cells, &TextAnalyzer::default())
+    }
+
+    pub fn try_from_segment_cell_refs_with_analyzer(
+        cells: &[SegmentCellRef<'_>],
+        analyzer: &TextAnalyzer,
+    ) -> EngineResult<Self> {
+        Self::try_from_cells_with_analyzer(
+            cells.iter().filter_map(|cell| {
+                let metadata = cell
+                    .descriptor
+                    .as_deref()
+                    .and_then(CellDescriptor::decode_section_v1)
+                    .map(|descriptor| {
+                        CellMetadata::from_payload_with_descriptor(cell.payload, &descriptor)
+                    })
+                    .unwrap_or_else(|| CellMetadata::from_payload(cell.payload));
+                cell.deleted_seq.is_none().then_some((
+                    cell.candidate_id,
+                    metadata,
+                    CellId(cell.cell_id),
+                ))
+            }),
+            analyzer,
+        )
     }
 
     pub fn bitmap_index(&self) -> BitmapIndex {
@@ -103,14 +124,22 @@ impl EngineAqlIndex {
     fn try_from_cells(
         cells: impl IntoIterator<Item = (u32, CellMetadata, CellId)>,
     ) -> EngineResult<Self> {
+        Self::try_from_cells_with_analyzer(cells, &TextAnalyzer::default())
+    }
+
+    fn try_from_cells_with_analyzer(
+        cells: impl IntoIterator<Item = (u32, CellMetadata, CellId)>,
+        analyzer: &TextAnalyzer,
+    ) -> EngineResult<Self> {
         let mut index = Self::default();
-        index.extend_cells(cells)?;
+        index.extend_cells_with_analyzer(cells, analyzer)?;
         Ok(index)
     }
 
-    pub(super) fn extend_cells(
+    pub(super) fn extend_cells_with_analyzer(
         &mut self,
         cells: impl IntoIterator<Item = (u32, CellMetadata, CellId)>,
+        analyzer: &TextAnalyzer,
     ) -> EngineResult<()> {
         for (candidate, metadata, cell_id) in cells {
             validate_candidate(candidate)?;
@@ -142,7 +171,7 @@ impl EngineAqlIndex {
                 self.push(memory_type_handle(memory_type), candidate);
             }
             self.push(BitmapHandle(cell_id.0), candidate);
-            let weighted_terms = metadata.weighted_lexical_terms();
+            let weighted_terms = metadata.weighted_lexical_terms_with_analyzer(analyzer);
             let doc_length = weighted_terms.values().copied().sum::<u32>().max(1);
             self.lexical_doc_lengths.insert(candidate, doc_length);
             for (term, frequency) in weighted_terms {
@@ -155,7 +184,7 @@ impl EngineAqlIndex {
                     .or_default()
                     .insert(candidate, frequency);
             }
-            for (field, terms) in metadata.lexical_field_terms() {
+            for (field, terms) in metadata.lexical_field_terms_with_analyzer(analyzer) {
                 let field_length = terms.values().copied().sum::<u32>().max(1);
                 self.lexical_field_doc_lengths
                     .entry(field.clone())

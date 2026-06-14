@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use crate::search::tokenize;
+use crate::search::{tokenize, TextAnalyzer};
 
 pub(crate) fn non_empty(value: &str) -> Option<String> {
     let value = value.trim();
@@ -24,6 +24,21 @@ pub(super) fn add_field_terms(
     text: &str,
 ) {
     for term in tokenize(text) {
+        *fields
+            .entry(field.to_owned())
+            .or_default()
+            .entry(term)
+            .or_default() += 1;
+    }
+}
+
+pub(super) fn add_field_terms_with_analyzer(
+    fields: &mut BTreeMap<String, BTreeMap<String, u32>>,
+    field: &str,
+    text: &str,
+    analyzer: &TextAnalyzer,
+) {
+    for term in analyzer.tokenize(text) {
         *fields
             .entry(field.to_owned())
             .or_default()

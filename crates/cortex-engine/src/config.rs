@@ -54,6 +54,7 @@ impl EngineConfig {
             feature_flags,
             ingestion_backpressure: Default::default(),
             compaction_policy: CompactionPolicy::default(),
+            text_analyzer: Default::default(),
         };
         database_options.hnsw_build_config = database_options.hnsw_build_config.normalized();
         Ok(Self { database_options })

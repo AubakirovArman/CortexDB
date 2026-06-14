@@ -3,7 +3,7 @@
 #[cfg(test)]
 mod tests {
     use crate::search::tokenize;
-    use crate::Database;
+    use crate::{Database, Language, TextAnalyzer, TextAnalyzerConfig};
     use cortex_core::{CellId, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
 
     // ─── Unicode Tokenizer Tests ───
@@ -62,6 +62,20 @@ mod tests {
     fn tokenize_russian_stopwords_filtered() {
         let terms = tokenize("и в на для с со за от до по о об у");
         assert!(terms.is_empty());
+    }
+
+    #[test]
+    fn russian_stemming_is_opt_in_and_normalizes_budget_case() {
+        let default = TextAnalyzer::default();
+        assert!(default.tokenize("бюджету").contains(&"бюджету".to_owned()));
+
+        let russian = TextAnalyzer::with_config(TextAnalyzerConfig {
+            language: Language::Russian,
+            stemming: true,
+        });
+        let terms = russian.tokenize("бюджету");
+        assert!(terms.contains(&"бюджет".to_owned()));
+        assert!(!terms.contains(&"бюджету".to_owned()));
     }
 
     // ─── BM25 Golden Dataset Tests ───

@@ -22,6 +22,7 @@ use crate::options::{
 use crate::query::cache::AqlQueryCache;
 use crate::query::AqlDeltaIndex;
 use crate::replay::{replay_wal_best_effort_into, replay_wal_into};
+use crate::search::TextAnalyzerConfig;
 
 impl Database {
     /// Open a database at the given path with default options.
@@ -80,6 +81,7 @@ impl Database {
         let manifest_path = manifest_path(&root_path);
         let segments_path = segments_path(&root_path);
         let checkpoint = load_checkpoint(&root_path, options.payload_residency)?;
+        ensure_text_analyzer_profile(&checkpoint.manifest, options.text_analyzer)?;
         let wal_files = find_wal_files(&wal_path);
         let mut current_memtable = checkpoint.memtable;
         let mut current_seq = CommitSeq(checkpoint.manifest.checkpoint_seq);
@@ -144,6 +146,7 @@ impl Database {
             persisted_index_cache: Mutex::new(None),
             active_read_pins: Arc::new(Mutex::new(BTreeMap::new())),
             compaction_policy: options.compaction_policy,
+            text_analyzer_config: options.text_analyzer,
             _lock: lock,
             closed: false,
         };
@@ -153,4 +156,29 @@ impl Database {
         database.resume_interrupted_ingestion_jobs()?;
         Ok(database)
     }
+}
+
+fn ensure_text_analyzer_profile(
+    manifest: &cortex_storage::manifest::StorageManifest,
+    requested: TextAnalyzerConfig,
+) -> EngineResult<()> {
+    if manifest.live_segments.is_empty() {
+        return Ok(());
+    }
+    let existing = match manifest.text_analyzer_profile {
+        Some(profile) => TextAnalyzerConfig::from_manifest_profile(profile).ok_or_else(|| {
+            EngineError::StorageInvariant(format!(
+                "manifest text analyzer profile {:?} is not supported by this engine",
+                profile
+            ))
+        })?,
+        None => TextAnalyzerConfig::default(),
+    };
+    if existing != requested {
+        return Err(EngineError::StorageInvariant(format!(
+            "requested text analyzer {:?} does not match existing manifest profile {:?}; rebuild or compact with one analyzer profile",
+            requested, existing
+        )));
+    }
+    Ok(())
 }

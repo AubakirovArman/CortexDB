@@ -22,16 +22,8 @@ DOC_REQUIREMENTS: dict[str, tuple[str, ...]] = {
         "Compatibility Gate",
         "cortex_engine::Database",
     ),
-    "docs/MODULE_OWNERSHIP.md": (
-        "Stable facade",
-        "Internal modules",
-        "cortex-engine",
-    ),
-    "docs/CORE_ENGINE.md": (
-        "cortex-engine",
-        "Database::open",
-        "PutCell",
-    ),
+    "docs/MODULE_OWNERSHIP.md": ("Stable facade", "Internal modules", "cortex-engine"),
+    "docs/CORE_ENGINE.md": ("cortex-engine", "Database::open", "PutCell"),
 }
 
 SUITES: tuple[dict[str, Any], ...] = (
@@ -147,7 +139,10 @@ def check_public_api_freeze(repo: Path) -> dict[str, Any]:
     lib_rs = (repo / "crates/cortex-engine/src/lib.rs").read_text(encoding="utf-8")
     public_test = (repo / "crates/cortex-engine/tests/public_api.rs").read_text(encoding="utf-8")
     engine_api_doc = (repo / "docs/ENGINE_API.md").read_text(encoding="utf-8")
-    makefile = (repo / "Makefile").read_text(encoding="utf-8")
+    makefile = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in [repo / "Makefile", *(repo / "mk").glob("*.mk")]
+    )
 
     for symbol in fixture.get("stable_facade_symbols", []):
         if not isinstance(symbol, str):

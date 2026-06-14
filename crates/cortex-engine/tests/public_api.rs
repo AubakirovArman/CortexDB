@@ -3,8 +3,9 @@ use cortex_engine::{
     AqlQueryCacheStats, BackupReport, CandidateId, CheckpointStats, ContextPack,
     ContextPackOptions, Database, DatabaseOptions, DbOperation, EngineAqlIndex, EngineConfig,
     EngineConfigError, EngineError, EngineErrorCategory, EngineErrorCode, EngineFeature,
-    EngineFeatureFlags, EngineResult, RecoveryMode, RepairReport, RestoreReport, RetrievedCell,
-    StaleLockPolicy, StorageStats, StorageValidationReport,
+    EngineFeatureFlags, EngineResult, Language, RecoveryMode, RepairReport, RestoreReport,
+    RetrievedCell, StaleLockPolicy, StorageStats, StorageValidationReport, TextAnalyzer,
+    TextAnalyzerConfig,
 };
 
 #[test]
@@ -52,6 +53,12 @@ fn stable_public_types_are_importable() {
     let _ = EngineErrorCategory::UserInput.as_str();
     let _ = EngineFeature::ExperimentalHnsw.as_str();
     let _ = EngineFeatureFlags::production_safe();
+    let analyzer_config = TextAnalyzerConfig {
+        language: Language::Russian,
+        stemming: true,
+    };
+    let analyzer = TextAnalyzer::with_config(analyzer_config);
+    assert!(analyzer.tokenize("бюджету").contains(&"бюджет".to_owned()));
     let config = EngineConfig::from_env_vars([("CORTEXDB_DURABILITY_MODE", "strict")]).unwrap();
     assert_eq!(config.database_options.recovery_mode, RecoveryMode::Strict);
     let _ = std::mem::size_of::<EngineConfigError>();

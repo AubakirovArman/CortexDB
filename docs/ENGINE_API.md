@@ -30,6 +30,7 @@ use cortex_engine::{
     EngineFeature,
     EngineFeatureFlags,
     EngineResult,
+    Language,
     RecoveryMode,
     RepairReport,
     RestoreReport,
@@ -37,6 +38,8 @@ use cortex_engine::{
     StaleLockPolicy,
     StorageStats,
     StorageValidationReport,
+    TextAnalyzer,
+    TextAnalyzerConfig,
 };
 ```
 
@@ -71,6 +74,11 @@ The central entrypoints are:
 `EngineConfig::from_env()` is the shared configuration loader for CLI/server
 entrypoints that need env-driven `DatabaseOptions`. Embedded callers may still
 construct `DatabaseOptions` directly for deterministic local setup.
+`DatabaseOptions::text_analyzer` selects the collection text analyzer profile
+for new writes, checkpointed lexical indexes, and query analysis. The default is
+the neutral analyzer with stemming disabled. Non-default language stemming
+profiles are persisted in the manifest and must match on reopen once live
+segments exist.
 
 Production-safe feature defaults are documented in
 [`ENGINE_FEATURE_FLAGS.md`](archive/ENGINE_FEATURE_FLAGS.md). Experimental HNSW,
@@ -81,6 +89,7 @@ The stable root-level types currently frozen are:
 - `Database`, `DatabaseOptions`, `EngineConfig`, `EngineConfigError`,
   `RecoveryMode`, `StaleLockPolicy`;
 - `EngineFeature`, `EngineFeatureFlags`;
+- `Language`, `TextAnalyzer`, `TextAnalyzerConfig`;
 - `EngineError`, `EngineResult`;
 - `EngineErrorCode`, `EngineErrorCategory`;
 - `DbOperation`;

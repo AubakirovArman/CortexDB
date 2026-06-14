@@ -164,6 +164,7 @@ pub use replay::{
 };
 pub use replication::*;
 pub use search::*;
+pub use search::{Language, TextAnalyzer, TextAnalyzerConfig};
 pub use session::{AgentSession, SessionMemory};
 pub use source_trust::{
     parse_source_trust_class, SourceTrust, SourceTrustBasis, SourceTrustCategory, SourceTrustClass,

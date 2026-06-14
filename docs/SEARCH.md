@@ -37,11 +37,23 @@ Persisted `.aci` files store the same term, field, and length statistics so
 checkpointed search keeps the same ranking signals as snapshot search. The full
 formula and defaults are documented in [`SCORING.md`](SCORING.md).
 
-`TextAnalyzer` supports field weights, stopwords, weighted terms, deterministic
-MRR checks, and built-in English/Russian/Kazakh analyzer packs. The language
-packs include light suffix stemmers and stopword lists. Custom lemma overrides
-can map normalized terms into domain dictionaries. The packs are deterministic
-and dependency-light, not full morphological analyzers.
+`TextAnalyzer` supports Unicode alphanumeric tokenization, field weights,
+stopwords, weighted terms, deterministic MRR checks, and built-in
+English/Russian/Kazakh analyzer packs. `TextAnalyzerConfig` controls the
+collection analyzer language and whether light suffix stemming is enabled.
+The default analyzer is neutral and keeps stemming disabled for backward
+compatibility. When stemming is enabled for Russian, inflections such as
+`бюджету` normalize to `бюджет`. Custom lemma overrides can map normalized
+terms into domain dictionaries. The packs are deterministic and dependency-light,
+not full morphological analyzers.
+
+Checkpoint, compact, replication snapshot install, live snapshot search,
+persisted `.aci` search, and AQL delta merge use the configured analyzer. The
+manifest stores a text analyzer profile (`ANLZ`) with analyzer version, language,
+and stemming flag. Opening a database with a different analyzer profile is
+rejected when persisted segments exist, which prevents mixed token streams inside
+one collection. Databases without persisted segments can switch analyzer config
+before their first checkpoint.
 
 `analyze_search_query` is the engine-side query understanding primitive. It
 reads only the user query text and extracts enterprise anchors such as ticket

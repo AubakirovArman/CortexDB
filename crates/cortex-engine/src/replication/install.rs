@@ -41,9 +41,11 @@ impl Database {
         fs::create_dir_all(&self.segments_path)?;
         let segment_id = self.manifest.generation + 1;
         let cell_refs = snapshot_cell_refs(&snapshot);
+        let analyzer = self.text_analyzer();
         SegmentWriter::write_refs(segment_path(&self.segments_path, segment_id), &cell_refs)?;
 
-        let index = EngineAqlIndex::try_from_segment_cell_refs(&cell_refs)?;
+        let index =
+            EngineAqlIndex::try_from_segment_cell_refs_with_analyzer(&cell_refs, &analyzer)?;
         index
             .bitmap_index()
             .write(bitmap_path(&self.segments_path, segment_id))?;
@@ -68,6 +70,7 @@ impl Database {
             .experimental_hnsw
             .then(|| manifest_hnsw_profile(self.hnsw_build_config))
             .transpose()?;
+        self.manifest.text_analyzer_profile = Some(self.text_analyzer_config.manifest_profile());
         self.manifest.store(&self.manifest_path)?;
         crate::database_files::truncate_wal_tail(&self.wal_path, 0)?;
         self.memtable = memtable_from_snapshot(&snapshot);

@@ -3,8 +3,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use crate::query::metadata::lexical_field_weight;
 
 use super::{
-    bm25_idf_q16, bm25_term_score_with_idf_q16, query_understanding, ranked, tokenize, Bm25Config,
-    Bm25TermInput, ScoredCandidate,
+    bm25_idf_q16, bm25_term_score_with_idf_q16, query_understanding, ranked, Bm25Config,
+    Bm25TermInput, ScoredCandidate, TextAnalyzer, TextAnalyzerConfig,
 };
 
 #[derive(Clone, Debug, Default)]
@@ -15,12 +15,27 @@ pub struct Bm25Index {
     field_docs: BTreeMap<u32, BTreeMap<String, BTreeMap<String, u32>>>,
     field_doc_lengths: BTreeMap<String, BTreeMap<u32, u32>>,
     config: Bm25Config,
+    analyzer: TextAnalyzer,
 }
 
 impl Bm25Index {
     pub fn with_config(config: Bm25Config) -> Self {
         Self {
             config,
+            ..Self::default()
+        }
+    }
+
+    pub fn with_analyzer_config(analyzer_config: TextAnalyzerConfig) -> Self {
+        Self {
+            analyzer: TextAnalyzer::with_config(analyzer_config),
+            ..Self::default()
+        }
+    }
+
+    pub fn with_analyzer(analyzer: TextAnalyzer) -> Self {
+        Self {
+            analyzer,
             ..Self::default()
         }
     }
@@ -33,7 +48,7 @@ impl Bm25Index {
         let mut terms = BTreeMap::<String, u32>::new();
         for (text, weight) in fields {
             let weight = (*weight).max(1);
-            for term in tokenize(text) {
+            for term in self.analyzer.tokenize(text) {
                 *terms.entry(term).or_default() += weight;
             }
         }
@@ -56,7 +71,8 @@ impl Bm25Index {
     }
 
     pub fn search(&self, query: &str, limit: usize) -> Vec<ScoredCandidate> {
-        let analyzed = query_understanding::analyze_search_query(query);
+        let analyzed =
+            query_understanding::analyze_search_query_with_analyzer(query, &self.analyzer);
         let query_terms = analyzed.weighted_terms;
         let doc_count = self.docs.len();
         let avg_len_q16 = self.average_len_q16();

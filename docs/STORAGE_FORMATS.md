@@ -248,6 +248,11 @@ optional vector_profile:
   magic[4] = "VECM"
   dimension u32
   metric u32
+optional text_analyzer_profile:
+  magic[4] = "ANLZ"
+  analyzer_version u32
+  language u32
+  stemming_enabled u32
 crc32c u32 over all previous bytes
 ```
 
@@ -264,6 +269,13 @@ incremental segment writes, while compact can republish the full collection
 profile from the visible snapshot. Storage validation compares `VECM` against
 the live `.acv` vector dimensions and `.ach` graph metric/dimension metadata,
 so mixed vector collections cannot silently share one ANN/search policy.
+
+The optional `ANLZ` trailer records the collection-level text analyzer profile:
+analyzer version, language id, and whether stemming is enabled. The current
+engine writes `ANLZ` on checkpoint/compact and rejects opening a persisted
+database with a different requested `DatabaseOptions::text_analyzer` profile.
+This keeps `.aci` token streams consistent after enabling language-specific
+stemming.
 
 The CLI can inspect the manifest without opening a database writer:
 

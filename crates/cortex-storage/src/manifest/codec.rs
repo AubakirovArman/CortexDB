@@ -4,7 +4,7 @@ use crate::format::MANIFEST_MAGIC;
 use crate::manifest::{
     CompactionMetadata, ManifestCount, ManifestHnswNoFallbackProfile, ManifestHnswProfile,
     ManifestMemoryCellCursor, ManifestSegment, ManifestSegmentStats, ManifestTermDocumentFrequency,
-    ManifestVectorProfile, StorageManifest,
+    ManifestTextAnalyzerProfile, ManifestVectorProfile, StorageManifest,
 };
 
 pub(super) fn encode_manifest(manifest: &StorageManifest) -> Vec<u8> {
@@ -36,6 +36,12 @@ pub(super) fn encode_manifest(manifest: &StorageManifest) -> Vec<u8> {
         put_u32(&mut out, bool_to_u32(profile.rollout_enabled));
         put_u32(&mut out, u32::from(profile.min_recall_q16));
         put_u32(&mut out, bool_to_u32(profile.require_upper_layers));
+    }
+    if let Some(profile) = manifest.text_analyzer_profile {
+        out.extend_from_slice(b"ANLZ");
+        put_u32(&mut out, profile.version);
+        put_u32(&mut out, profile.language);
+        put_u32(&mut out, bool_to_u32(profile.stemming));
     }
     {
         let meta = manifest.compaction_metadata;
@@ -73,6 +79,7 @@ pub(super) fn decode_manifest(bytes: &[u8]) -> StorageResult<StorageManifest> {
     let vector_profile = read_vector_profile(bytes, &mut cursor)?;
     let segment_stats = read_segment_stats_section(bytes, &mut cursor)?;
     let hnsw_no_fallback_profile = read_hnsw_no_fallback_profile(bytes, &mut cursor)?;
+    let text_analyzer_profile = read_text_analyzer_profile(bytes, &mut cursor)?;
     let compaction_metadata = read_compaction_metadata(bytes, &mut cursor)?;
     let (next_cell_id, memory_cell_cursors) = read_cell_id_allocator(bytes, &mut cursor)?;
     if cursor > bytes.len() {
@@ -87,6 +94,7 @@ pub(super) fn decode_manifest(bytes: &[u8]) -> StorageResult<StorageManifest> {
         retired_segments,
         hnsw_profile,
         vector_profile,
+        text_analyzer_profile,
         segment_stats,
         hnsw_no_fallback_profile,
         compaction_metadata,
@@ -269,6 +277,25 @@ fn read_hnsw_no_fallback_profile(
         min_recall_q16,
         require_upper_layers,
     }))
+}
+
+fn read_text_analyzer_profile(
+    bytes: &[u8],
+    cursor: &mut usize,
+) -> StorageResult<Option<ManifestTextAnalyzerProfile>> {
+    if bytes.len().saturating_sub(*cursor) < 4 || &bytes[*cursor..*cursor + 4] != b"ANLZ" {
+        return Ok(None);
+    }
+    *cursor += 4;
+    let profile = ManifestTextAnalyzerProfile {
+        version: read_u32(bytes, cursor)?,
+        language: read_u32(bytes, cursor)?,
+        stemming: read_bool(bytes, cursor)?,
+    };
+    if profile.version == 0 {
+        return Err(StorageError::InvalidManifestFile);
+    }
+    Ok(Some(profile))
 }
 
 fn read_compaction_metadata(bytes: &[u8], cursor: &mut usize) -> StorageResult<CompactionMetadata> {

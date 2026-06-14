@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use super::tokenize;
+use super::{tokenize, TextAnalyzer};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SearchQueryUnderstanding {
@@ -28,9 +28,16 @@ pub enum QueryAnchorKind {
 }
 
 pub fn analyze_search_query(query: &str) -> SearchQueryUnderstanding {
+    analyze_search_query_with_analyzer(query, &TextAnalyzer::default())
+}
+
+pub fn analyze_search_query_with_analyzer(
+    query: &str,
+    analyzer: &TextAnalyzer,
+) -> SearchQueryUnderstanding {
     let anchors = extract_anchors(query);
-    let source_hints = extract_source_hints(query);
-    let weighted_terms = weighted_query_terms(query, &anchors);
+    let source_hints = extract_source_hints(query, analyzer);
+    let weighted_terms = weighted_query_terms_with_analyzer(query, &anchors, analyzer);
     SearchQueryUnderstanding {
         anchors,
         source_hints,
@@ -38,9 +45,13 @@ pub fn analyze_search_query(query: &str) -> SearchQueryUnderstanding {
     }
 }
 
-pub(crate) fn weighted_query_terms(query: &str, anchors: &[QueryAnchor]) -> BTreeMap<String, u32> {
+pub(crate) fn weighted_query_terms_with_analyzer(
+    query: &str,
+    anchors: &[QueryAnchor],
+    analyzer: &TextAnalyzer,
+) -> BTreeMap<String, u32> {
     let mut terms = BTreeMap::new();
-    for term in tokenize(query) {
+    for term in analyzer.tokenize(query) {
         add_weighted_term(&mut terms, &term, 4);
         for expansion in query_expansions(&term) {
             add_weighted_term(&mut terms, expansion, 1);
@@ -122,9 +133,9 @@ fn quoted_phrases(query: &str) -> Vec<String> {
     out
 }
 
-fn extract_source_hints(query: &str) -> Vec<String> {
+fn extract_source_hints(query: &str, analyzer: &TextAnalyzer) -> Vec<String> {
     let mut hints = BTreeSet::new();
-    for term in tokenize(query) {
+    for term in analyzer.tokenize(query) {
         if let Some(source) = source_hint(&term) {
             hints.insert(source.to_owned());
         }

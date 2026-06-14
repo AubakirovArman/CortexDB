@@ -1,7 +1,7 @@
 use cortex_storage::manifest::{
     ManifestCount, ManifestHnswNoFallbackProfile, ManifestHnswProfile, ManifestMemoryCellCursor,
-    ManifestSegment, ManifestSegmentStats, ManifestTermDocumentFrequency, ManifestVectorProfile,
-    StorageManifest,
+    ManifestSegment, ManifestSegmentStats, ManifestTermDocumentFrequency,
+    ManifestTextAnalyzerProfile, ManifestVectorProfile, StorageManifest,
 };
 
 #[test]
@@ -50,6 +50,24 @@ fn manifest_hnsw_no_fallback_profile_roundtrips() {
             rollout_enabled: true,
             min_recall_q16: 65_535,
             require_upper_layers: true,
+        }),
+        ..StorageManifest::default()
+    };
+
+    manifest.store(&path).unwrap();
+
+    assert_eq!(StorageManifest::load(&path).unwrap(), manifest);
+}
+
+#[test]
+fn manifest_text_analyzer_profile_roundtrips() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("manifest.acm");
+    let manifest = StorageManifest {
+        text_analyzer_profile: Some(ManifestTextAnalyzerProfile {
+            version: 2,
+            language: 2,
+            stemming: true,
         }),
         ..StorageManifest::default()
     };

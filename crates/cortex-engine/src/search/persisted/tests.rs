@@ -1,5 +1,5 @@
 use super::*;
-use crate::search::Bm25Index;
+use crate::search::{Bm25Index, TextAnalyzer};
 
 #[test]
 fn persisted_lexical_search_filters_allowed_candidates() {
@@ -19,6 +19,7 @@ fn persisted_lexical_search_filters_allowed_candidates() {
         "budget",
         &BTreeSet::from([2]),
         10,
+        &TextAnalyzer::default(),
     );
 
     assert_eq!(results.len(), 1);
@@ -44,6 +45,7 @@ fn persisted_lexical_search_uses_term_frequencies() {
         "budget",
         &BTreeSet::from([1, 2]),
         2,
+        &TextAnalyzer::default(),
     );
 
     assert_eq!(results[0].cell_id, 2);
@@ -80,6 +82,7 @@ fn persisted_lexical_search_uses_field_weights_when_available() {
         "apollo",
         &BTreeSet::from([1, 2]),
         2,
+        &TextAnalyzer::default(),
     );
 
     assert_eq!(results[0].cell_id, 1);
@@ -155,6 +158,7 @@ fn persisted_lexical_scores_match_live_field_bm25() {
         "apollo budget",
         &BTreeSet::from([1, 2]),
         2,
+        &TextAnalyzer::default(),
     );
     let live = live.search("apollo budget", 2);
 
@@ -187,6 +191,7 @@ fn persisted_lexical_search_filters_allowed_even_with_extra_allowed_ids() {
         "budget",
         &BTreeSet::from([1, 99]),
         10,
+        &TextAnalyzer::default(),
     );
 
     assert_eq!(results.len(), 1);
@@ -200,7 +205,13 @@ fn persisted_query_term_selection_prefers_rare_terms() {
         ("rare".to_owned(), BTreeSet::from([4])),
     ]);
     let allowed = BTreeSet::from([1, 2, 3, 4]);
-    let selected = selected_query_terms(&terms, "common rare common", &allowed, true);
+    let selected = selected_query_terms(
+        &terms,
+        "common rare common",
+        &allowed,
+        true,
+        &TextAnalyzer::default(),
+    );
 
     assert_eq!(selected.len(), 2);
     assert_eq!(selected[0].term, "rare");

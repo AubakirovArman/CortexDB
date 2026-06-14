@@ -17,7 +17,10 @@ use crate::memory::MemoryLifecycleStore;
 use crate::options::{CompactionPolicy, EngineFeatureFlags, PayloadResidency};
 use crate::query::{cache::AqlQueryCache, AqlDeltaIndex, CellMetadata};
 use crate::retrieval_quality::TemporalValidityStore;
-use crate::search::{CorpusSynonymStore, HnswBuildConfig, LiveSearchStore, SearchContextStore};
+use crate::search::{
+    CorpusSynonymStore, HnswBuildConfig, LiveSearchStore, SearchContextStore, TextAnalyzer,
+    TextAnalyzerConfig,
+};
 use crate::session::SessionIndex;
 use crate::tool_registry::ToolIndex;
 use crate::verification::{
@@ -58,6 +61,7 @@ pub struct Database {
     pub(crate) persisted_index_cache: Mutex<Option<PersistedIndexCache>>,
     pub(crate) active_read_pins: Arc<Mutex<BTreeMap<CommitSeq, usize>>>,
     pub(crate) compaction_policy: CompactionPolicy,
+    pub(crate) text_analyzer_config: TextAnalyzerConfig,
     pub(crate) _lock: DatabaseLock,
     pub(crate) closed: bool,
 }
@@ -68,6 +72,12 @@ pub struct Database {
 pub struct PinnedReadTxn {
     pub(crate) read_txn: ReadTxn,
     pub(crate) registry: Arc<Mutex<BTreeMap<CommitSeq, usize>>>,
+}
+
+impl Database {
+    pub(crate) fn text_analyzer(&self) -> TextAnalyzer {
+        TextAnalyzer::with_config(self.text_analyzer_config)
+    }
 }
 
 impl PinnedReadTxn {

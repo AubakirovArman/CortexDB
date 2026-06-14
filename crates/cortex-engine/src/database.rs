@@ -1,3 +1,27 @@
+//! Embedded database facade.
+//!
+//! `Database` is the stable entrypoint for opening a local CortexDB store,
+//! writing cells, reading cells, checkpointing, compacting, and validating
+//! storage.
+//!
+//! # Example
+//!
+//! ```
+//! use cortex_core::CellId;
+//! use cortex_engine::{Database, EngineResult};
+//!
+//! fn main() -> EngineResult<()> {
+//!     let dir = tempfile::tempdir().unwrap();
+//!     let mut db = Database::open(dir.path())?;
+//!     db.put_cell(CellId(1), b"scope=docs\nstatus=ready\nhello".to_vec())?;
+//!     assert_eq!(
+//!         db.get_latest_cell(CellId(1)),
+//!         Some(b"scope=docs\nstatus=ready\nhello".to_vec())
+//!     );
+//!     db.close()?;
+//!     Ok(())
+//! }
+//! ```
 mod candidates;
 mod open;
 mod payload_cache;

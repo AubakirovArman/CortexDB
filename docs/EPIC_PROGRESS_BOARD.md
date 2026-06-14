@@ -20,18 +20,20 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-C04` — Unicode tokenizer + optional stemming.
+`EPIC-C05` — Disk-resident vector storage + SIMD exact scan.
 
-C04 exit steps:
+C05 exit steps:
 
-1. Define tokenizer contract for Unicode and optional stemming.
-2. Add analyzer-version or migration policy for changed token streams.
-3. Add Russian/Kazakh quality fixtures and preserve English fixtures.
-4. Mark done when tokenizer changes are backward-compatible or migrated.
+1. Define `.acv` contiguous vector layout and mmap/read path.
+2. Add exact scan parity with current vector results.
+3. Add SIMD or fixed deterministic acceleration path within stable Rust constraints.
+4. Mark done when disk-resident exact scan is correct and RSS behavior is documented.
 
-C04 current state:
+C05 current state:
 
 - next.
+- C04 is closed with configured Unicode analyzer/tokenizer, optional stemming,
+  and manifest analyzer-profile protection.
 - C03 is closed with canonical BM25 and field weights.
 - Do not reopen C01 unless `ACI4` compact lexical format or dual-read tests regress.
 - Do not reopen B20 unless `BRAIN_SEMANTICS.md` or alias tests regress.
@@ -51,6 +53,18 @@ D05 split state:
 - do not block kernel/database epics on D05.
 
 ## Recently Closed
+
+### EPIC-C04 — Unicode tokenizer + optional stemming
+
+Status: `done`
+
+What closed it:
+
+- Added `TextAnalyzerConfig` to `DatabaseOptions`; default remains neutral with stemming disabled.
+- Routed configured analyzer through checkpoint/compact, replication install, snapshot search, persisted `.aci` search, and AQL delta merge.
+- Added manifest `ANLZ` analyzer profile and open-time mismatch rejection to prevent mixed token streams.
+- Added Russian stemming fixture for `бюджету -> бюджет`, persisted search coverage, and manifest roundtrip coverage.
+- Documented analyzer config and storage profile in `SEARCH.md`, `STORAGE_FORMATS.md`, and `ENGINE_API.md`.
 
 ### EPIC-C03 — Real BM25 with field weights
 
@@ -848,9 +862,9 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 ## Next Exit Step
 
-Work on C04 only:
+Work on C05 only:
 
-1. inventory current tokenizer/analyzer paths and stored index compatibility;
-2. define unicode/stemming contract and migration/version policy;
-3. add ru/kz quality fixtures while keeping English fixtures stable;
-4. move to the next ordered epic after C04 acceptance is closed.
+1. inventory current vector payload/index storage and exact scan path;
+2. define `.acv` disk-resident layout and mmap/load policy;
+3. add parity/RSS fixtures for exact scan;
+4. move to the next ordered epic after C05 acceptance is closed.
