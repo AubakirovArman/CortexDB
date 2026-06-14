@@ -68,6 +68,35 @@ fn explain_analyze_verify_reports_operator_trace_and_counts() {
         .any(|operator| operator.name == "VerdictAggregateOp" && operator.output_count == 1));
 }
 
+#[test]
+fn explain_analyze_verify_uses_temporal_index_for_stale_guard() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(11),
+        b"scope=tenant:private\nstatus=verified\ntype=fact\nsource=archive\nvalid_to=2024-12-31\n\nSolar budget is 12 KZT."
+            .to_vec(),
+    )
+    .unwrap();
+
+    let report = db
+        .explain_analyze_verify_aql(
+            r#"EXPLAIN ANALYZE VERIFY FACT "Solar budget is 12 KZT on 2025-01-10" IN BRAIN default;"#,
+            &view(),
+        )
+        .unwrap();
+    let trace = report.execution_trace.expect("analyze returns trace");
+
+    assert_eq!(
+        report.status,
+        Some(cortex_engine::VerificationStatus::Insufficient)
+    );
+    assert!(trace.operators.iter().any(|operator| {
+        operator.name == "VerificationTemporalIndexLookup" && operator.output_count == 1
+    }));
+    assert_eq!(report.guard_count, 1);
+}
+
 fn view() -> AgentView {
     AgentView {
         agent_id: AgentId(1),

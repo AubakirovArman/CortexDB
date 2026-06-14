@@ -489,7 +489,7 @@ Exit steps:
 1. Define temporal keys for created/valid ranges.
 2. Add range query and stale/fresh lookup support.
 3. Add timezone/date edge tests.
-4. Mark done when temporal filters are indexed; then move to B10.
+4. Mark done when temporal filters are indexed; then move to B14.
 
 ### EPIC-C15 — Graph index performance
 

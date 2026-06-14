@@ -153,13 +153,17 @@ pub(super) fn temporal_stale_reason_with_metadata(
     temporal_stale_reason_from_metadata(fact, query, validity, metadata)
 }
 
+pub(super) fn temporal_fact_overlaps_metadata(fact: &str, metadata: &CellMetadata) -> bool {
+    non_temporal_overlap(fact, &metadata.body_text) > 0
+}
+
 fn temporal_stale_reason_from_metadata(
     fact: &str,
     query: TemporalQueryRange,
     validity: TemporalValidity,
     metadata: &CellMetadata,
 ) -> Option<TemporalStaleReason> {
-    (non_temporal_overlap(fact, &metadata.body_text) > 0).then(|| validity.stale_reason(query))?
+    temporal_fact_overlaps_metadata(fact, metadata).then(|| validity.stale_reason(query))?
 }
 
 fn parse_temporal_bound(value: &str, boundary: Boundary) -> Option<TemporalDate> {

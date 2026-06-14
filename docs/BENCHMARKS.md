@@ -119,6 +119,21 @@ This builds a direct-checkpoint 1M typed numeric fact fixture and writes:
 target/numeric-verify-index/report.json
 ```
 
+For the C14 temporal validity interval-index gate:
+
+```bash
+make temporal-validity-index-check
+```
+
+This builds a bounded lazy temporal fixture and writes:
+
+```text
+target/temporal-validity-index/report.json
+```
+
+The default gate uses 10K cells for interactive reliability. Increase
+`TEMPORAL_VALIDITY_INDEX_CELLS` when running larger benchmark packets.
+
 The report records direct checkpoint time, open/index-build time, and repeated
 numeric `VERIFY FACT` p50/p95/p99 latency. The default threshold is
 `NUMERIC_VERIFY_INDEX_MAX_P95_MS=250`.

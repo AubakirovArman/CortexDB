@@ -11,7 +11,9 @@ use super::graph::{
 };
 use super::guards::{
     citation_guard, numeric_mismatch_conflict, numeric_mismatch_guard, stale_fact_guard,
+    stale_fact_guard_with_reason,
 };
+use super::temporal::extract_temporal_query_range;
 use super::VerificationReport;
 use crate::database::Database;
 use crate::error::EngineResult;
@@ -40,6 +42,20 @@ impl Database {
         let mut numeric_conflicts = Vec::new();
         let pin = self.pin_read_txn();
         let txn = pin.read_txn();
+
+        let started = Instant::now();
+        let temporal_query = extract_temporal_query_range(&plan.fact);
+        let indexed_stale_cell_ids = temporal_query
+            .map(|query| self.temporal_validity_store.stale_cell_ids_for_range(query))
+            .unwrap_or_default();
+        if temporal_query.is_some() {
+            operators.push(trace(
+                "VerificationTemporalIndexLookup",
+                0,
+                indexed_stale_cell_ids.len(),
+                started,
+            ));
+        }
 
         let started = Instant::now();
         let indexed_numeric_cell_ids = self
@@ -87,7 +103,16 @@ impl Database {
         for candidate in &candidate_versions {
             let version = candidate.version;
             let payload = candidate.payload.as_slice();
-            if let Some(guard) = stale_fact_guard(&plan.fact, version, view) {
+            let indexed_stale_reason = temporal_query.and_then(|query| {
+                indexed_stale_cell_ids.contains(&version.cell_id).then(|| {
+                    self.temporal_validity_store
+                        .stale_reason_for_cell(version.cell_id, query)
+                })?
+            });
+            let stale_guard = indexed_stale_reason
+                .and_then(|reason| stale_fact_guard_with_reason(&plan.fact, version, view, reason))
+                .or_else(|| stale_fact_guard(&plan.fact, version, view));
+            if let Some(guard) = stale_guard {
                 guards.push(guard);
             }
             if let Some(item) = evidence_for_version(candidate, view, &plan.fact) {

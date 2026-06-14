@@ -1,10 +1,12 @@
 single-node-performance-check:
 	cargo run --release -p cortex-engine --bin single_node_performance_check -- --root "$(SINGLE_NODE_PERF_ROOT)" --report "$(SINGLE_NODE_PERF_REPORT)" --cells "$(SINGLE_NODE_PERF_CELLS)" --max-total-ms "$(SINGLE_NODE_PERF_MAX_TOTAL_MS)" --min-ingest-cells-per-sec "$(SINGLE_NODE_PERF_MIN_INGEST_CELLS_PER_SEC)" --max-rss-bytes "$(SINGLE_NODE_PERF_MAX_RSS_BYTES)"
-.PHONY: verify-performance-check numeric-verify-index-check
+.PHONY: verify-performance-check numeric-verify-index-check temporal-validity-index-check
 verify-performance-check:
 	cargo run --release -p cortex-engine --bin verify_performance_check -- --root "$(VERIFY_PERF_ROOT)" --report "$(VERIFY_PERF_REPORT)" --cells "$(VERIFY_PERF_CELLS)" --warmup-samples "$(VERIFY_PERF_WARMUP_SAMPLES)" --samples "$(VERIFY_PERF_SAMPLES)" --max-p95-ms "$(VERIFY_PERF_MAX_P95_MS)"
 numeric-verify-index-check:
 	cargo run --release -p cortex-engine --bin numeric_verify_index_check -- --root "$(NUMERIC_VERIFY_INDEX_ROOT)" --report "$(NUMERIC_VERIFY_INDEX_REPORT)" --cells "$(NUMERIC_VERIFY_INDEX_CELLS)" --samples "$(NUMERIC_VERIFY_INDEX_SAMPLES)" --batch-size "$(NUMERIC_VERIFY_INDEX_BATCH_SIZE)" --max-p95-ms "$(NUMERIC_VERIFY_INDEX_MAX_P95_MS)" $(NUMERIC_VERIFY_INDEX_SKIP_VALIDATION)
+temporal-validity-index-check:
+	cargo run --release -p cortex-engine --bin temporal_validity_gate -- --root "$(TEMPORAL_VALIDITY_INDEX_ROOT)" --report "$(TEMPORAL_VALIDITY_INDEX_REPORT)" --cells "$(TEMPORAL_VALIDITY_INDEX_CELLS)" --batch-size "$(TEMPORAL_VALIDITY_INDEX_BATCH_SIZE)" --payload-residency "$(TEMPORAL_VALIDITY_INDEX_PAYLOAD_RESIDENCY)"
 
 .PHONY: memory-profile memory-estimate-audit
 memory-profile:

@@ -6,7 +6,9 @@ use cortex_core::CellId;
 
 use crate::plan::PolicyRewrite;
 use crate::verification::numeric::{extract_numeric_values, numeric_conflict};
-use crate::verification::temporal::{temporal_stale_reason_with_metadata, TemporalStaleReason};
+use crate::verification::temporal::{
+    temporal_fact_overlaps_metadata, temporal_stale_reason_with_metadata, TemporalStaleReason,
+};
 
 use super::{VerificationEvidence, VerificationGuard, VerificationNumericConflict};
 
@@ -62,6 +64,25 @@ pub(super) fn stale_fact_guard(
         return None;
     }
     let reason = temporal_stale_from_metadata(fact, &metadata)?;
+    Some(VerificationGuard {
+        cell_id: Some(version.cell_id),
+        code: crate::verification::VerificationGuardCode::StaleFact,
+        message: temporal_stale_message(reason),
+    })
+}
+
+pub(super) fn stale_fact_guard_with_reason(
+    fact: &str,
+    version: &CellVersion,
+    view: &AgentView,
+    reason: TemporalStaleReason,
+) -> Option<VerificationGuard> {
+    let metadata = CellMetadata::from_version(version);
+    if !PolicyRewrite::allows_scope(view, crate::query::scope_id(&metadata.scope))
+        || !temporal_fact_overlaps_metadata(fact, &metadata)
+    {
+        return None;
+    }
     Some(VerificationGuard {
         cell_id: Some(version.cell_id),
         code: crate::verification::VerificationGuardCode::StaleFact,

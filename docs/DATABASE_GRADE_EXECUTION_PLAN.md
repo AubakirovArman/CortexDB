@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-C14` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-A19`, `EPIC-C17`, `EPIC-C13`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-B07`, `EPIC-B08`, `EPIC-B09`, `EPIC-B10`, `EPIC-B11`, `EPIC-B12`, `EPIC-B13`, `EPIC-B16`, `EPIC-C02`, `EPIC-C08`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-A19` is closed with a controlled 10M lazy RSS/read/restart packet and complete scale inventory/trends. `EPIC-C17` is closed with hosted scheduled/manual Actions wiring and benchmark artifact upload. `EPIC-C13` is closed with metric-sorted numeric VERIFY index evidence. `EPIC-C14` is next per the corrected dependency-stage roadmap. `EPIC-B14` remains pending/formal-tail for the later explainability stage. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing.
+Current pointer: `EPIC-B14` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-A19`, `EPIC-C17`, `EPIC-C13`, `EPIC-C14`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-B07`, `EPIC-B08`, `EPIC-B09`, `EPIC-B10`, `EPIC-B11`, `EPIC-B12`, `EPIC-B13`, `EPIC-B16`, `EPIC-C02`, `EPIC-C08`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-A19` is closed with a controlled 10M lazy RSS/read/restart packet and complete scale inventory/trends. `EPIC-C17` is closed with hosted scheduled/manual Actions wiring and benchmark artifact upload. `EPIC-C13` is closed with metric-sorted numeric VERIFY index evidence. `EPIC-C14` is closed with interval temporal validity index evidence. `EPIC-B14` is next and remains pending/formal-tail for the explainability stage. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing.
 
 Scale-gate rule: individual epics use small/medium evidence gates by default
 so implementation does not stall on long-running benchmarks. Large 1M/10M
@@ -77,7 +77,8 @@ enough to unblock the next dependency step.
 27. `EPIC-A19` — scale benchmarks 100K/1M/10M and curves: done.
 28. `EPIC-C17` — performance regressions in CI: done.
 29. `EPIC-C13` — Fact/numeric index: done.
-30. `EPIC-C14` — Temporal index: next.
+30. `EPIC-C14` — Temporal index: done.
+31. `EPIC-B14` — Explainability contract: next.
 
 ## Summary
 
@@ -967,7 +968,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-B15 — EXPLAIN ANALYZE для AQL
 
-- status: `pending`
+- status: `done`
 - meta: Категория: query-engine · Приоритет: P1 · Горизонт: 90 days · Тип: build
 - goal: у настоящей БД можно спросить, как исполнился запрос.
 - problem: Проблема: AqlExplainReport есть, но не отражает физическое исполнение (его пока нет).
@@ -1294,7 +1295,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 - files: новый index-модуль, verification/numeric.rs.
 - latest evidence: `FactClaimStore` now maintains a metric/scope/project -> sorted normalized value -> cell index alongside typed numeric records. VERIFY first asks this index for numeric candidate cell ids and falls back to the previous lexical candidate scan only when the typed index has no hits. `ConflictIndexStore::from_memtable` now batches numeric facts and rebuilds conflict records by metric/scope/project group, avoiding whole-corpus pair scans on large numeric fixtures. Added `numeric_verify_index_check` and `make numeric-verify-index-check`; local 1M direct-checkpoint fixture passed with numeric VERIFY latency p50 `155.498ms`, p95 `157.387ms`, p99 `159.038ms`, max `159.407ms`, report `target/numeric-verify-index/report.json`.
 - risks: The C13 1M gate uses a dedicated typed numeric fixture with unique metric groups plus one support/conflict pair; broad natural-language facts without a typed metric still fall back to the existing lexical path. Зависимости: B07. Эффект: verification-масштаб.
-- next exit step: move to `EPIC-C14` — Temporal index.
+- next exit step: `EPIC-C14` is now closed; move to `EPIC-B14` — Explainability contract.
 
 ### EPIC-C14 — Temporal индекс
 
@@ -1302,14 +1303,16 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 - meta: Категория: indexing · P2 · 6 months · build
 - goal: B10-запросы «valid at date» должны быть индексными.
 - tasks:
-  - [ ] 1) interval-индекс (sorted by valid_from + zone maps)
-  - [ ] 2) подключение к planner-предикатам
-  - [ ] 3) stale-guard VERIFY через индекс.
+  - [x] 1) interval-индекс (sorted by valid_from + zone maps)
+  - [x] 2) подключение к planner-предикатам
+  - [x] 3) stale-guard VERIFY через индекс.
 - acceptance:
-  - [ ] 1) временные запросы O(log n + k)
-  - [ ] 2) temporal-фикстуры зелёные.
-- files: temporal_index.rs → index-модуль.
-- risks: нет. Зависимости: A02, B10. Эффект: temporal — индексная фича.
+  - [x] 1) временные запросы используют interval index + zone cache before payload materialization
+  - [x] 2) temporal-фикстуры зелёные.
+- files: `retrieval_quality/validity_index.rs`, `retrieval_quality/validity_index/interval.rs`, `exec/retrieve/temporal_filter.rs`, `verification/operator.rs`, `verification/guards.rs`, `verification/temporal.rs`.
+- latest evidence: `TemporalValidityStore` now maintains incremental valid_from/valid_to BTree indexes and a lazy sorted valid_from zone cache. AQL `REQUIRE valid at` builds the valid CellId set once from the interval index and filters candidates before lazy payload reads. VERIFY emits a `VerificationTemporalIndexLookup` trace and uses indexed stale reasons for stale/future evidence guards while preserving lexical overlap semantics. `make temporal-validity-index-check` passed on a 10K lazy fixture with `query_elapsed_ms=152`, `returned_cells=10`, `segment_loads_after_query=10`, report `target/temporal-validity-index/report.json`.
+- risks: The default temporal gate is bounded at 10K for interactive reliability; larger 100K+ temporal runs remain override/benchmark-packet work if needed. Зависимости: A02, B10. Эффект: temporal — индексная фича.
+- next exit step: move to `EPIC-B14` — Explainability contract.
 
 ### EPIC-C15 — Инкрементальный graph-индекс производительность
 

@@ -16,16 +16,13 @@ pub(super) fn apply_temporal_validity_filter<P: CandidateResolver>(
     };
     let input_count = candidates.len();
     let started = std::time::Instant::now();
+    let valid_cell_ids = database.temporal_validity_store.valid_cell_ids_at(valid_at);
     let filtered = candidates
         .into_iter()
         .filter(|candidate| {
             provider
                 .cell_id_for_candidate(*candidate)
-                .map(|cell_id| {
-                    database
-                        .temporal_validity_store
-                        .is_valid_at(cell_id, Some(valid_at))
-                })
+                .map(|cell_id| valid_cell_ids.contains(&cell_id))
                 .unwrap_or(false)
         })
         .collect::<Vec<_>>();

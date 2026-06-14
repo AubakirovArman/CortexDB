@@ -20,21 +20,20 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-C14` — Temporal index.
+`EPIC-B14` — Explainability contract.
 
-C14 exit steps:
+B14 exit steps:
 
-1. Inventory existing `TemporalFactStore` and `TemporalValidityStore` paths.
-2. Add interval/validity index maintenance suitable for planner predicates.
-3. Route temporal VERIFY/AQL filtering through the index.
-4. Publish focused tests and benchmark evidence, then move to B14.
+1. Inventory existing explain-v2 surfaces.
+2. Freeze the formal explainability contract in docs/schema/golden tests.
+3. Add missing cell-specific/golden-test coverage without rewriting accepted explain code.
+4. Publish focused evidence, then move to B15.
 
-C14 current state:
+B14 current state:
 
-- next; start with `verification::temporal`, `TemporalValidityStore`, and
-  AQL `REQUIRE valid at` call sites.
-- Do not reopen C13 unless metric-sorted numeric index or numeric VERIFY
-  artifact contracts regress.
+- next; formal-tail only, not greenfield.
+- Do not reopen C14 unless temporal interval index, AQL `valid at`, or VERIFY
+  stale-guard contracts regress.
 
 ## Active Partial Tail
 
@@ -48,6 +47,17 @@ D05 split state:
 - do not block kernel/database epics on D05.
 
 ## Recently Closed
+
+### EPIC-C14 — Temporal index
+
+Status: `done`
+
+What closed it:
+
+- Added incremental temporal validity indexes over `valid_from` and `valid_to`.
+- Added sorted `valid_from` zone cache for AQL `REQUIRE valid at` candidate filtering before lazy payload reads.
+- Routed VERIFY stale/future guard reasons through `VerificationTemporalIndexLookup`.
+- Added `make temporal-validity-index-check`; 10K lazy fixture passed with `query_elapsed_ms=152`, `returned_cells=10`, `segment_loads_after_query=10`.
 
 ### EPIC-C13 — Fact/numeric index
 
