@@ -30,6 +30,17 @@ export interface StatsResponse {
   wal_writer_bytes: number;
   wal_writer_fsyncs: number;
   wal_writer_batches: number;
+  aql_query_cache: AqlQueryCacheStatsResponse;
+}
+
+export interface AqlQueryCacheStatsResponse {
+  entries: number;
+  max_entries: number;
+  hits: number;
+  misses: number;
+  evictions: number;
+  catalog_invalidations: number;
+  hit_rate_q16: number;
 }
 
 export interface ValidationResponse {

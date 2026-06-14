@@ -20,6 +20,29 @@ class HealthResponse:
 
 
 @dataclass(frozen=True)
+class AqlQueryCacheStatsResponse:
+    entries: int
+    max_entries: int
+    hits: int
+    misses: int
+    evictions: int
+    catalog_invalidations: int
+    hit_rate_q16: int
+
+    @classmethod
+    def from_json(cls, value: dict[str, Any]) -> "AqlQueryCacheStatsResponse":
+        return cls(
+            entries=int(value.get("entries", 0)),
+            max_entries=int(value.get("max_entries", 0)),
+            hits=int(value.get("hits", 0)),
+            misses=int(value.get("misses", 0)),
+            evictions=int(value.get("evictions", 0)),
+            catalog_invalidations=int(value.get("catalog_invalidations", 0)),
+            hit_rate_q16=int(value.get("hit_rate_q16", 0)),
+        )
+
+
+@dataclass(frozen=True)
 class StatsResponse:
     current_seq: int
     checkpoint_seq: int
@@ -46,6 +69,7 @@ class StatsResponse:
     wal_writer_bytes: int
     wal_writer_fsyncs: int
     wal_writer_batches: int
+    aql_query_cache: AqlQueryCacheStatsResponse
 
     @classmethod
     def from_json(cls, value: dict[str, Any]) -> "StatsResponse":
@@ -75,6 +99,9 @@ class StatsResponse:
             wal_writer_bytes=int(value["wal_writer_bytes"]),
             wal_writer_fsyncs=int(value["wal_writer_fsyncs"]),
             wal_writer_batches=int(value["wal_writer_batches"]),
+            aql_query_cache=AqlQueryCacheStatsResponse.from_json(
+                value.get("aql_query_cache", {})
+            ),
         )
 
 

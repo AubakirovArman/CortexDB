@@ -2,7 +2,7 @@ use std::collections::BTreeSet;
 
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, ScopeId, Q16_ZERO};
 use cortex_core::CellId;
-use cortex_engine::{scope_id, Database};
+use cortex_engine::{scope_id, Database, DatabaseOptions};
 
 #[test]
 fn repeated_retrieve_aql_uses_query_cache() {
@@ -87,6 +87,42 @@ WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;"#;
     assert_eq!(stats.hits, 1);
     assert_eq!(stats.misses, 2);
     assert_eq!(stats.catalog_invalidations, 1);
+}
+
+#[test]
+fn aql_query_cache_max_entries_option_controls_fifo_eviction() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open_with_options(
+        dir.path(),
+        DatabaseOptions {
+            aql_query_cache_max_entries: 1,
+            ..DatabaseOptions::default()
+        },
+    )
+    .unwrap();
+    db.put_cell(
+        CellId(1),
+        b"scope=project:investments\nstatus=ready\nalpha budget".to_vec(),
+    )
+    .unwrap();
+    let readable = view(scope_id("project:investments"));
+    let first = r#"RETRIEVE CONTEXT FOR TASK "budget" IN BRAIN investment_projects
+WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;"#;
+    let second = r#"RETRIEVE CONTEXT FOR TASK "alpha" IN BRAIN investment_projects
+WHERE space = project:investments AND status = "ready" LIMIT 10 CANDIDATES;"#;
+
+    db.retrieve_aql(first, &readable).unwrap();
+    db.retrieve_aql(second, &readable).unwrap();
+    let stats = db.aql_query_cache_stats().unwrap();
+    assert_eq!(stats.max_entries, 1);
+    assert_eq!(stats.entries, 1);
+    assert_eq!(stats.evictions, 1);
+
+    db.retrieve_aql(first, &readable).unwrap();
+    let stats = db.aql_query_cache_stats().unwrap();
+    assert_eq!(stats.hits, 0);
+    assert_eq!(stats.misses, 3);
+    assert_eq!(stats.evictions, 2);
 }
 
 #[test]

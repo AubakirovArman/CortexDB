@@ -129,7 +129,7 @@ impl Database {
             feature_flags: options.feature_flags,
             ingestion_backpressure_policy: options.ingestion_backpressure,
             ingestion_rate_state: crate::ingestion::default_ingestion_rate_state(),
-            aql_query_cache: Mutex::new(AqlQueryCache::default()),
+            aql_query_cache: Mutex::new(AqlQueryCache::new(options.aql_query_cache_max_entries)),
             aql_delta_index,
             corpus_synonym_store: stores.corpus_synonym_store,
             feedback_index: stores.feedback_index,

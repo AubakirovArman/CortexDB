@@ -7,6 +7,7 @@ use crate::responses::{
     NumericConflictResponse, PutCellResponse, ScoreComponentResponse, SearchResultResponse,
     SourceRefResponse, StatsResponse, ValidationResponse, VerificationReportResponse,
 };
+use cortex_api_types::core::AqlQueryCacheStatsResponse;
 use cortex_engine::{
     ContextPipelineCellTrace, ContextPipelineStageTrace, ContextPipelineTrace,
     ContextPipelineVerificationTrace, ContextScoreComponentTrace, IngestionSkippedItem,
@@ -51,6 +52,7 @@ fn snapshot_stats_response() {
         wal_writer_bytes: 8192,
         wal_writer_fsyncs: 10,
         wal_writer_batches: 5,
+        aql_query_cache: AqlQueryCacheStatsResponse::from_counts(7, 128, 90, 10, 2, 1),
     };
     let _: cortex_api_types::core::StatsResponse = resp.clone();
     insta::assert_json_snapshot!(resp);
@@ -103,6 +105,7 @@ fn snapshot_metrics_response() {
         wal_writer_bytes: 8192,
         wal_writer_fsyncs: 10,
         wal_writer_batches: 5,
+        aql_query_cache: AqlQueryCacheStatsResponse::from_counts(7, 128, 90, 10, 2, 1),
         backup_latest_age_seconds: 3600,
         ann_graph_nodes: 120,
         ann_total_edges: 540,

@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-C11` (`EPIC-C10` is now done along with the previously
+Current pointer: `EPIC-C18` (`EPIC-C11` is now done along with the previously
 closed epics listed in the Active Execution Queue). `EPIC-C01` is closed with
 the `ACI4` compact term dictionary/postings format, `ACI0..ACI3` dual-read
 compatibility, and persisted/search compatibility gates. `EPIC-C03` is closed
@@ -27,7 +27,9 @@ coverage. `EPIC-C09` added permission-aware AQL index pruning with scope-zone
 segment skipping, planner cardinality coverage, stale-candidate safety, and
 EXPLAIN skipped/opened segment reporting. `EPIC-C10` added plan-aware
 segment-zone pruning for AQL bitmap predicates plus freshness created-at
-ranges, with EXPLAIN `segment_pruning` counters. `EPIC-C11` is next.
+ranges, with EXPLAIN `segment_pruning` counters. `EPIC-C11` exposed AQL query
+cache hit/miss/eviction/capacity metrics through stats, metrics, Prometheus,
+OpenAPI/SDK models, and configurable bounded FIFO policy. `EPIC-C18` is next.
 `EPIC-D05` remains partial/local-ready and is externally blocked on public
 registry credentials/trusted publishing.
 
@@ -111,7 +113,8 @@ enough to unblock the next dependency step.
 43. `EPIC-C07` — Hybrid retrieval in engine: done.
 44. `EPIC-C09` — Permission-aware index pruning: done.
 45. `EPIC-C10` — Segment zone maps + segment skipping: done.
-46. `EPIC-C11` — AQL query cache: metrics and policy: next.
+46. `EPIC-C11` — AQL query cache: metrics and policy: done.
+47. `EPIC-C18` — Concurrent read throughput benchmark: next.
 
 ## Summary
 
@@ -1331,18 +1334,22 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-C11 — AQL query cache: метрики и политика
 
-- status: `pending`
+- status: `done`
 - meta: Категория: query-engine · P2 · 60 days · improve
 - goal: кэш есть (AqlQueryCache), но непрозрачен.
 - tasks:
-  - [ ] 1) hit/miss/eviction в /v1/stats и Prometheus
-  - [ ] 2) инвалидация по seq задокументирована
-  - [ ] 3) размер/политика в конфиге.
+  - [x] 1) hit/miss/eviction в /v1/stats и Prometheus
+  - [x] 2) инвалидация по seq задокументирована
+  - [x] 3) размер/политика в конфиге.
 - acceptance:
-  - [ ] 1) hit-rate видим
-  - [ ] 2) тест инвалидации после записи.
-- files: query/cache.rs, server/metrics.rs.
-- risks: нет. Зависимости: E05. Эффект: наблюдаемость кэша.
+  - [x] 1) hit-rate видим
+  - [x] 2) тест инвалидации после записи.
+- files: `crates/cortex-engine/src/query/cache.rs`, `crates/cortex-engine/src/options.rs`, `crates/cortex-engine/src/config.rs`, `crates/cortex-engine/src/database/open.rs`, `crates/cortex-server/src/router/core_routes.rs`, `crates/cortex-server/src/router/metrics_routes.rs`, `crates/cortex-api-types/src/core.rs`, `docs/openapi.yaml`, SDK generated/manual type files, `docs/ENGINE_API.md`, `docs/archive/ENGINE_CONFIG.md`, `crates/cortex-engine/tests/aql_query_cache.rs`.
+- evidence: `/v1/stats` and `/v1/metrics` now include nested `aql_query_cache` counters with entries, max_entries, hits, misses, evictions, catalog invalidations, and Q16 hit rate. Prometheus export now emits matching `cortexdb_aql_query_cache_*` gauge/counter series. `DatabaseOptions::aql_query_cache_max_entries` and `CORTEXDB_AQL_QUERY_CACHE_MAX_ENTRIES` configure the bounded FIFO plan-cache size while preserving the 128-entry default. The invalidation policy is documented as query + AgentView + current seq/manifest/live-segment fingerprint, so writes and segment rewrites invalidate stale bound plans before reuse. Regression coverage verifies write-driven invalidation and configured max_entries=1 FIFO eviction.
+- verification: `cargo fmt --check`; `make openapi-sdk-generated-types-check`; `cargo test -p cortex-engine --test aql_query_cache`; `cargo test -p cortex-engine config --all-features`; `INSTA_UPDATE=always cargo test -p cortex-server response_snapshot_tests`; `cargo test -p cortex-server snapshot_metrics_includes_actor_and_request_fields`; `cargo test -p cortex-server metrics_prometheus_output_contains_contract_series`; `cargo test -p cortex-server snapshot_stats_response_shape`; `cargo test --workspace --all-features`; `cargo clippy --workspace --all-targets -- -D warnings`; `make check`; `make openapi-contract-check`.
+- remaining: none for C11 acceptance.
+- risks: Metrics are process-local cumulative counters, not a time-windowed hit-rate. The fingerprint invalidates conservatively on any commit sequence change, so write-heavy workloads may report lower hit-rate by design. Зависимости: E05. Эффект: наблюдаемость кэша.
+- next exit step: move to `EPIC-C18` — concurrent read throughput benchmark.
 
 ### EPIC-C12 — Rank key precompute (sort_by_cached_key)
 
@@ -1455,7 +1462,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-C18 — Concurrent read throughput bench
 
-- status: `pending`
+- status: `next`
 - meta: Категория: benchmarks · P1 · 60 days · benchmark
 - goal: A16 без бенча — вера, не факт.
 - tasks:

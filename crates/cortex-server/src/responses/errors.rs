@@ -1,3 +1,4 @@
+use cortex_api_types::core::AqlQueryCacheStatsResponse;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -90,6 +91,7 @@ pub struct MetricsResponse {
     pub wal_writer_bytes: u64,
     pub wal_writer_fsyncs: u64,
     pub wal_writer_batches: u64,
+    pub aql_query_cache: AqlQueryCacheStatsResponse,
     pub backup_latest_age_seconds: i64,
     pub ann_graph_nodes: usize,
     pub ann_total_edges: usize,

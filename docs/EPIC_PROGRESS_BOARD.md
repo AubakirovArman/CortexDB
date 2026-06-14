@@ -20,18 +20,20 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-C11` — AQL query cache: metrics and policy.
+`EPIC-C18` — Concurrent read throughput benchmark.
 
-C11 exit steps:
+C18 exit steps:
 
-1. Expose AQL query cache hit/miss/eviction/capacity metrics in stats or
-   metrics surfaces.
-2. Document and test catalog/seq invalidation policy.
-3. Add configured size/policy coverage without changing default behavior.
+1. Add a benchmark scenario with K readers + 1 writer and latency/throughput
+   curves by thread count.
+2. Compare actor-only versus RwLock read paths.
+3. Publish the curve and include it in the C17 trend workflow.
 
-C11 current state:
+C18 current state:
 
 - next.
+- C11 is closed with `/v1/stats`, `/v1/metrics`, Prometheus, OpenAPI/SDK, and
+  configured bounded-FIFO AQL query cache metrics/policy.
 - C10 is closed with plan-aware segment pruning from existing manifest zone
   maps, freshness created-at range pruning, conservative unknown/NOT behavior,
   10-segment fixture coverage, and EXPLAIN `segment_pruning` counters.
@@ -65,6 +67,27 @@ D05 split state:
 - do not block kernel/database epics on D05.
 
 ## Recently Closed
+
+### EPIC-C11 — AQL query cache: metrics and policy
+
+Status: `done`
+
+What closed it:
+
+- `/v1/stats` and `/v1/metrics` include nested AQL query cache counters and Q16
+  hit rate.
+- Prometheus exports `cortexdb_aql_query_cache_*` entries, capacity, hit/miss,
+  eviction, invalidation, and hit-rate series.
+- `DatabaseOptions::aql_query_cache_max_entries` and
+  `CORTEXDB_AQL_QUERY_CACHE_MAX_ENTRIES` configure the bounded FIFO policy.
+- `docs/ENGINE_API.md` documents seq/manifest/live-segment fingerprint
+  invalidation.
+- Regression coverage verifies write-driven invalidation and configured FIFO
+  eviction.
+
+Important follow-up:
+
+- C18 should measure concurrent read throughput under mixed reader/writer load.
 
 ### EPIC-C10 — Segment zone maps + segment skipping
 

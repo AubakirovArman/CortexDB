@@ -1,6 +1,5 @@
 ---
 source: crates/cortex-server/src/tests/response_snapshot_tests.rs
-assertion_line: 148
 expression: resp
 ---
 {
@@ -29,6 +28,15 @@ expression: resp
   "wal_writer_bytes": 8192,
   "wal_writer_fsyncs": 10,
   "wal_writer_batches": 5,
+  "aql_query_cache": {
+    "entries": 7,
+    "max_entries": 128,
+    "hits": 90,
+    "misses": 10,
+    "evictions": 2,
+    "catalog_invalidations": 1,
+    "hit_rate_q16": 58981
+  },
   "backup_latest_age_seconds": 3600,
   "ann_graph_nodes": 120,
   "ann_total_edges": 540,

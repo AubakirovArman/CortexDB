@@ -54,6 +54,7 @@ pub enum PayloadResidency {
 }
 
 pub const DEFAULT_PAYLOAD_CACHE_BYTES: usize = 64 * 1024 * 1024;
+pub const DEFAULT_AQL_QUERY_CACHE_MAX_ENTRIES: usize = 128;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum EngineFeature {
@@ -133,6 +134,7 @@ pub struct DatabaseOptions {
     pub stale_lock_policy: StaleLockPolicy,
     pub payload_residency: PayloadResidency,
     pub payload_cache_bytes: usize,
+    pub aql_query_cache_max_entries: usize,
     pub rebuild_lazy_payload_indexes_on_open: bool,
     pub hnsw_build_config: HnswBuildConfig,
     pub feature_flags: EngineFeatureFlags,
@@ -149,6 +151,7 @@ impl Default for DatabaseOptions {
             stale_lock_policy: StaleLockPolicy::Reject,
             payload_residency: PayloadResidency::Memory,
             payload_cache_bytes: DEFAULT_PAYLOAD_CACHE_BYTES,
+            aql_query_cache_max_entries: DEFAULT_AQL_QUERY_CACHE_MAX_ENTRIES,
             rebuild_lazy_payload_indexes_on_open: true,
             hnsw_build_config: HnswBuildConfig::default(),
             feature_flags: EngineFeatureFlags::production_safe(),

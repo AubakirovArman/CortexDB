@@ -76,6 +76,57 @@ pub struct StatsResponse {
     pub wal_writer_fsyncs: u64,
     /// Total number of batches committed under group commit.
     pub wal_writer_batches: u64,
+    /// AQL query-plan cache size, policy, and hit/miss counters.
+    #[serde(default)]
+    pub aql_query_cache: AqlQueryCacheStatsResponse,
+}
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AqlQueryCacheStatsResponse {
+    /// Current cached plan entries.
+    pub entries: usize,
+    /// Maximum cached plan entries allowed by the configured FIFO policy.
+    pub max_entries: usize,
+    /// Total cache hits.
+    pub hits: u64,
+    /// Total cache misses.
+    pub misses: u64,
+    /// Total FIFO evictions.
+    pub evictions: u64,
+    /// Total catalog/sequence invalidations.
+    pub catalog_invalidations: u64,
+    /// Q16 cache hit rate over hits + misses.
+    pub hit_rate_q16: u32,
+}
+
+impl AqlQueryCacheStatsResponse {
+    pub fn from_counts(
+        entries: usize,
+        max_entries: usize,
+        hits: u64,
+        misses: u64,
+        evictions: u64,
+        catalog_invalidations: u64,
+    ) -> Self {
+        Self {
+            entries,
+            max_entries,
+            hits,
+            misses,
+            evictions,
+            catalog_invalidations,
+            hit_rate_q16: hit_rate_q16(hits, misses),
+        }
+    }
+}
+
+fn hit_rate_q16(hits: u64, misses: u64) -> u32 {
+    let total = hits.saturating_add(misses);
+    if total == 0 {
+        0
+    } else {
+        ((u128::from(hits) * 65_535) / u128::from(total)) as u32
+    }
 }
 
 /// Validation report containing integrity verification results.

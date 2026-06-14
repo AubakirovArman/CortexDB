@@ -80,6 +80,14 @@ the neutral analyzer with stemming disabled. Non-default language stemming
 profiles are persisted in the manifest and must match on reopen once live
 segments exist.
 
+`DatabaseOptions::aql_query_cache_max_entries` controls the bounded FIFO AQL
+query-plan cache. The default is 128 entries. Cache keys include the normalized
+query text, AgentView fingerprint, current commit sequence, manifest generation,
+checkpoint sequence, and live-segment metadata, so any write or segment rewrite
+invalidates stale bound plans before reuse. `Database::aql_query_cache_stats`,
+`/v1/stats`, `/v1/metrics`, and Prometheus export the cache entries, max size,
+hits, misses, evictions, catalog invalidations, and Q16 hit rate.
+
 Production-safe feature defaults are documented in
 [`ENGINE_FEATURE_FLAGS.md`](archive/ENGINE_FEATURE_FLAGS.md). Experimental HNSW,
 database-level replication, and dashboard surfaces must be enabled explicitly.

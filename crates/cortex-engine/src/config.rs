@@ -6,7 +6,7 @@ use cortex_storage::wal::DurabilityMode;
 
 use crate::options::{
     CompactionPolicy, DatabaseOptions, EngineFeatureFlags, PayloadResidency, RecoveryMode,
-    StaleLockPolicy, DEFAULT_PAYLOAD_CACHE_BYTES,
+    StaleLockPolicy, DEFAULT_AQL_QUERY_CACHE_MAX_ENTRIES, DEFAULT_PAYLOAD_CACHE_BYTES,
 };
 use crate::search::{HnswBuildConfig, HnswBuildProfile};
 
@@ -48,6 +48,11 @@ impl EngineConfig {
                 &vars,
                 "CORTEXDB_PAYLOAD_CACHE_BYTES",
                 DEFAULT_PAYLOAD_CACHE_BYTES,
+            )?,
+            aql_query_cache_max_entries: parse_usize_var(
+                &vars,
+                "CORTEXDB_AQL_QUERY_CACHE_MAX_ENTRIES",
+                DEFAULT_AQL_QUERY_CACHE_MAX_ENTRIES,
             )?,
             rebuild_lazy_payload_indexes_on_open: true,
             hnsw_build_config: parse_hnsw_build_config(&vars)?,
@@ -240,6 +245,7 @@ mod tests {
             ("CORTEXDB_STALE_LOCK_POLICY", "break"),
             ("CORTEXDB_PAYLOAD_RESIDENCY", "lazy"),
             ("CORTEXDB_PAYLOAD_CACHE_BYTES", "4096"),
+            ("CORTEXDB_AQL_QUERY_CACHE_MAX_ENTRIES", "64"),
             ("CORTEXDB_HNSW_PROFILE", "audit"),
             ("CORTEXDB_EXPERIMENTAL_HNSW", "true"),
             ("CORTEXDB_EXPERIMENTAL_REPLICATION", "1"),
@@ -263,6 +269,7 @@ mod tests {
             PayloadResidency::Lazy
         );
         assert_eq!(config.database_options.payload_cache_bytes, 4096);
+        assert_eq!(config.database_options.aql_query_cache_max_entries, 64);
         assert_eq!(
             config.database_options.hnsw_build_config,
             HnswBuildConfig::for_profile(HnswBuildProfile::Audit)
@@ -287,5 +294,9 @@ mod tests {
         let error =
             EngineConfig::from_env_vars([("CORTEXDB_PAYLOAD_CACHE_BYTES", "maybe")]).unwrap_err();
         assert_eq!(error.variable, "CORTEXDB_PAYLOAD_CACHE_BYTES");
+        let error =
+            EngineConfig::from_env_vars([("CORTEXDB_AQL_QUERY_CACHE_MAX_ENTRIES", "maybe")])
+                .unwrap_err();
+        assert_eq!(error.variable, "CORTEXDB_AQL_QUERY_CACHE_MAX_ENTRIES");
     }
 }

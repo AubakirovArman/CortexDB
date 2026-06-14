@@ -2166,6 +2166,7 @@ components:
       - wal_writer_bytes
       - wal_writer_fsyncs
       - wal_writer_batches
+      - aql_query_cache
       properties:
         current_seq:
           type: integer
@@ -2233,6 +2234,39 @@ components:
         wal_writer_batches:
           type: integer
           format: uint64
+        aql_query_cache:
+          $ref: '#/components/schemas/AqlQueryCacheStatsResponse'
+    AqlQueryCacheStatsResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - entries
+      - max_entries
+      - hits
+      - misses
+      - evictions
+      - catalog_invalidations
+      - hit_rate_q16
+      properties:
+        entries:
+          type: integer
+        max_entries:
+          type: integer
+        hits:
+          type: integer
+          format: uint64
+        misses:
+          type: integer
+          format: uint64
+        evictions:
+          type: integer
+          format: uint64
+        catalog_invalidations:
+          type: integer
+          format: uint64
+        hit_rate_q16:
+          type: integer
+          format: uint32
     ValidationResponse:
       type: object
       required:
@@ -3989,6 +4023,7 @@ components:
       - wal_writer_bytes
       - wal_writer_fsyncs
       - wal_writer_batches
+      - aql_query_cache
       - backup_latest_age_seconds
       - ann_graph_nodes
       - ann_total_edges
@@ -4087,6 +4122,8 @@ components:
         wal_writer_batches:
           type: integer
           format: uint64
+        aql_query_cache:
+          $ref: '#/components/schemas/AqlQueryCacheStatsResponse'
         backup_latest_age_seconds:
           type: integer
           format: int64

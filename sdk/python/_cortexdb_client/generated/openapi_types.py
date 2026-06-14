@@ -402,6 +402,7 @@ OpenApiCheckpointResponse = TypedDict(
 OpenApiStatsResponse = TypedDict(
     'OpenApiStatsResponse',
     {
+        'aql_query_cache': 'OpenApiAqlQueryCacheStatsResponse',
         'checkpoint_seq': 'int',
         'compaction_pressure_q16': 'int',
         'current_seq': 'int',
@@ -427,6 +428,20 @@ OpenApiStatsResponse = TypedDict(
         'wal_writer_fsyncs': 'int',
         'wal_writer_records': 'int',
         'write_amplification_q16': 'int',
+    },
+    total=False,
+)
+
+OpenApiAqlQueryCacheStatsResponse = TypedDict(
+    'OpenApiAqlQueryCacheStatsResponse',
+    {
+        'catalog_invalidations': 'int',
+        'entries': 'int',
+        'evictions': 'int',
+        'hit_rate_q16': 'int',
+        'hits': 'int',
+        'max_entries': 'int',
+        'misses': 'int',
     },
     total=False,
 )
@@ -1153,6 +1168,7 @@ OpenApiMetricsResponse = TypedDict(
         'ann_search_latency_ms': 'OpenApiLatencyHistogramResponse',
         'ann_search_requests': 'int',
         'ann_total_edges': 'int',
+        'aql_query_cache': 'OpenApiAqlQueryCacheStatsResponse',
         'backup_latest_age_seconds': 'int',
         'checkpoint_seq': 'int',
         'compaction_cells_compacted': 'int',

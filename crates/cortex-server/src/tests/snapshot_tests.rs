@@ -48,6 +48,8 @@ fn snapshot_stats_response_shape() {
     assert!(response.contains(r#""wal_writer_bytes":"#));
     assert!(response.contains(r#""wal_writer_fsyncs":"#));
     assert!(response.contains(r#""wal_writer_batches":"#));
+    assert!(response.contains(r#""aql_query_cache":"#));
+    assert!(response.contains(r#""hit_rate_q16":"#));
 }
 
 #[test]
@@ -115,6 +117,8 @@ fn metrics_prometheus_output_contains_contract_series() {
         "cortexdb_current_seq",
         "cortexdb_checkpoint_seq",
         "cortexdb_wal_size_bytes",
+        "cortexdb_aql_query_cache_hits_total",
+        "cortexdb_aql_query_cache_hit_rate_q16",
         "cortexdb_actor_queue_depth",
         "cortexdb_request_count",
         "cortexdb_request_id_client_provided",

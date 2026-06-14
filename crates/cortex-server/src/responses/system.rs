@@ -1,9 +1,9 @@
 use serde::Serialize;
 
 pub use cortex_api_types::core::{
-    CellLookupResponse, CellResponse, DeleteJobResponse, HealthResponse, PutCellResponse,
-    StatsResponse, ValidationResponse, WriteBatchOperationRequest, WriteBatchRequest,
-    WriteBatchResponse,
+    AqlQueryCacheStatsResponse, CellLookupResponse, CellResponse, DeleteJobResponse,
+    HealthResponse, PutCellResponse, StatsResponse, ValidationResponse, WriteBatchOperationRequest,
+    WriteBatchRequest, WriteBatchResponse,
 };
 
 #[derive(Serialize, Debug, Clone)]

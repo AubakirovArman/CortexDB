@@ -269,6 +269,7 @@ export interface OpenApiCheckpointResponse {
 }
 
 export interface OpenApiStatsResponse {
+  aql_query_cache: OpenApiAqlQueryCacheStatsResponse;
   checkpoint_seq: number;
   compaction_pressure_q16: number;
   current_seq: number;
@@ -294,6 +295,16 @@ export interface OpenApiStatsResponse {
   wal_writer_fsyncs: number;
   wal_writer_records: number;
   write_amplification_q16: number;
+}
+
+export interface OpenApiAqlQueryCacheStatsResponse {
+  catalog_invalidations: number;
+  entries: number;
+  evictions: number;
+  hit_rate_q16: number;
+  hits: number;
+  max_entries: number;
+  misses: number;
 }
 
 export interface OpenApiValidationResponse {
@@ -801,6 +812,7 @@ export interface OpenApiMetricsResponse {
   ann_search_latency_ms: OpenApiLatencyHistogramResponse;
   ann_search_requests: number;
   ann_total_edges: number;
+  aql_query_cache: OpenApiAqlQueryCacheStatsResponse;
   backup_latest_age_seconds: number;
   checkpoint_seq: number;
   compaction_cells_compacted: number;

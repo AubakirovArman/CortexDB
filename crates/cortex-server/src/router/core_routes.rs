@@ -5,10 +5,10 @@ use cortex_engine::{ClusterConfig, WriteBatch, WriteBatchOperation};
 
 use crate::authz;
 use crate::responses::{
-    CellLookupResponse, CellResponse, CheckpointResponse, ClusterNodeResponse,
-    ClusterStatusResponse, CompactionMetricsResponse, CompactionResponse, CompactorStatusResponse,
-    HealthResponse, PutCellResponse, RouterError, StatsResponse, ValidationResponse,
-    WriteBatchOperationRequest, WriteBatchRequest, WriteBatchResponse,
+    AqlQueryCacheStatsResponse, CellLookupResponse, CellResponse, CheckpointResponse,
+    ClusterNodeResponse, ClusterStatusResponse, CompactionMetricsResponse, CompactionResponse,
+    CompactorStatusResponse, HealthResponse, PutCellResponse, RouterError, StatsResponse,
+    ValidationResponse, WriteBatchOperationRequest, WriteBatchRequest, WriteBatchResponse,
 };
 
 use super::params::cell_id;
@@ -75,6 +75,7 @@ pub(super) fn try_route<A: DatabaseAccess>(
             }
             ("GET", "/v1/stats") => {
                 let stats = db.storage_stats()?;
+                let aql_cache = db.aql_query_cache_stats()?;
                 let response = StatsResponse {
                     current_seq: stats.current_seq.0,
                     checkpoint_seq: stats.checkpoint_seq.0,
@@ -101,6 +102,14 @@ pub(super) fn try_route<A: DatabaseAccess>(
                     wal_writer_bytes: stats.wal_writer.bytes_written,
                     wal_writer_fsyncs: stats.wal_writer.fsync_count,
                     wal_writer_batches: stats.wal_writer.batches_committed,
+                    aql_query_cache: AqlQueryCacheStatsResponse::from_counts(
+                        aql_cache.entries,
+                        aql_cache.max_entries,
+                        aql_cache.hits,
+                        aql_cache.misses,
+                        aql_cache.evictions,
+                        aql_cache.catalog_invalidations,
+                    ),
                 };
                 Ok(serde_json::to_string(&response)?)
             }

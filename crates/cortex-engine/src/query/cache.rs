@@ -5,11 +5,10 @@ use cortex_aql::{parse_aql, AgentView, AqlStatement, Binder, BoundPlan};
 
 use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
+use crate::options::DEFAULT_AQL_QUERY_CACHE_MAX_ENTRIES;
 
 use super::render::condition_to_string;
 use super::EngineAqlIndex;
-
-pub(super) const DEFAULT_AQL_QUERY_CACHE_MAX_ENTRIES: usize = 128;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AqlStatementKind {

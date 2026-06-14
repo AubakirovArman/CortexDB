@@ -27,5 +27,14 @@ expression: resp
   "wal_writer_records": 100,
   "wal_writer_bytes": 8192,
   "wal_writer_fsyncs": 10,
-  "wal_writer_batches": 5
+  "wal_writer_batches": 5,
+  "aql_query_cache": {
+    "entries": 7,
+    "max_entries": 128,
+    "hits": 90,
+    "misses": 10,
+    "evictions": 2,
+    "catalog_invalidations": 1,
+    "hit_rate_q16": 58981
+  }
 }

@@ -9,6 +9,7 @@ from .context import (
     SourceRefResponse,
 )
 from .core import (
+    AqlQueryCacheStatsResponse,
     AqlCellResponse,
     AqlResponse,
     CellLookupResponse,
@@ -37,6 +38,7 @@ __all__ = [
     "AnswerGroundingReportResponse",
     "AnswerGroundingSpanResponse",
     "AqlCellResponse",
+    "AqlQueryCacheStatsResponse",
     "AqlResponse",
     "CellLookupResponse",
     "CellResponse",

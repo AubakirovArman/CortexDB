@@ -25,6 +25,7 @@ let db = Database::open_with_options("./data", config.database_options())?;
 | `CORTEXDB_DURABILITY_MODE` | `strict` | `strict`, `balanced` | WAL fsync behavior for newly opened databases. |
 | `CORTEXDB_RECOVERY_MODE` | `strict` | `strict`, `best_effort` | WAL recovery policy. |
 | `CORTEXDB_STALE_LOCK_POLICY` | `reject` | `reject`, `break` | Existing `db.lock` behavior on open. |
+| `CORTEXDB_AQL_QUERY_CACHE_MAX_ENTRIES` | `128` | non-negative integer | Maximum entries in the bounded FIFO AQL query-plan cache. |
 | `CORTEXDB_HNSW_PROFILE` | `balanced` | `fast`, `balanced`, `semantic`, `audit` | HNSW graph build profile when HNSW is enabled. |
 | `CORTEXDB_EXPERIMENTAL_HNSW` | `false` | bool | Enables persisted `.ach` graph build/use. |
 | `CORTEXDB_EXPERIMENTAL_REPLICATION` | `false` | bool | Enables database-level replication snapshot/install helpers. |

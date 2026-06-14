@@ -1,5 +1,6 @@
 use crate::responses::{
-    AnnMetricsResponse, LatencyHistogramResponse, MetricsResponse, RouterError,
+    AnnMetricsResponse, AqlQueryCacheStatsResponse, LatencyHistogramResponse, MetricsResponse,
+    RouterError,
 };
 
 use super::params::query_param_opt_decoded;
@@ -21,6 +22,7 @@ pub(super) fn try_route<A: DatabaseAccess>(
         match (method, path) {
             ("GET", "/v1/metrics") => {
                 let stats = db.storage_stats()?;
+                let aql_cache = db.aql_query_cache_stats()?;
                 let ann = db.ann_metrics();
                 let format =
                     query_param_opt_decoded(query, "format").unwrap_or_else(|| "json".to_owned());
@@ -101,6 +103,27 @@ pub(super) fn try_route<A: DatabaseAccess>(
                      # HELP cortexdb_wal_writer_batches Total WAL batches committed.\n\
                      # TYPE cortexdb_wal_writer_batches counter\n\
                      cortexdb_wal_writer_batches {}\n\
+                     # HELP cortexdb_aql_query_cache_entries Current cached AQL query plans.\n\
+                     # TYPE cortexdb_aql_query_cache_entries gauge\n\
+                     cortexdb_aql_query_cache_entries {}\n\
+                     # HELP cortexdb_aql_query_cache_max_entries Configured maximum cached AQL query plans.\n\
+                     # TYPE cortexdb_aql_query_cache_max_entries gauge\n\
+                     cortexdb_aql_query_cache_max_entries {}\n\
+                     # HELP cortexdb_aql_query_cache_hits_total Total AQL query cache hits.\n\
+                     # TYPE cortexdb_aql_query_cache_hits_total counter\n\
+                     cortexdb_aql_query_cache_hits_total {}\n\
+                     # HELP cortexdb_aql_query_cache_misses_total Total AQL query cache misses.\n\
+                     # TYPE cortexdb_aql_query_cache_misses_total counter\n\
+                     cortexdb_aql_query_cache_misses_total {}\n\
+                     # HELP cortexdb_aql_query_cache_evictions_total Total AQL query cache evictions.\n\
+                     # TYPE cortexdb_aql_query_cache_evictions_total counter\n\
+                     cortexdb_aql_query_cache_evictions_total {}\n\
+                     # HELP cortexdb_aql_query_cache_catalog_invalidations_total Total AQL query cache catalog invalidations.\n\
+                     # TYPE cortexdb_aql_query_cache_catalog_invalidations_total counter\n\
+                     cortexdb_aql_query_cache_catalog_invalidations_total {}\n\
+                     # HELP cortexdb_aql_query_cache_hit_rate_q16 AQL query cache hit rate over hits plus misses in Q16.\n\
+                     # TYPE cortexdb_aql_query_cache_hit_rate_q16 gauge\n\
+                     cortexdb_aql_query_cache_hit_rate_q16 {}\n\
                      # HELP cortexdb_ann_graph_nodes Number of ANN graph nodes.\n\
                      # TYPE cortexdb_ann_graph_nodes gauge\n\
                      cortexdb_ann_graph_nodes {}\n\
@@ -135,6 +158,21 @@ pub(super) fn try_route<A: DatabaseAccess>(
                     stats.wal_writer.bytes_written,
                     stats.wal_writer.fsync_count,
                     stats.wal_writer.batches_committed,
+                    aql_cache.entries,
+                    aql_cache.max_entries,
+                    aql_cache.hits,
+                    aql_cache.misses,
+                    aql_cache.evictions,
+                    aql_cache.catalog_invalidations,
+                    AqlQueryCacheStatsResponse::from_counts(
+                        aql_cache.entries,
+                        aql_cache.max_entries,
+                        aql_cache.hits,
+                        aql_cache.misses,
+                        aql_cache.evictions,
+                        aql_cache.catalog_invalidations,
+                    )
+                    .hit_rate_q16,
                     ann.graph_nodes,
                     ann.total_edges,
                     ann.persisted_segments,
@@ -167,6 +205,14 @@ pub(super) fn try_route<A: DatabaseAccess>(
                         wal_writer_bytes: stats.wal_writer.bytes_written,
                         wal_writer_fsyncs: stats.wal_writer.fsync_count,
                         wal_writer_batches: stats.wal_writer.batches_committed,
+                        aql_query_cache: AqlQueryCacheStatsResponse::from_counts(
+                            aql_cache.entries,
+                            aql_cache.max_entries,
+                            aql_cache.hits,
+                            aql_cache.misses,
+                            aql_cache.evictions,
+                            aql_cache.catalog_invalidations,
+                        ),
                         backup_latest_age_seconds: -1,
                         ann_graph_nodes: ann.graph_nodes,
                         ann_total_edges: ann.total_edges,
