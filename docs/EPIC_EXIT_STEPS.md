@@ -308,7 +308,7 @@ Exit steps:
 1. Define durable session memory semantics.
 2. Enforce permissions from descriptor scope.
 3. Add session restart/TTL/scope tests.
-4. Mark done when session retrieval is descriptor-safe and documented; then move to B11.
+4. Mark done when session retrieval is descriptor-safe and documented; then move to B13.
 
 ### EPIC-B13 — Feedback ranking signal
 

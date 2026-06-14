@@ -119,8 +119,13 @@ ttl_seconds=3600
 created_unix_seconds=1760000000
 ```
 
-Retrieval is scope-checked against `AgentView`, filtered by `session_id`, and
-excludes cells whose TTL has expired at the requested `now_unix_seconds`.
+`session_id` and `session_kind` are also stored in the typed cell descriptor and
+binary descriptor section. The maintained `SessionIndex` maps
+`session_id -> cell_id` and stores scope/TTL from descriptors, so lazy
+checkpoint reopen can find session candidates without scanning every payload.
+Retrieval is scope-checked against `AgentView`, filtered by descriptor
+`session_id`, excludes cells whose TTL has expired at the requested
+`now_unix_seconds`, and only materializes payloads for matching session cells.
 
 ### Long-Term Memory
 
@@ -206,9 +211,9 @@ examples/demo/agent_memory/run.sh
   freshness as a deterministic multiplier for temporary memory cells.
 - **Feedback ordering** — ContextPack candidate ordering uses durable feedback
   scores before packing.
-- **Agent sessions** — explicit `session_id` memory cells provide bounded
-  task-local context, temporary memory, TTL filtering, and session-scoped
-  retrieval through the normal WAL/replay path.
+- **Agent sessions** — explicit descriptor-backed `session_id` memory cells
+  provide bounded task-local context, temporary memory, TTL filtering, and
+  session-scoped retrieval through the normal WAL/replay/checkpoint path.
 - **End-to-end memory demo** — `examples/demo/agent_memory` exercises CLI
   remember, context, and verify flows, while the gate also runs TTL/decay and
   feedback regression tests.

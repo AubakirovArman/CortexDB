@@ -63,6 +63,7 @@ impl DerivedStores {
         let mut stores = Self {
             temporal_validity_store: TemporalValidityStore::from_memtable(memtable, txn),
             memory_lifecycle_store: MemoryLifecycleStore::from_memtable(memtable, txn),
+            session_index: SessionIndex::from_memtable(memtable, txn),
             ..Self::default()
         };
         for version in memtable

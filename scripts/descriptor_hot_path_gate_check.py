@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """Guard descriptor-first hot paths against legacy payload metadata parsing."""
-
 from pathlib import Path
-
 
 ROOT = Path(__file__).resolve().parents[1]
 SERVER_AUTHZ = ROOT / "crates/cortex-server/src/authz.rs"
@@ -67,7 +65,7 @@ def main() -> None:
     retrieval_quality = RETRIEVAL_QUALITY.read_text()
     query_explain = QUERY_EXPLAIN.read_text()
     session = SESSION.read_text()
-    session_index = SESSION_INDEX.read_text()
+    session_index = SESSION_INDEX.read_text() + "\n" + (ROOT / "crates/cortex-engine/src/session/index/record.rs").read_text()
     session_payload = SESSION_PAYLOAD.read_text()
     ingestion = INGESTION.read_text()
     ingestion_report = INGESTION_REPORT.read_text()
@@ -229,9 +227,9 @@ def main() -> None:
         "scope mapping metadata scoring helper",
     )
     for text, needle, label in (
-        (session, "self.session_index\n                .retrieve(session_id, view, now_unix_seconds)", "session retrieval delegates to maintained index"),
-        (session_index, "let descriptor_metadata = CellMetadata::from_payload_with_descriptor(", "session index descriptor-backed metadata"),
-        (session_index, "view.can_read_scope(scope_id(&descriptor_metadata.scope))", "session index descriptor scope authorization"),
+        (session, "let mut cells = self.session_index.retrieve(", "session retrieval delegates to maintained index"),
+        (session_index, "SessionMetadata::from_descriptor(descriptor)", "session index descriptor-backed metadata"),
+        (session_index, "view.can_read_scope(scope_id(&self.descriptor.scope))", "session index descriptor scope authorization"),
         (session, "self.get_latest_cell_descriptor(cell_id).is_none()", "session id allocation uses descriptor-only existence check"),
         (ingestion, "self.get_latest_cell_descriptor(cell_id).is_none()", "memory id allocation uses descriptor-only existence check"),
     ):
@@ -239,6 +237,7 @@ def main() -> None:
     for text, needle, label in (
         (session, "snapshot_versions()", "session retrieval full snapshot scan"),
         (session, "view.can_read_scope(scope_id(&metadata.scope))", "session retrieval payload scope authorization"),
+        (session_index, "CellMetadata::from_payload_with_descriptor(", "session index payload metadata parsing"),
         (session_payload, "pub scope: String", "session payload scope permission metadata"),
         (session, "self.get_latest_cell(cell_id).is_none()", "session id allocation payload existence check"),
         (ingestion, "self.get_latest_cell(cell_id).is_none()", "memory id allocation payload existence check"),

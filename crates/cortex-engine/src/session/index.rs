@@ -1,35 +1,37 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use cortex_aql::AgentView;
 use cortex_core::memtable::{MemTable, ReadTxn};
 use cortex_core::{CellDescriptor, CellId};
 
 use crate::database::RetrievedCell;
-use crate::query::{scope_id, CellMetadata};
 
-use super::payload::parse_session_cell;
+mod record;
+
+use record::SessionIndexCell;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub(crate) struct SessionIndex {
     cells: BTreeMap<CellId, SessionIndexCell>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct SessionIndexCell {
-    session_id: String,
-    expires_at_unix_seconds: u64,
-    retrieved: RetrievedCell,
+    cells_by_session: BTreeMap<String, BTreeSet<CellId>>,
 }
 
 impl SessionIndex {
     pub(crate) fn from_memtable(memtable: &MemTable, txn: ReadTxn) -> Self {
-        let cells = memtable
-            .visible_iter(txn)
-            .filter_map(|version| {
-                Self::record_from_payload(version.cell_id, &version.payload, &version.descriptor)
-            })
-            .collect();
-        Self { cells }
+        let mut index = Self::default();
+        for version in memtable.visible_iter(txn) {
+            index.apply_record(
+                version.cell_id,
+                SessionIndexCell::from_version(
+                    version.cell_id,
+                    &version.payload,
+                    &version.descriptor,
+                    version.is_payload_resident(),
+                )
+                .map(|record| (version.cell_id, record)),
+            );
+        }
+        index
     }
 
     pub(crate) fn record_from_payload(
@@ -37,21 +39,8 @@ impl SessionIndex {
         payload: &[u8],
         descriptor: &CellDescriptor,
     ) -> Option<(CellId, SessionIndexCell)> {
-        let session_metadata = parse_session_cell(payload)?;
-        let expires_at_unix_seconds = session_metadata.expires_at_unix_seconds();
-        let retrieved = RetrievedCell {
-            cell_id,
-            payload: payload.to_vec(),
-            descriptor: descriptor.clone(),
-        };
-        Some((
-            cell_id,
-            SessionIndexCell {
-                session_id: session_metadata.session_id,
-                expires_at_unix_seconds,
-                retrieved,
-            },
-        ))
+        SessionIndexCell::from_version(cell_id, payload, descriptor, true)
+            .map(|record| (cell_id, record))
     }
 
     pub(crate) fn apply_record(
@@ -59,52 +48,58 @@ impl SessionIndex {
         cell_id: CellId,
         record: Option<(CellId, SessionIndexCell)>,
     ) {
+        self.remove_record(cell_id);
         if let Some((_, record)) = record {
+            self.cells_by_session
+                .entry(record.session_id().to_owned())
+                .or_default()
+                .insert(cell_id);
             self.cells.insert(cell_id, record);
-        } else {
-            self.cells.remove(&cell_id);
         }
     }
 
     pub(crate) fn apply_tombstone(&mut self, cell_id: CellId) {
-        self.cells.remove(&cell_id);
+        self.remove_record(cell_id);
     }
 
-    pub(crate) fn retrieve(
+    pub(crate) fn retrieve<F>(
         &self,
         session_id: &str,
         view: &AgentView,
         now_unix_seconds: u64,
-    ) -> Vec<RetrievedCell> {
-        self.cells
-            .values()
-            .filter(|cell| {
-                let descriptor_metadata = CellMetadata::from_payload_with_descriptor(
-                    &cell.retrieved.payload,
-                    &cell.retrieved.descriptor,
-                );
-                cell.session_id == session_id
-                    && now_unix_seconds < cell.expires_at_unix_seconds
-                    && view.can_read_scope(scope_id(&descriptor_metadata.scope))
+        mut load_payload: F,
+    ) -> Vec<RetrievedCell>
+    where
+        F: FnMut(CellId, Option<&[u8]>, &CellDescriptor) -> Option<Vec<u8>>,
+    {
+        self.cells_by_session
+            .get(session_id)
+            .into_iter()
+            .flat_map(|cell_ids| cell_ids.iter())
+            .filter_map(|cell_id| {
+                let cell = self.cells.get(cell_id)?;
+                if !cell.is_visible_to(view, now_unix_seconds) {
+                    return None;
+                }
+                let payload = load_payload(*cell_id, cell.resident_payload(), cell.descriptor())?;
+                Some(RetrievedCell {
+                    cell_id: *cell_id,
+                    payload,
+                    descriptor: cell.descriptor().clone(),
+                })
             })
-            .map(|cell| cell.retrieved.clone())
             .collect()
     }
 
-    pub(crate) fn retrieve_from_payload(
-        cell_id: CellId,
-        payload: &[u8],
-        descriptor: &CellDescriptor,
-        session_id: &str,
-        view: &AgentView,
-        now_unix_seconds: u64,
-    ) -> Option<RetrievedCell> {
-        let (_, cell) = Self::record_from_payload(cell_id, payload, descriptor)?;
-        let descriptor_metadata =
-            CellMetadata::from_payload_with_descriptor(&cell.retrieved.payload, descriptor);
-        (cell.session_id == session_id
-            && now_unix_seconds < cell.expires_at_unix_seconds
-            && view.can_read_scope(scope_id(&descriptor_metadata.scope)))
-        .then_some(cell.retrieved)
+    fn remove_record(&mut self, cell_id: CellId) {
+        let Some(record) = self.cells.remove(&cell_id) else {
+            return;
+        };
+        if let Some(cell_ids) = self.cells_by_session.get_mut(record.session_id()) {
+            cell_ids.remove(&cell_id);
+            if cell_ids.is_empty() {
+                self.cells_by_session.remove(record.session_id());
+            }
+        }
     }
 }

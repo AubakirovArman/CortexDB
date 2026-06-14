@@ -3,7 +3,6 @@ use cortex_core::{CellId, CommitSeq};
 
 use crate::database::{Database, RetrievedCell};
 use crate::error::{EngineError, EngineResult};
-use crate::options::PayloadResidency;
 use crate::query::scope_id;
 
 mod index;
@@ -126,25 +125,20 @@ impl Database {
         view: &AgentView,
         now_unix_seconds: u64,
     ) -> Vec<RetrievedCell> {
-        let mut cells = if self.payload_residency == PayloadResidency::Lazy {
-            self.memtable
-                .visible_iter(self.read_txn())
-                .filter_map(|version| {
-                    let payload = self.payload_for_version(version).ok()?;
-                    SessionIndex::retrieve_from_payload(
-                        version.cell_id,
-                        &payload,
-                        &version.descriptor,
-                        session_id,
-                        view,
-                        now_unix_seconds,
-                    )
-                })
-                .collect()
-        } else {
-            self.session_index
-                .retrieve(session_id, view, now_unix_seconds)
-        };
+        let txn = self.read_txn();
+        let mut cells = self.session_index.retrieve(
+            session_id,
+            view,
+            now_unix_seconds,
+            |cell_id, resident, _| {
+                if let Some(payload) = resident {
+                    return Some(payload.to_vec());
+                }
+                self.memtable
+                    .read(txn, cell_id)
+                    .and_then(|version| self.payload_for_version(version).ok())
+            },
+        );
         cells.sort_by_key(|cell| cell.cell_id);
         cells
     }

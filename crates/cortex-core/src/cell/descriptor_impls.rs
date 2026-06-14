@@ -58,6 +58,12 @@ impl CellDescriptor {
         if metadata.confidence_q16.is_some() {
             self.confidence_q16 = metadata.confidence_q16;
         }
+        if metadata.session_id.is_some() {
+            self.session_id = metadata.session_id.clone();
+        }
+        if metadata.session_kind.is_some() {
+            self.session_kind = metadata.session_kind.clone();
+        }
     }
 
     pub(crate) fn apply_header(&mut self, key: &str, value: &str) {
@@ -87,6 +93,8 @@ impl CellDescriptor {
             "parent_id" | "parent_chunk_id" => self.parent_id = non_empty(value),
             "valid_from" => self.valid_from = non_empty(value),
             "valid_to" => self.valid_to = non_empty(value),
+            "session_id" => self.session_id = non_empty(value),
+            "session_kind" => self.session_kind = non_empty(value),
             _ => {}
         }
     }
@@ -114,36 +122,10 @@ impl CellDescriptor {
             19 => self.cell_range = decode_optional_string(value)?,
             20 => self.json_path = decode_optional_string(value)?,
             21 if value.len() == 2 => self.confidence_q16 = Some(read_fixed_u16(value)?),
+            22 => self.session_id = decode_optional_string(value)?,
+            23 => self.session_kind = decode_optional_string(value)?,
             _ => {}
         }
         Some(())
-    }
-}
-
-impl Default for CellDescriptor {
-    fn default() -> Self {
-        Self {
-            scope: "default".to_owned(),
-            status: "ready".to_owned(),
-            cell_type: KnowledgeCellType::Raw,
-            memory_type: None,
-            ttl_seconds: None,
-            created_unix_seconds: None,
-            source_trust_q16: None,
-            source: None,
-            citation: None,
-            content_hash: None,
-            source_id: None,
-            source_url: None,
-            document_id: None,
-            page: None,
-            row: None,
-            cell_range: None,
-            json_path: None,
-            confidence_q16: None,
-            parent_id: None,
-            valid_from: None,
-            valid_to: None,
-        }
     }
 }

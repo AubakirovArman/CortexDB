@@ -1,6 +1,6 @@
 # CortexDB Epic Progress Board
 
-Last updated: 2026-06-13
+Last updated: 2026-06-14
 
 Purpose: short operational board for active epic execution. The detailed source
 of truth remains `docs/DATABASE_GRADE_EXECUTION_PLAN.md`; this file shows what
@@ -21,22 +21,23 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-B12` — Session/episodic memory contract.
+`EPIC-B13` — Feedback as an indexed ranking signal.
 
-B12 exit steps:
+B13 exit steps:
 
-1. Define session/episodic memory as a public contract, not a private harness.
-2. Make session retrieval index-backed by descriptor/session metadata.
-3. Add append/retrieve session API examples and tests.
-4. Mark done when session paths are indexed and documented; then move to B13.
+1. Define feedback records and ranking impact.
+2. Index feedback by target cell/query context.
+3. Add tests proving feedback affects rank without bypassing relevance or
+   permissions.
+4. Mark done when feedback is an indexed ranking signal; then move to B14.
 
-B12 current state:
+B13 current state:
 
-- next; start by inventorying `session.rs`, `session/index.rs`, session payload
-  descriptor fields, public examples, and any `snapshot_versions`/payload-scan
-  path used by session retrieval.
-- Do not reopen B11 memory lifecycle unless a session test proves the shared
-  lifecycle index is wrong.
+- next; start by inventorying `feedback.rs`, `feedback/index.rs`, `RankOp`,
+  ContextPack ordering, public HTTP/SDK surfaces, and any remaining
+  feedback-related `snapshot_versions`/payload-scan paths.
+- Do not reopen B12 unless a session regression proves descriptor-backed
+  session indexing is wrong.
 
 ## Active Partial Tail
 
@@ -81,6 +82,44 @@ C17 split state:
   is out of focus.
 
 ## Recently Closed
+
+### EPIC-B12 — Session/episodic memory contract
+
+Status: `done`
+
+What closed it:
+
+- Added `session_id` and `session_kind` to `CellDescriptor` payload-header
+  materialization and binary descriptor encode/decode.
+- Reworked `SessionIndex` into descriptor-backed records plus a maintained
+  `session_id -> cell_id` map.
+- Removed the lazy-residency full payload scan from
+  `Database::retrieve_session_cells`; retrieval now filters by indexed
+  descriptor session/scope/TTL metadata and materializes only matching payloads.
+- Built the lazy-open session index from descriptors, so checkpoint-backed
+  session cells are discoverable without resident payloads.
+- Added `agent_session_lazy_tests` proving a lazy reopen retrieves one session
+  while loading only that session's two payloads from segment storage.
+- Documented the public session contract in `AGENT_MEMORY.md` and added the
+  multi-session agent example at `examples/demo/agent_sessions/README.md`.
+
+Gates passed:
+
+- `cargo fmt --check`
+- `cargo test -p cortex-core --all-features`
+- `cargo test -p cortex-engine --test agent_session_tests --all-features`
+- `cargo test -p cortex-engine --test agent_session_lazy_tests --all-features`
+- `python3 scripts/descriptor_hot_path_gate_check.py`
+- `python3 scripts/query_scan_inventory_check.py`
+- `make file-size-check`
+- `cargo test --workspace --all-features`
+- `cargo clippy --workspace --all-targets -- -D warnings`
+- `make check`
+
+Remaining follow-up:
+
+- B13 owns feedback ranking/indexing. Long-running benchmark evidence stays in
+  A19/C17; no B12-specific large run is required.
 
 ### EPIC-B11 — Memory lifecycle as storage policy
 
@@ -570,7 +609,7 @@ Important follow-up:
 
 ## Done Snapshot
 
-Done count in roadmap snapshot: `46`.
+Done count in roadmap snapshot: `54`.
 
 High-signal done epics:
 
@@ -596,7 +635,15 @@ High-signal done epics:
 - B01 ContextPack JSON Schema v1;
 - B02 ContextPackBuilder physical operator;
 - B03 token-budget pushdown and early termination;
+- B04 AgentView as an index invariant;
+- B05 AgentView lifecycle API v1;
 - B06 typed provenance model;
+- B07 fact/claim store;
+- B08 VerifyOp as a planned operator;
+- B09 contradiction/conflict index;
+- B10 temporal validity columns and temporal queries;
+- B11 memory lifecycle as storage policy;
+- B12 session/episodic memory contract;
 - D02 init/doctor;
 - D06 Python SDK;
 - D07 TypeScript SDK;

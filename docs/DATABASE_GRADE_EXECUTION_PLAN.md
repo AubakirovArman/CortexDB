@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-B12` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-B07`, `EPIC-B08`, `EPIC-B09`, `EPIC-B10`, `EPIC-B11`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-B12` is next. `EPIC-A19` remains partial with an explicit final long-running benchmark tail. `EPIC-C17` remains partial/local-ready with hosted nightly Actions wiring deferred. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing. Large 1M/10M lazy ContextPack latency evidence is tracked by `EPIC-A19`/`EPIC-C17`.
+Current pointer: `EPIC-B13` (`EPIC-A06`, `EPIC-A07`, `EPIC-A08`, `EPIC-D10`, `EPIC-D09`, `EPIC-D08`, `EPIC-D07`, `EPIC-D06`, `EPIC-D02`, `EPIC-A09`, `EPIC-E01`, `EPIC-D11`, `EPIC-A15`, `EPIC-B01`, `EPIC-B02`, `EPIC-B03`, `EPIC-A12`, `EPIC-A13`, `EPIC-B04`, `EPIC-B05`, `EPIC-B06`, `EPIC-B07`, `EPIC-B08`, `EPIC-B09`, `EPIC-B10`, `EPIC-B11`, `EPIC-B12`, `EPIC-E08`, `EPIC-E09`, `EPIC-E10`, `EPIC-E04`, `EPIC-E02`, `EPIC-E14`, `EPIC-D15`, and `EPIC-C16` are done). `EPIC-B13` is next. `EPIC-A19` remains partial with an explicit final long-running benchmark tail. `EPIC-C17` remains partial/local-ready with hosted nightly Actions wiring deferred. `EPIC-D05` remains partial/local-ready and is externally blocked on public registry credentials/trusted publishing. Large 1M/10M lazy ContextPack latency evidence is tracked by `EPIC-A19`/`EPIC-C17`.
 
 Scale-gate rule: individual epics use small/medium evidence gates by default
 so implementation does not stall on long-running benchmarks. Large 1M/10M
@@ -71,7 +71,8 @@ enough to unblock the next dependency step.
    and surfaced as ContextPack conflict anomalies without query-time full scan.
 23. `EPIC-B10` — temporal validity columns and temporal queries: done; descriptor-backed `TemporalValidityStore` feeds a physical `TemporalValidityFilter`, AQL supports `REQUIRE valid at`, and stale/future candidates are filtered before payload materialization.
 24. `EPIC-B11` — Memory lifecycle: TTL/decay as storage policy: done; descriptor-backed lifecycle index, query-time TTL filter, WAL tombstone maintenance, and Q16 rank decay are in place.
-25. `EPIC-B12` — Session/episodic memory contract: next.
+25. `EPIC-B12` — Session/episodic memory contract: done; session metadata is descriptor-backed, session retrieval uses a maintained index, and lazy reopen only materializes matching session payloads.
+26. `EPIC-B13` — Feedback as an indexed ranking signal: next.
 
 ## Summary
 
@@ -870,20 +871,37 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-B12 — Session/episodic memory contract
 
-- status: `pending`
+- status: `done`
 - meta: Категория: product · Приоритет: P2 · Горизонт: 6 months · Тип: productize
 - goal: LongMemEval показал, что session-память — реальный workload; нужен контракт, а не приватный харнесс.
 - problem: Проблема: session.rs использует snapshot_versions-скан; семантика сессий не публична.
 - tasks:
-  - [ ] 1) session_id в descriptor; session-retrieval через индекс scope+session
-  - [ ] 2) API: append session event, retrieve session window/summary-кандидаты
-  - [ ] 3) перенести lessons из LongMemEval-харнесса в generic-механизм (без оверфита, урок EPIC из прошлого аудита).
+  - [x] 1) session_id в descriptor; session-retrieval через индекс scope+session
+  - [x] 2) API: append session event, retrieve session window/summary-кандидаты
+  - [x] 3) перенести lessons из LongMemEval-харнесса в generic-механизм (без оверфита, урок EPIC из прошлого аудита).
 - acceptance:
-  - [ ] 1) session-пути индексные
-  - [ ] 2) публичный пример «чат-агент с многосессионной памятью»
-  - [ ] 3) LongMemEval-харнесс использует только публичные API.
+  - [x] 1) session-пути индексные
+  - [x] 2) публичный пример «чат-агент с многосессионной памятью»
+  - [x] 3) LongMemEval-харнесс использует только публичные API.
 - files: session.rs, query/, examples/.
 - risks: переусложнение — минимальный контракт. Зависимости: A02, A06. Эффект: главный agent-workload оформлен.
+- evidence: `CellDescriptor` now carries `session_id` and `session_kind` through
+  payload header parsing and the binary descriptor section. `SessionIndex`
+  stores descriptor-backed session records and a `session_id -> cell_id` map;
+  `Database::retrieve_session_cells` delegates to the index and materializes
+  payload only after descriptor scope/TTL/session filtering. Lazy checkpoint
+  reopen builds the session index from descriptors rather than resident
+  payloads, and `agent_session_lazy_tests` proves retrieving one session loads
+  only that session's payloads. Public examples are documented in
+  `docs/AGENT_MEMORY.md` and `examples/demo/agent_sessions/README.md`.
+- gates: `cargo fmt --check`; `cargo test -p cortex-core --all-features`;
+  `cargo test -p cortex-engine --test agent_session_tests --test
+  agent_session_lazy_tests --all-features`;
+  `python3 scripts/descriptor_hot_path_gate_check.py`;
+  `python3 scripts/query_scan_inventory_check.py`; `make file-size-check`;
+  `cargo test --workspace --all-features`; `cargo clippy --workspace
+  --all-targets -- -D warnings`; `make check`.
+- next exit step: move to `EPIC-B13` — Feedback as an indexed ranking signal.
 
 ### EPIC-B13 — Feedback как индексированный ranking-сигнал
 
