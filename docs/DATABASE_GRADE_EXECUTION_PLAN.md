@@ -1955,7 +1955,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
   quota-policy-check`, `make openapi-contract-check`, and `make
   load-suite-check`.
 - remaining: none for E06 acceptance.
-- next exit step: `EPIC-E15` is now done; move to `EPIC-D13` — mdBook docs site.
+- next exit step: `EPIC-D13` is now done; move to `EPIC-D14` — Three live integration examples.
 
 ### EPIC-E07 — Audit log productization
 
@@ -1992,7 +1992,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
   --report target/security-hardening/e07-smoke.json`; `cargo clippy -p
   cortex-server --all-targets -- -D warnings`; `cargo clippy -p cortex-cli
   --all-targets -- -D warnings`.
-- next exit step: `EPIC-E15` is now done; move to `EPIC-D13` — mdBook docs site.
+- next exit step: `EPIC-D13` is now done; move to `EPIC-D14` — Three live integration examples.
 
 ### EPIC-E08 — Tenant isolation test suite
 
@@ -2104,7 +2104,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
   `cargo test -p cortex-server denied_ingestion_audit_event_does_not_leak_query_body_or_token --all-features`;
   `python3 -m py_compile scripts/secrets_hygiene_check.py scripts/llm_inference_gate_check.py`;
   `make secrets-check`.
-- next exit step: `EPIC-E15` is now done; move to `EPIC-D13` — mdBook docs site.
+- next exit step: `EPIC-D13` is now done; move to `EPIC-D14` — Three live integration examples.
 
 ### EPIC-E14 — Upgrade/rollback drill
 
@@ -2150,7 +2150,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
   `cargo test -p cortex-server slow_loris_body_times_out_without_blocking_follow_up_request --all-features`;
   `cargo test -p cortex-server metrics_prometheus_output_contains_contract_series --all-features`;
   `make route-timeout-check`.
-- next exit step: move to `EPIC-D13` — mdBook docs site.
+- next exit step: `EPIC-D13` is now done; move to `EPIC-D14` — Three live integration examples.
 
 ## Block F — Long-term database research
 
