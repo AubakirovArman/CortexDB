@@ -15,8 +15,8 @@ use crate::graph::GraphIndexStore;
 use crate::lock::DatabaseLock;
 use crate::memory::MemoryLifecycleStore;
 use crate::options::{
-    AgentTransactionOptions, CompactionPolicy, EngineFeatureFlags, PayloadResidency,
-    TieredStorageOptions,
+    AgentTransactionOptions, CompactionPolicy, EngineFeatureFlags, LearnedRankingOptions,
+    PayloadResidency, TieredStorageOptions,
 };
 use crate::query::{cache::AqlQueryCache, AqlDeltaIndex, CellMetadata};
 use crate::retrieval_quality::TemporalValidityStore;
@@ -47,6 +47,7 @@ pub struct Database {
     pub(crate) payload_cache: Mutex<SegmentPayloadCache>,
     pub(crate) tiered_storage: TieredStorageOptions,
     pub(crate) agent_transactions: AgentTransactionOptions,
+    pub(crate) learned_ranking: LearnedRankingOptions,
     pub(crate) hnsw_build_config: HnswBuildConfig,
     pub(crate) feature_flags: EngineFeatureFlags,
     pub(crate) ingestion_backpressure_policy: crate::ingestion::IngestionBackpressurePolicy,

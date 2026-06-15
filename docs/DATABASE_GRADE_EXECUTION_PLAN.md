@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-F05` (`EPIC-F04` is now done along with the previously
+Current pointer: `EPIC-F06` (`EPIC-F05` is now done along with the previously
 closed epics listed in the Active Execution Queue). `EPIC-C01` is closed with
 the `ACI4` compact term dictionary/postings format, `ACI0..ACI3` dual-read
 compatibility, and persisted/search compatibility gates. `EPIC-C03` is closed
@@ -51,7 +51,9 @@ mock LLM smoke coverage. `EPIC-F01` added the tiered storage v2 design,
 guarded options, bounded payload cache metrics, and eviction/readback gate.
 `EPIC-F04` added agent transaction semantics docs, guarded engine prototype,
 deterministic optimistic same-cell conflict reporting, and concurrent agent
-write tests. `EPIC-F05` is next.
+write tests. `EPIC-F05` added opt-in learned ranking config, offline train /
+heldout calibration data, a deterministic-vs-learned comparison gate, and
+`docs/LEARNED_RANKING_CALIBRATION.md`. `EPIC-F06` is next.
 `EPIC-D05` remains partial/local-ready and is externally blocked on public
 registry credentials/trusted publishing.
 
@@ -149,7 +151,8 @@ enough to unblock the next dependency step.
 57. `EPIC-D14` — Three live integration examples: done.
 58. `EPIC-F01` — Tiered storage v2: done.
 59. `EPIC-F04` — Agent transaction semantics: done.
-60. `EPIC-F05` — Learned/calibrated ranking: next.
+60. `EPIC-F05` — Learned/calibrated ranking: done.
+61. `EPIC-F06` — Semantic compression памяти: next.
 
 ## Summary
 
@@ -1976,7 +1979,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
   quota-policy-check`, `make openapi-contract-check`, and `make
   load-suite-check`.
 - remaining: none for E06 acceptance.
-- next exit step: `EPIC-F04` is now done; move to `EPIC-F05` — Learned/calibrated ranking.
+- next exit step: `EPIC-F05` is now done; move to `EPIC-F06` — Semantic compression памяти.
 
 ### EPIC-E07 — Audit log productization
 
@@ -2013,7 +2016,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
   --report target/security-hardening/e07-smoke.json`; `cargo clippy -p
   cortex-server --all-targets -- -D warnings`; `cargo clippy -p cortex-cli
   --all-targets -- -D warnings`.
-- next exit step: `EPIC-F04` is now done; move to `EPIC-F05` — Learned/calibrated ranking.
+- next exit step: `EPIC-F05` is now done; move to `EPIC-F06` — Semantic compression памяти.
 
 ### EPIC-E08 — Tenant isolation test suite
 
@@ -2125,7 +2128,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
   `cargo test -p cortex-server denied_ingestion_audit_event_does_not_leak_query_body_or_token --all-features`;
   `python3 -m py_compile scripts/secrets_hygiene_check.py scripts/llm_inference_gate_check.py`;
   `make secrets-check`.
-- next exit step: `EPIC-F04` is now done; move to `EPIC-F05` — Learned/calibrated ranking.
+- next exit step: `EPIC-F05` is now done; move to `EPIC-F06` — Semantic compression памяти.
 
 ### EPIC-E14 — Upgrade/rollback drill
 
@@ -2171,7 +2174,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
   `cargo test -p cortex-server slow_loris_body_times_out_without_blocking_follow_up_request --all-features`;
   `cargo test -p cortex-server metrics_prometheus_output_contains_contract_series --all-features`;
   `make route-timeout-check`.
-- next exit step: `EPIC-F04` is now done; move to `EPIC-F05` — Learned/calibrated ranking.
+- next exit step: `EPIC-F05` is now done; move to `EPIC-F06` — Semantic compression памяти.
 
 ## Block F — Long-term database research
 
@@ -2190,7 +2193,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
   - `PayloadCacheStats` exposes `max_bytes`, `resident_bytes`, `hits`, `misses`, `segment_loads`, and `evictions`.
   - `crates/cortex-engine/tests/tiered_storage_v2.rs` proves cold segment payload readback stays within a 64-byte hot cache and records eviction/readback behavior.
   - latest checks: `python3 -m py_compile scripts/tiered_storage_v2_check.py`; `make tiered-storage-v2-check`.
-- next exit step: `EPIC-F04` is now done; move to `EPIC-F05` — Learned/calibrated ranking.
+- next exit step: `EPIC-F05` is now done; move to `EPIC-F06` — Semantic compression памяти.
 - dependencies: A08 стабилен в проде ≥1 квартал. Риски: высокие.
 
 ### EPIC-F02 — Распределённая репликация (разморозка)
@@ -2217,17 +2220,29 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
   - `DatabaseOptions::agent_transactions` and `CORTEXDB_AGENT_TRANSACTIONS` gate the prototype.
   - `Database::commit_agent_transaction` reuses atomic `WriteBatch` WAL commit and returns structured `AgentTransactionOutcome::Conflict` reports for stale/tombstoned target cells.
   - `crates/cortex-engine/tests/agent_transactions.rs` covers feature flag, stale same-cell conflicts, disjoint concurrent commits, read-your-writes, scope mismatch, and unwritable scope rejection.
-  - latest checks: `python3 -m py_compile scripts/agent_transaction_semantics_check.py`; `make agent-transaction-semantics-check`.
-- next exit step: `EPIC-F04` is now done; move to `EPIC-F05` — Learned/calibrated ranking.
+  - latest checks: `python3 -m py_compile scripts/learned_ranking_calibration_check.py`; `make learned-ranking-calibration-check`; `cargo test -p cortex-engine --test database_search --all-features database_learned_ranking_is_disabled_by_default_and_opt_in`.
+- next exit step: `EPIC-F05` is now done; move to `EPIC-F06` — Semantic compression памяти.
 
 ### EPIC-F05 — Learned/calibrated ranking
 
-- status: `pending`
+- status: `done`
 - meta: Категория: research · P3 · 12 months · research · **не делать до C-блока**
+- tasks:
+  - [x] Define offline training/evaluation data without benchmark overfit.
+  - [x] Add calibrated ranking behind a feature/config.
+  - [x] Compare against deterministic ranking with held-out data.
+- evidence:
+  - `LearnedRankingOptions` and `CORTEXDB_LEARNED_RANKING` keep calibrated
+    `HybridRerank` opt-in and disabled by default.
+  - `fixtures/enterprise_rag_bench/learned_ranking/offline_v1.jsonl` provides
+    non-overlapping train/heldout calibration rows.
+  - `make learned-ranking-calibration-check` reports heldout deterministic
+    baseline MRR `6250` bps, learned MRR `10000` bps, lift `3750` bps, win rate
+    `75%`, and zero policy regressions.
 
 ### EPIC-F06 — Semantic compression памяти
 
-- status: `pending`
+- status: `next`
 - meta: Категория: research · P3 · long-term · research
 - tasks:
   - [ ] Идея: cold-память агентов сжимается суммаризацией (внешней моделью) с сохранением provenance-ссылок на оригиналы; «вспоминание» разворачивает. Деливерабл: дизайн + прототип через MCP/внешний воркер. **Не встраивать LLM в движок.**

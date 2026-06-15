@@ -10,14 +10,17 @@ use super::super::ann::{
 use super::super::persisted::{
     search_persisted_lexical, search_persisted_vectors, PersistedLexicalSearchIndex,
 };
-use super::super::{HybridRrfWeights, SearchMode, SearchQuery, WeightedScoreReranker};
+use super::super::{SearchMode, SearchQuery};
 use super::ann_reports::{
     persisted_exact_fallback_report, persisted_graph_is_stale,
     persisted_hnsw_fault_fallback_report, persisted_hnsw_stale_fallback_report,
 };
 use super::diversity::select_diverse_results;
 use super::persisted_rrf::{distance_metric_from_manifest, fuse_persisted_rrf};
-use super::ranking::{rerank_database_results, search_rerank_candidate_limit};
+use super::ranking::{
+    database_hybrid_rrf_weights, database_weighted_reranker, rerank_database_results,
+    search_rerank_candidate_limit,
+};
 use super::trace::trace_search;
 use super::{DatabaseSearchOutcome, DatabaseSearchResult, PersistedSearchCandidate};
 
@@ -221,7 +224,12 @@ impl Database {
                     );
                     let vector =
                         self.search_disk_resident_vectors(vector, &allowed, depth, &metric)?;
-                    fuse_persisted_rrf(lexical, vector, depth, HybridRrfWeights::balanced())
+                    fuse_persisted_rrf(
+                        lexical,
+                        vector,
+                        depth,
+                        database_hybrid_rrf_weights(self, query.text),
+                    )
                 } else {
                     search_persisted_lexical(
                         PersistedLexicalSearchIndex {
@@ -268,7 +276,7 @@ impl Database {
         }
         let mut diversity_diagnostics = None;
         if query.mode == SearchMode::HybridRerank {
-            rerank_database_results(&mut results, query, &WeightedScoreReranker::default());
+            rerank_database_results(&mut results, query, &database_weighted_reranker(self));
             let selection = select_diverse_results(results, query);
             results = selection.results;
             diversity_diagnostics = Some(selection.diagnostics);

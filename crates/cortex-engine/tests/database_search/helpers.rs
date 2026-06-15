@@ -9,7 +9,7 @@ pub(crate) use cortex_engine::search::{
     SearchQuery, SearchRerankInput, SearchReranker,
 };
 pub(crate) use cortex_engine::{
-    scope_id, Database, DatabaseOptions, PayloadResidency, SearchLimit,
+    scope_id, Database, DatabaseOptions, LearnedRankingOptions, PayloadResidency, SearchLimit,
 };
 pub(crate) use cortex_storage::indexes::LexicalIndex;
 pub(crate) use cortex_storage::vectors::VectorIndex;

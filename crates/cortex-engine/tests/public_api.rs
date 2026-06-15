@@ -4,9 +4,9 @@ use cortex_engine::{
     AgentTransactionRequest, AqlQueryCacheStats, BackupReport, CandidateId, CheckpointStats,
     ContextPack, ContextPackOptions, Database, DatabaseOptions, DbOperation, EngineAqlIndex,
     EngineConfig, EngineConfigError, EngineError, EngineErrorCategory, EngineErrorCode,
-    EngineFeature, EngineFeatureFlags, EngineResult, Language, RecoveryMode, RepairReport,
-    RestoreReport, RetrievedCell, StaleLockPolicy, StorageStats, StorageValidationReport,
-    TextAnalyzer, TextAnalyzerConfig,
+    EngineFeature, EngineFeatureFlags, EngineResult, Language, LearnedRankingOptions, RecoveryMode,
+    RepairReport, RestoreReport, RetrievedCell, StaleLockPolicy, StorageStats,
+    StorageValidationReport, TextAnalyzer, TextAnalyzerConfig,
 };
 
 #[test]
@@ -68,6 +68,7 @@ fn stable_public_types_are_importable() {
     let _ = std::mem::size_of::<StorageStats>();
     let _ = std::mem::size_of::<AqlQueryCacheStats>();
     let _ = std::mem::size_of::<AgentTransactionOptions>();
+    let _ = std::mem::size_of::<LearnedRankingOptions>();
     let _ = std::mem::size_of::<AgentTransactionRequest>();
     let _ = std::mem::size_of::<AgentTransactionReport>();
     let _ = std::mem::size_of::<AgentTransactionConflict>();

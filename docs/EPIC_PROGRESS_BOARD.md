@@ -20,17 +20,20 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-F05` — Learned/calibrated ranking.
+`EPIC-F06` — Semantic compression памяти.
 
-F05 exit steps:
+F06 exit steps:
 
-1. Define offline training/evaluation data without benchmark overfit.
-2. Add calibrated ranking behind a feature/config.
-3. Compare against deterministic ranking with held-out data.
+1. Define compression contract and loss boundaries.
+2. Preserve provenance and answerability metadata.
+3. Add quality/regression tests.
 
-F05 current state:
+F06 current state:
 
 - next.
+- F05 is closed with `docs/LEARNED_RANKING_CALIBRATION.md`,
+  `LearnedRankingOptions`, `CORTEXDB_LEARNED_RANKING`, non-overlapping
+  offline train/heldout fixture data, and `make learned-ranking-calibration-check`.
 - F04 is closed with `docs/AGENT_TRANSACTION_SEMANTICS.md`, guarded
   `AgentTransactionOptions`, `Database::commit_agent_transaction`, structured
   stale/tombstoned target conflict reports, concurrent agent write tests, and
@@ -1131,9 +1134,9 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 ## Next Exit Step
 
-Work on F05 only:
+Work on F06 only:
 
-1. define offline training/evaluation data without benchmark overfit;
-2. add calibrated ranking behind a feature/config;
-3. compare against deterministic ranking with held-out data;
-4. move to the next ordered epic after F05 acceptance is closed.
+1. define compression contract and loss boundaries;
+2. preserve provenance and answerability metadata;
+3. add quality/regression tests;
+4. move to the next ordered epic after F06 acceptance is closed.

@@ -8,10 +8,13 @@ use crate::options::PayloadResidency;
 use crate::plan::PolicyRewrite;
 
 use super::super::ann::AnnSearchPolicy;
-use super::super::{SearchIndexes, SearchMode, SearchQuery, WeightedScoreReranker};
+use super::super::{SearchIndexes, SearchMode, SearchQuery};
 use super::ann_reports::snapshot_ann_report;
 use super::diversity::select_diverse_results;
-use super::ranking::{database_index_query, rerank_database_results};
+use super::ranking::{
+    database_hybrid_rrf_weights, database_index_query, database_weighted_reranker,
+    rerank_database_results,
+};
 use super::trace::trace_search;
 use super::{DatabaseSearchOutcome, SearchViewTrace};
 
@@ -66,7 +69,10 @@ impl Database {
             vector_candidates
         ));
         let indexed_results = indexes
-            .search(index_query)
+            .search_with_hybrid_rrf_weights(
+                index_query,
+                database_hybrid_rrf_weights(self, query.text),
+            )
             .into_iter()
             .filter_map(|result| {
                 let candidate_id = result.cell_id;
@@ -92,7 +98,7 @@ impl Database {
             .collect::<Vec<_>>();
         let mut diversity_diagnostics = None;
         if query.mode == SearchMode::HybridRerank {
-            rerank_database_results(&mut raw_results, query, &WeightedScoreReranker::default());
+            rerank_database_results(&mut raw_results, query, &database_weighted_reranker(self));
             let selection = select_diverse_results(raw_results, query);
             raw_results = selection.results;
             diversity_diagnostics = Some(selection.diagnostics);

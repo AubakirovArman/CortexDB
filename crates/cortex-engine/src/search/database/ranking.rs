@@ -9,8 +9,12 @@ use super::super::routing::{
     classify_search_query_intent, routed_candidate_limit, routed_result_limit, SearchQueryIntent,
 };
 use super::super::vector::{vector_from_payload, vectors_from_payload};
-use super::super::{SearchMode, SearchQuery, SearchRerankInput, SearchReranker};
+use super::super::{
+    calibrated_hybrid_rrf_weights, HybridRrfWeights, SearchMode, SearchQuery, SearchRerankInput,
+    SearchReranker, WeightedScoreReranker,
+};
 use super::DatabaseSearchResult;
+use crate::database::Database;
 
 pub(super) fn database_index_query(query: SearchQuery<'_>) -> SearchQuery<'_> {
     if query.mode == SearchMode::HybridRerank {
@@ -30,6 +34,25 @@ pub(super) fn search_rerank_candidate_limit(query: SearchQuery<'_>) -> usize {
 
 pub(super) fn search_rerank_result_limit(query: SearchQuery<'_>) -> usize {
     routed_result_limit(query.text, query.limit)
+}
+
+pub(super) fn database_hybrid_rrf_weights(
+    database: &Database,
+    query_text: &str,
+) -> HybridRrfWeights {
+    if database.learned_ranking.enabled {
+        calibrated_hybrid_rrf_weights(query_text)
+    } else {
+        HybridRrfWeights::balanced()
+    }
+}
+
+pub(super) fn database_weighted_reranker(database: &Database) -> WeightedScoreReranker {
+    if database.learned_ranking.enabled {
+        WeightedScoreReranker::enterprise_rag_calibrated()
+    } else {
+        WeightedScoreReranker::fixed_default()
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

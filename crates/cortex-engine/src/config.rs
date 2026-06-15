@@ -6,9 +6,9 @@ use cortex_storage::wal::DurabilityMode;
 
 use crate::options::{
     AgentTransactionOptions, CompactionPolicy, DatabaseOptions, EngineFeatureFlags,
-    PayloadResidency, RecoveryMode, StaleLockPolicy, TieredStorageCompressionPolicy,
-    TieredStorageOptions, DEFAULT_AQL_QUERY_CACHE_MAX_ENTRIES, DEFAULT_PAYLOAD_CACHE_BYTES,
-    DEFAULT_WAL_ARCHIVE_MAX_FILES,
+    LearnedRankingOptions, PayloadResidency, RecoveryMode, StaleLockPolicy,
+    TieredStorageCompressionPolicy, TieredStorageOptions, DEFAULT_AQL_QUERY_CACHE_MAX_ENTRIES,
+    DEFAULT_PAYLOAD_CACHE_BYTES, DEFAULT_WAL_ARCHIVE_MAX_FILES,
 };
 use crate::search::{HnswBuildConfig, HnswBuildProfile};
 
@@ -53,6 +53,7 @@ impl EngineConfig {
             )?,
             tiered_storage: parse_tiered_storage_options(&vars)?,
             agent_transactions: parse_agent_transaction_options(&vars)?,
+            learned_ranking: parse_learned_ranking_options(&vars)?,
             aql_query_cache_max_entries: parse_usize_var(
                 &vars,
                 "CORTEXDB_AQL_QUERY_CACHE_MAX_ENTRIES",
@@ -235,6 +236,14 @@ fn parse_agent_transaction_options(
     })
 }
 
+fn parse_learned_ranking_options(
+    vars: &BTreeMap<String, String>,
+) -> Result<LearnedRankingOptions, EngineConfigError> {
+    Ok(LearnedRankingOptions {
+        enabled: parse_bool_var(vars, "CORTEXDB_LEARNED_RANKING", false)?,
+    })
+}
+
 fn parse_usize_var(
     vars: &BTreeMap<String, String>,
     name: &'static str,
@@ -295,6 +304,7 @@ mod tests {
             ("CORTEXDB_TIERED_STORAGE_V2", "true"),
             ("CORTEXDB_TIERED_STORAGE_COMPRESSION", "zstd_reserved"),
             ("CORTEXDB_AGENT_TRANSACTIONS", "true"),
+            ("CORTEXDB_LEARNED_RANKING", "true"),
             ("CORTEXDB_AQL_QUERY_CACHE_MAX_ENTRIES", "64"),
             ("CORTEXDB_WAL_ARCHIVE", "true"),
             ("CORTEXDB_WAL_ARCHIVE_MAX_FILES", "8"),
@@ -327,6 +337,7 @@ mod tests {
             TieredStorageCompressionPolicy::ZstdReserved
         );
         assert!(config.database_options.agent_transactions.enabled);
+        assert!(config.database_options.learned_ranking.enabled);
         assert_eq!(config.database_options.aql_query_cache_max_entries, 64);
         assert!(config.database_options.wal_archive_enabled);
         assert_eq!(config.database_options.wal_archive_max_files, 8);

@@ -65,6 +65,18 @@ impl SearchIndexes {
         }
     }
 
+    pub fn search_with_hybrid_rrf_weights(
+        &self,
+        query: SearchQuery<'_>,
+        weights: HybridRrfWeights,
+    ) -> Vec<SearchResult> {
+        match query.mode {
+            SearchMode::Hybrid => self.hybrid_search_with_weights(query, weights),
+            SearchMode::HybridRerank => self.hybrid_rerank_search_with_weights(query, weights),
+            _ => self.search(query),
+        }
+    }
+
     pub fn search_with_reranker(
         &self,
         query: SearchQuery<'_>,
@@ -81,13 +93,21 @@ impl SearchIndexes {
     }
 
     fn hybrid_rerank_search(&self, query: SearchQuery<'_>) -> Vec<SearchResult> {
+        self.hybrid_rerank_search_with_weights(query, HybridRrfWeights::balanced())
+    }
+
+    fn hybrid_rerank_search_with_weights(
+        &self,
+        query: SearchQuery<'_>,
+        weights: HybridRrfWeights,
+    ) -> Vec<SearchResult> {
         let mut results = self.hybrid_search_with_weights(
             SearchQuery {
                 mode: SearchMode::Hybrid,
                 limit: rerank_candidate_limit(query),
                 ..query
             },
-            HybridRrfWeights::balanced(),
+            weights,
         );
         rerank_results(&mut results, query, &WeightedScoreReranker::fixed_default());
         results.truncate(rerank_result_limit(query));

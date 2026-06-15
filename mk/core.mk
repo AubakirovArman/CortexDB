@@ -34,6 +34,14 @@ context-pack-schema-contract-check:
 	python3 scripts/context_pack_schema_contract_check.py
 agent-transaction-semantics-check:
 	python3 scripts/agent_transaction_semantics_check.py --report "$(AGENT_TRANSACTION_SEMANTICS_REPORT)"
+
+learned-ranking-calibration-check:
+	python3 scripts/learned_ranking_calibration_check.py \
+	  --fixture "$(LEARNED_RANKING_CALIBRATION_FIXTURE)" \
+	  --report "$(LEARNED_RANKING_CALIBRATION_REPORT)" \
+	  --min-heldout-mrr-lift-bps "$(LEARNED_RANKING_MIN_HELDOUT_MRR_LIFT_BPS)" \
+	  --min-heldout-win-rate-pct "$(LEARNED_RANKING_MIN_HELDOUT_WIN_RATE_PCT)"
+
 provenance-model-inventory: ; python3 scripts/provenance_model_inventory.py
 erb-oracle-audit:
 	python3 scripts/enterprise_rag_bench/oracle_inference_guard.py

@@ -279,3 +279,21 @@ fn database_hybrid_rerank_uses_adaptive_result_limit() {
     assert_eq!(lookup_results.len(), 5);
     assert_eq!(broad_results.len(), 10);
 }
+
+#[test]
+fn database_learned_ranking_is_disabled_by_default_and_opt_in() {
+    let default_dir = tempfile::tempdir().unwrap();
+    let default_db = Database::open(default_dir.path()).unwrap();
+    assert!(!default_db.learned_ranking_options().enabled);
+
+    let tuned_dir = tempfile::tempdir().unwrap();
+    let tuned_db = Database::open_with_options(
+        tuned_dir.path(),
+        DatabaseOptions {
+            learned_ranking: LearnedRankingOptions { enabled: true },
+            ..DatabaseOptions::default()
+        },
+    )
+    .unwrap();
+    assert!(tuned_db.learned_ranking_options().enabled);
+}

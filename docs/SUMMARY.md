@@ -39,6 +39,7 @@
 - [Explain Analyze](EXPLAIN_ANALYZE.md)
 - [Lexical Index](LEXICAL_INDEX.md)
 - [Embedding Integration](EMBEDDING_INTEGRATION.md)
+- [Learned Ranking Calibration](LEARNED_RANKING_CALIBRATION.md)
 
 # Agent-Native Features
 

@@ -151,8 +151,8 @@ pub use operation::{
 };
 pub use options::{
     AgentTransactionOptions, CompactionPolicy, DatabaseOptions, EngineFeature, EngineFeatureFlags,
-    PayloadResidency, RecoveryMode, StaleLockPolicy, TieredStorageCompressionPolicy,
-    TieredStorageOptions,
+    LearnedRankingOptions, PayloadResidency, RecoveryMode, StaleLockPolicy,
+    TieredStorageCompressionPolicy, TieredStorageOptions,
 };
 pub use plan::{
     CostModelDecision, CostModelEstimate, CostModelOptions, ExecutionPath, LogicalPlan,
