@@ -1,0 +1,67 @@
+name: Docs Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "book.toml"
+      - "docs/**"
+      - "scripts/docs_site_check.py"
+      - ".github/workflows/docs-pages.yml"
+      - "mk/**"
+      - "Makefile"
+  pull_request:
+    paths:
+      - "book.toml"
+      - "docs/**"
+      - "scripts/docs_site_check.py"
+      - ".github/workflows/docs-pages.yml"
+      - "mk/**"
+      - "Makefile"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: docs-pages
+  cancel-in-progress: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  MDBOOK_VERSION: 0.4.48
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+      - name: Install mdBook
+        run: cargo install mdbook --locked --version "${MDBOOK_VERSION}"
+      - name: Check and build docs site
+        run: make docs-site-check
+      - name: Configure Pages
+        if: github.event_name != 'pull_request'
+        uses: actions/configure-pages@v5
+      - name: Upload Pages artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: target/mdbook
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

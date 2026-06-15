@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-D13` (`EPIC-E15` is now done along with the previously
+Current pointer: `EPIC-D14` (`EPIC-D13` is now done along with the previously
 closed epics listed in the Active Execution Queue). `EPIC-C01` is closed with
 the `ACI4` compact term dictionary/postings format, `ACI0..ACI3` dual-read
 compatibility, and persisted/search compatibility gates. `EPIC-C03` is closed
@@ -44,7 +44,9 @@ closed audit log productization. `EPIC-E13` closed secrets hygiene with env/file
 secret inputs, CLI rejection tests, audit redaction coverage, and
 `make secrets-check`. `EPIC-E15` closed per-route read/write/admin timeout
 budgets, slow-loris body timeout protection, timeout metrics, docs, and
-`make route-timeout-check`. `EPIC-D13` is next.
+`make route-timeout-check`. `EPIC-D13` added mdBook configuration,
+`docs/SUMMARY.md` navigation, GitHub Pages deployment workflow, and
+`make docs-site-check`. `EPIC-D14` is next.
 `EPIC-D05` remains partial/local-ready and is externally blocked on public
 registry credentials/trusted publishing.
 
@@ -138,7 +140,8 @@ enough to unblock the next dependency step.
 53. `EPIC-E07` — Audit log productization: done.
 54. `EPIC-E13` — Secrets hygiene: done.
 55. `EPIC-E15` — Per-route timeouts and slow-client protection: done.
-56. `EPIC-D13` — mdBook docs site: next.
+56. `EPIC-D13` — mdBook docs site: done.
+57. `EPIC-D14` — Three live integration examples: next.
 
 ## Summary
 
@@ -1758,15 +1761,24 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-D13 — mdBook docs-сайт
 
-- status: `pending`
+- status: `done`
 - meta: Категория: docs · P2 · 90 days · productize
 - tasks:
-  - [ ] 1) mdBook поверх core-доков
-  - [ ] 2) GitHub Pages deploy
-  - [ ] 3) поиск.
+  - [x] 1) mdBook поверх core-доков — `book.toml` and `docs/SUMMARY.md`
+    build a navigable site from the root docs.
+  - [x] 2) GitHub Pages deploy — `.github/workflows/docs-pages.yml`
+    installs mdBook, runs `make docs-site-check`, uploads `target/mdbook`, and
+    deploys on pushes to `main`.
+  - [x] 3) поиск — mdBook HTML search is enabled through `search = true`.
 - acceptance:
-  - [ ] сайт с навигацией публикуется из CI.
+  - [x] сайт с навигацией публикуется из CI.
 - dependencies: D12.
+- evidence: Added mdBook site config, complete top-level docs navigation,
+  dependency-free structural site gate with optional local mdBook build,
+  GitHub Pages workflow, and docs-site build/serve notes in
+  `docs/DOCUMENTATION_INDEX.md`. Checks passed: `python3 -m py_compile
+  scripts/docs_site_check.py` and `make docs-site-check`, which ran
+  `docs-link-check` and wrote `target/docs-site/report.json`.
 
 ### EPIC-D14 — Examples: 3 живых интеграции
 

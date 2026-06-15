@@ -644,7 +644,7 @@ Exit steps:
 1. Create mdBook structure from core docs.
 2. Add build/check command.
 3. Fix broken links.
-4. Mark done when docs site builds reproducibly; then move to D15.
+4. Mark done when docs site builds reproducibly; then move to D14.
 
 ### EPIC-D14 — Examples
 

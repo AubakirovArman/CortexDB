@@ -1,0 +1,19 @@
+[book]
+title = "CortexDB"
+description = "Single-node durable context database for agentic systems"
+authors = ["CortexDB contributors"]
+language = "en"
+multilingual = false
+src = "docs"
+
+[build]
+build-dir = "target/mdbook"
+create-missing = false
+
+[output.html]
+default-theme = "light"
+preferred-dark-theme = "navy"
+git-repository-url = "https://github.com/AubakirovArman/CortexDB"
+edit-url-template = "https://github.com/AubakirovArman/CortexDB/edit/main/{path}"
+site-url = "/CortexDB/"
+search = true

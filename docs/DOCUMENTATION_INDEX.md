@@ -15,6 +15,15 @@ evidence snapshots, benchmark experiments, and release working notes live in
 - [`INSTALL.md`](INSTALL.md) - local install and first checks.
 - [`CONTRIBUTOR_ONBOARDING.md`](CONTRIBUTOR_ONBOARDING.md) - contributor path.
 
+## Docs Site
+
+- [`SUMMARY.md`](SUMMARY.md) - mdBook navigation over the current core docs.
+- [`book.toml`](../book.toml) - mdBook configuration; output goes to
+  `target/mdbook`.
+- Local gate: `make docs-site-check`.
+- Local preview when mdBook is installed: `mdbook serve --open`.
+- GitHub Pages deploy: [`.github/workflows/docs-pages.yml`](../.github/workflows/docs-pages.yml).
+
 ## Core Database
 
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) - workspace and subsystem map.

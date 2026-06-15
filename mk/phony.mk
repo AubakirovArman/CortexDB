@@ -34,7 +34,7 @@
 .PHONY: use-case-pack-check
 .PHONY: contributor-onboarding-check community-roadmap-check
 .PHONY: public-benchmarks-check public-retrieval-benchmark-page-check
-.PHONY: comparison-docs-check docs-link-check getting-started-check
+.PHONY: comparison-docs-check docs-link-check docs-site-check getting-started-check
 .PHONY: openapi-sdk-codegen-control-check openapi-sdk-generated-types-check
 .PHONY: agent-memory-demo-check memory-quality-benchmark-check
 .PHONY: tool-registry-check context-pack-tool-recommendation-check

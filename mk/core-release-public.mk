@@ -75,6 +75,9 @@ comparison-docs-check:
 docs-link-check:
 	python3 scripts/docs_link_check.py
 
+docs-site-check: docs-link-check
+	python3 scripts/docs_site_check.py --report "$(DOCS_SITE_REPORT)"
+
 getting-started-check:
 	python3 scripts/getting_started_check.py
 

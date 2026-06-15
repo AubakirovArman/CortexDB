@@ -20,17 +20,20 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-D13` — mdBook docs site.
+`EPIC-D14` — Three live integration examples.
 
-D13 exit steps:
+D14 exit steps:
 
-1. Build a navigable docs site from the current docs.
-2. Keep generated/site artifacts controlled.
-3. Add a local docs-site gate.
+1. Pick three real integration examples.
+2. Keep examples small, runnable, and documented.
+3. Add smoke tests or scripts.
 
-D13 current state:
+D14 current state:
 
 - next.
+- D13 is closed with `book.toml`, `docs/SUMMARY.md`, GitHub Pages deploy,
+  mdBook search enabled, docs-site build/serve notes, and
+  `make docs-site-check`.
 - E15 is closed with configured read/write/admin timeout budgets,
   slow-loris body timeout coverage, typed `503 service_unavailable` timeout
   responses, `cortexdb_request_timeout_total`, docs, and
@@ -1090,6 +1093,7 @@ High-signal done epics:
 - D09 Docker quickstart;
 - D10 OpenAPI/codegen control;
 - D11 MCP adapter;
+- D13 mdBook docs site;
 - D15 beta.2 release/tag;
 - E01 WAL writer error surfacing;
 - E10 decode fuzzing gate;
@@ -1116,9 +1120,9 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 ## Next Exit Step
 
-Work on D13 only:
+Work on D14 only:
 
-1. inspect current docs layout and build tooling;
-2. add mdBook site config or equivalent local static docs gate;
-3. document how to build/serve the docs site;
-4. move to the next ordered epic after D13 acceptance is closed.
+1. inspect existing examples and smoke-test tooling;
+2. add three live integration examples with small READMEs;
+3. add mock/smoke validation for each example;
+4. move to the next ordered epic after D14 acceptance is closed.
