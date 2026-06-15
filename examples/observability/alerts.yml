@@ -37,6 +37,15 @@ groups:
           summary: CortexDB actor queue is near capacity
           description: Actor queue saturation is above 80%; callers may soon receive database_busy responses.
 
+      - alert: CortexDbActorQueueWaitP95High
+        expr: cortexdb_actor_queue_wait_p95_ms > 100
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: CortexDB actor queue wait p95 is high
+          description: Requests are waiting before engine execution; reduce caller concurrency or inspect queue saturation.
+
       - alert: CortexDbDatabaseBusy
         expr: increase(cortexdb_request_rejected[5m]) > 0
         for: 1m

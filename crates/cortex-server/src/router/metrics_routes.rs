@@ -227,6 +227,8 @@ pub(super) fn try_route<A: DatabaseAccess>(
                         ann_search_latency_ms: LatencyHistogramResponse::default(),
                         actor_queue_depth: 0,
                         actor_queue_capacity: 0,
+                        actor_queue_wait_latency_ms: LatencyHistogramResponse::default(),
+                        actor_queue_wait_p95_ms: 0,
                         active_readers: 0,
                         waiting_writers: 0,
                         request_count: 0,

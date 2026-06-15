@@ -57,7 +57,12 @@
       "type": "timeseries",
       "targets": [
         { "expr": "cortexdb_actor_queue_depth", "legendFormat": "queue_depth" },
-        { "expr": "cortexdb_actor_queue_capacity", "legendFormat": "queue_capacity" }
+        { "expr": "cortexdb_actor_queue_capacity", "legendFormat": "queue_capacity" },
+        { "expr": "cortexdb_actor_queue_wait_p95_ms", "legendFormat": "queue_wait_p95_ms" },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(cortexdb_actor_queue_wait_ms_bucket[5m])) by (le))",
+          "legendFormat": "queue_wait_histogram_p95_ms"
+        }
       ]
     },
     {

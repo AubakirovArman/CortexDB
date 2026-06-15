@@ -41,6 +41,7 @@ pub struct AppState {
     pub(crate) ann_no_fallback_allowed: Arc<AtomicU64>,
     pub(crate) ann_no_fallback_blocked: Arc<AtomicU64>,
     pub(crate) ann_search_latency_ms: metrics::LatencyHistogram,
+    pub(crate) actor_queue_wait_latency_ms: metrics::LatencyHistogram,
     pub(crate) validation_failures: Arc<AtomicU64>,
     pub(crate) principal_quota_requests_allowed: Arc<AtomicU64>,
     pub(crate) principal_quota_requests_rejected: Arc<AtomicU64>,

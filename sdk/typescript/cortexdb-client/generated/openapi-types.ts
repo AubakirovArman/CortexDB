@@ -801,6 +801,8 @@ export interface OpenApiErrorResponse {
 export interface OpenApiMetricsResponse {
   actor_queue_capacity: number;
   actor_queue_depth: number;
+  actor_queue_wait_latency_ms: OpenApiLatencyHistogramResponse;
+  actor_queue_wait_p95_ms: number;
   ann_fallbacks: number;
   ann_graph_nodes: number;
   ann_has_checkpoint: boolean;

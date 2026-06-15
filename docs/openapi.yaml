@@ -4038,6 +4038,8 @@ components:
       - ann_search_latency_ms
       - actor_queue_depth
       - actor_queue_capacity
+      - actor_queue_wait_latency_ms
+      - actor_queue_wait_p95_ms
       - request_count
       - request_rejected
       - request_duration_ms_total
@@ -4158,6 +4160,11 @@ components:
           type: integer
         actor_queue_capacity:
           type: integer
+        actor_queue_wait_latency_ms:
+          $ref: '#/components/schemas/LatencyHistogramResponse'
+        actor_queue_wait_p95_ms:
+          type: integer
+          format: uint64
         request_count:
           type: integer
           format: uint64

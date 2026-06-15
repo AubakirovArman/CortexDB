@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-E05` (`EPIC-E03` is now done along with the previously
+Current pointer: `EPIC-E06` (`EPIC-E05` is now done along with the previously
 closed epics listed in the Active Execution Queue). `EPIC-C01` is closed with
 the `ACI4` compact term dictionary/postings format, `ACI0..ACI3` dual-read
 compatibility, and persisted/search compatibility gates. `EPIC-C03` is closed
@@ -35,7 +35,9 @@ the concurrent read throughput curve and wired it into the C17 trend check.
 throughput reporting, C17 trend integration, and an explicit 100K gate target.
 `EPIC-C20` added the reproducible baseline comparison gate and published the
 four-domain quality/latency/feature matrix. `EPIC-E03` added retained closed
-WAL archives, restore-to-seq, and PITR operations docs. `EPIC-E05` is next.
+WAL archives, restore-to-seq, and PITR operations docs. `EPIC-E05` added
+HTTP/queue/engine tracing spans, actor queue-wait latency metrics with p95,
+Prometheus scrape coverage, and Grafana/alert docs. `EPIC-E06` is next.
 `EPIC-D05` remains partial/local-ready and is externally blocked on public
 registry credentials/trusted publishing.
 
@@ -124,7 +126,8 @@ enough to unblock the next dependency step.
 48. `EPIC-C19` — Ingestion throughput + batch embedding pipeline: done.
 49. `EPIC-C20` — Baseline comparison with naive stack: done.
 50. `EPIC-E03` — WAL archive to point-in-time recovery: done.
-51. `EPIC-E05` — Observability tracing + Prometheus metrics: next.
+51. `EPIC-E05` — Observability tracing + Prometheus metrics: done.
+52. `EPIC-E06` — Backpressure tuning and per-tenant limits: next.
 
 ## Summary
 
@@ -1852,7 +1855,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
   and `restore_to_seq_command_replays_archived_wal_until_target`. Docs updated:
   `docs/OPERATIONS.md`, `docs/BACKUP_RESTORE.md`, `docs/CLI.md`, and
   `docs/ENGINE_CONFIG.md`.
-- next exit step: move to `EPIC-E05` — Observability tracing + Prometheus metrics.
+- next exit step: completed by `EPIC-E05`; move to `EPIC-E06` — Backpressure tuning and per-tenant limits.
 
 ### EPIC-E04 — Corruption handling: карантин и repair UX
 
@@ -1873,17 +1876,29 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-E05 — Observability: tracing + Prometheus /metrics
 
-- status: `pending`
+- status: `done`
 - meta: Категория: observability · P1 · 60 days · build
 - tasks:
-  - [ ] 1) tracing-спаны: HTTP → queue-wait → engine op (queue-wait — ключевая backpressure-метрика)
-  - [ ] 2) /metrics в Prometheus-формате (маппинг существующего /v1/stats)
-  - [ ] 3) пример Grafana-дашборда.
+  - [x] 1) tracing-спаны: HTTP → queue-wait → engine op (queue-wait — ключевая backpressure-метрика)
+  - [x] 2) /metrics в Prometheus-формате (маппинг существующего /v1/stats)
+  - [x] 3) пример Grafana-дашборда.
 - acceptance:
-  - [ ] 1) queue-wait p95 в метриках
-  - [ ] 2) scrape-smoke в CI
-  - [ ] 3) дашборд в docs.
+  - [x] 1) queue-wait p95 в метриках
+  - [x] 2) scrape-smoke в CI
+  - [x] 3) дашборд в docs.
 - files: cortex-server (metrics.rs, middleware).
+- evidence: Added `actor_queue_wait` and `engine_op` tracing spans around the
+  server actor route, while the existing HTTP request span remains the outer
+  boundary. Added actor queue-wait latency histogram and p95 to JSON metrics,
+  Prometheus series (`cortexdb_actor_queue_wait_ms_*` and
+  `cortexdb_actor_queue_wait_p95_ms`), OpenAPI/SDK generated models, snapshots,
+  docs, contract checks, alert examples, Grafana dashboard, and metrics smoke.
+  Verification passed: `cargo fmt --check`, `cargo test -p cortex-server metrics
+  --all-features`, `make observability-check`, `cargo test --workspace
+  --all-features`, `cargo clippy --workspace --all-targets -- -D warnings`, and
+  `make openapi-contract-check`.
+- remaining: none for E05 acceptance.
+- next exit step: move to `EPIC-E06` — Backpressure tuning and per-tenant limits.
 
 ### EPIC-E06 — Backpressure-тюнинг и лимиты per tenant
 

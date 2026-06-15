@@ -60,6 +60,17 @@ expression: resp
   },
   "actor_queue_depth": 2,
   "actor_queue_capacity": 16,
+  "actor_queue_wait_latency_ms": {
+    "count": 10,
+    "sum_ms": 128,
+    "le_10_ms": 6,
+    "le_50_ms": 9,
+    "le_100_ms": 10,
+    "le_500_ms": 10,
+    "le_1000_ms": 10,
+    "gt_1000_ms": 0
+  },
+  "actor_queue_wait_p95_ms": 100,
   "active_readers": 0,
   "waiting_writers": 0,
   "request_count": 1000,

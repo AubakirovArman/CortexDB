@@ -16,6 +16,7 @@ They cover:
 - checkpoint lag: `cortexdb_current_seq - cortexdb_checkpoint_seq`;
 - large WAL size: `cortexdb_wal_size_bytes`;
 - actor queue pressure: `cortexdb_actor_queue_depth / cortexdb_actor_queue_capacity`;
+- actor queue wait p95: `cortexdb_actor_queue_wait_p95_ms`;
 - database busy/rejected requests: `cortexdb_request_rejected`;
 - operational error rate:
   `(increase(cortexdb_request_rejected[5m]) + increase(cortexdb_validation_failures[5m])) / increase(cortexdb_request_count[5m])`;
@@ -40,6 +41,7 @@ They cover:
 | `CortexDbWalCheckpointLag` | Run `cortexdb validate`, inspect server logs, then checkpoint/compact during a maintenance window. |
 | `CortexDbWalGrowth` | Check whether checkpoint is stuck and confirm free disk before restart. |
 | `CortexDbActorQueuePressure` | Reduce client concurrency or raise `--actor-queue-capacity` only after checking disk/WAL latency. |
+| `CortexDbActorQueueWaitP95High` | Reduce client concurrency, inspect actor queue pressure, then check disk/WAL latency before raising queue capacity. |
 | `CortexDbDatabaseBusy` | Inspect rate limits and actor saturation; retry with backoff rather than tight loops. |
 | `CortexDbOperationalErrorRateHigh` | Compare rejected requests with validation failures; reduce client load first, then inspect storage validation output. |
 | `CortexDbRateLimitSpike` | Identify the principal that exceeded request/body/queue quota and adjust caller backoff before raising limits. |
@@ -63,7 +65,8 @@ They cover:
 
 ### Actor Queue Pressure
 
-1. Compare `actor_queue_depth` with `actor_queue_capacity`.
+1. Compare `actor_queue_depth` with `actor_queue_capacity` and
+   `actor_queue_wait_p95_ms`.
 2. Check `request_rejected` and application retry behavior.
 3. Reduce client concurrency or add backoff.
 4. Increase queue capacity only when disk/WAL latency is healthy.
@@ -124,6 +127,7 @@ They cover:
 
 ## Boundary
 
-Core Alpha now exposes ANN latency buckets and alert-rule examples, but it does
-not provide managed alert routing, paging, tracing spans, or long-term metric
-retention. Use Prometheus/Grafana externally for those concerns.
+Core Alpha now exposes HTTP/queue/engine tracing spans, queue-wait and ANN
+latency buckets, and alert-rule examples, but it does not provide managed
+alert routing, paging, or long-term metric retention. Use Prometheus/Grafana
+externally for those concerns.

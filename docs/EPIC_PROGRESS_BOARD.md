@@ -20,17 +20,20 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-E05` — Observability tracing + Prometheus metrics.
+`EPIC-E06` — Backpressure tuning and per-tenant limits.
 
-E05 exit steps:
+E06 exit steps:
 
-1. Add tracing spans for HTTP, queue wait, and engine operations.
-2. Expose Prometheus-format `/metrics` from existing stats.
-3. Add a Grafana dashboard example and CI scrape smoke.
+1. Enforce per-tenant quota limits for cells/RAM-estimate/queue.
+2. Document `CORTEXDB_ACTOR_QUEUE_CAPACITY` tuning against latency.
+3. Add a 50-tenant load test.
 
-E05 current state:
+E06 current state:
 
 - next.
+- E05 is closed with HTTP/queue/engine tracing spans, queue-wait histogram and
+  p95 metrics, Prometheus scrape coverage, Grafana/alert examples, and
+  OpenAPI/SDK contract alignment.
 - E03 is closed with WAL archive retention, `restore --to-seq`, exact seq
   validation, engine/CLI PITR regressions, and operations docs.
 - C20 is closed with a reproducible SQLite FTS5 + exact hashed-vector + hybrid
@@ -77,6 +80,23 @@ D05 split state:
 - do not block kernel/database epics on D05.
 
 ## Recently Closed
+
+### EPIC-E05 — Observability tracing + Prometheus metrics
+
+Status: `done`
+
+What closed it:
+
+- Added actor queue-wait and engine-operation tracing spans under the existing
+  HTTP request span.
+- Added actor queue-wait histogram and p95 to JSON metrics, Prometheus output,
+  OpenAPI, SDK generated models, snapshots, and contract docs.
+- Extended metrics smoke, observability contract checks, alert examples, and
+  Grafana dashboard panels for queue-wait p95.
+- Verified with `cargo fmt --check`, `cargo test -p cortex-server metrics
+  --all-features`, `make observability-check`, `cargo test --workspace
+  --all-features`, `cargo clippy --workspace --all-targets -- -D warnings`,
+  and `make openapi-contract-check`.
 
 ### EPIC-E03 — WAL archive to point-in-time recovery
 

@@ -20,6 +20,7 @@ pub(crate) fn metrics_response(
 ) -> Option<Response> {
     if query.contains("format=prometheus") {
         let ann_latency = state.ann_search_latency_ms.snapshot();
+        let actor_queue_wait_latency = state.actor_queue_wait_latency_ms.snapshot();
         let ann_search_requests = state.ann_search_requests.load(Ordering::Relaxed);
         let request_id_client_provided = state.request_id_client_provided.load(Ordering::Relaxed);
         let request_id_generated = state.request_id_generated.load(Ordering::Relaxed);
@@ -30,6 +31,19 @@ pub(crate) fn metrics_response(
                          # HELP cortexdb_actor_queue_capacity Actor command queue capacity.\n\
                          # TYPE cortexdb_actor_queue_capacity gauge\n\
                          cortexdb_actor_queue_capacity {}\n\
+                         # HELP cortexdb_actor_queue_wait_ms Actor queue wait latency in milliseconds.\n\
+                         # TYPE cortexdb_actor_queue_wait_ms histogram\n\
+                         cortexdb_actor_queue_wait_ms_bucket{{le=\"10\"}} {}\n\
+                         cortexdb_actor_queue_wait_ms_bucket{{le=\"50\"}} {}\n\
+                         cortexdb_actor_queue_wait_ms_bucket{{le=\"100\"}} {}\n\
+                         cortexdb_actor_queue_wait_ms_bucket{{le=\"500\"}} {}\n\
+                         cortexdb_actor_queue_wait_ms_bucket{{le=\"1000\"}} {}\n\
+                         cortexdb_actor_queue_wait_ms_bucket{{le=\"+Inf\"}} {}\n\
+                         cortexdb_actor_queue_wait_ms_count {}\n\
+                         cortexdb_actor_queue_wait_ms_sum {}\n\
+                         # HELP cortexdb_actor_queue_wait_p95_ms Approximate actor queue wait p95 in milliseconds from fixed buckets.\n\
+                         # TYPE cortexdb_actor_queue_wait_p95_ms gauge\n\
+                         cortexdb_actor_queue_wait_p95_ms {}\n\
                          # HELP cortexdb_active_readers Number of threads currently holding a database read lock.\n\
                          # TYPE cortexdb_active_readers gauge\n\
                          cortexdb_active_readers {}\n\
@@ -121,6 +135,15 @@ cortexdb_compaction_input_bytes_total {}\n\
                          cortexdb_backup_latest_age_seconds {}\n",
                         db.queue_depth(),
                         db.queue_capacity(),
+                        actor_queue_wait_latency.le_10_ms,
+                        actor_queue_wait_latency.le_50_ms,
+                        actor_queue_wait_latency.le_100_ms,
+                        actor_queue_wait_latency.le_500_ms,
+                        actor_queue_wait_latency.le_1000_ms,
+                        actor_queue_wait_latency.count,
+                        actor_queue_wait_latency.count,
+                        actor_queue_wait_latency.sum_ms,
+                        state.actor_queue_wait_latency_ms.p95_ms(),
                         db.active_readers(),
                         db.waiting_writers(),
                         state.request_count.load(Ordering::Relaxed),
@@ -177,6 +200,8 @@ cortexdb_compaction_input_bytes_total {}\n\
     if let Ok(mut metrics) = serde_json::from_str::<MetricsResponse>(body_str) {
         metrics.actor_queue_depth = db.queue_depth();
         metrics.actor_queue_capacity = db.queue_capacity();
+        metrics.actor_queue_wait_latency_ms = state.actor_queue_wait_latency_ms.snapshot();
+        metrics.actor_queue_wait_p95_ms = state.actor_queue_wait_latency_ms.p95_ms();
         metrics.active_readers = db.active_readers();
         metrics.waiting_writers = db.waiting_writers();
         metrics.request_count = state.request_count.load(Ordering::Relaxed);

@@ -41,6 +41,8 @@ METRICS_FIELDS = [
     "ann_search_latency_ms",
     "actor_queue_depth",
     "actor_queue_capacity",
+    "actor_queue_wait_latency_ms",
+    "actor_queue_wait_p95_ms",
     "request_count",
     "request_rejected",
     "request_duration_ms_total",
@@ -89,6 +91,10 @@ PROMETHEUS_SERIES = [
     "cortexdb_ann_persisted_segments",
     "cortexdb_actor_queue_depth",
     "cortexdb_actor_queue_capacity",
+    "cortexdb_actor_queue_wait_ms_bucket",
+    "cortexdb_actor_queue_wait_ms_count",
+    "cortexdb_actor_queue_wait_ms_sum",
+    "cortexdb_actor_queue_wait_p95_ms",
     "cortexdb_request_count",
     "cortexdb_request_rejected",
     "cortexdb_request_duration_ms_total",
@@ -162,15 +168,22 @@ def missing(expected: list[str], actual: list[str] | str, label: str) -> list[st
 
 def validate() -> dict[str, object]:
     failures: list[str] = []
-    responses = read("crates/cortex-server/src/responses.rs")
+    responses = read("crates/cortex-server/src/responses.rs") + read(
+        "crates/cortex-server/src/responses/errors.rs"
+    )
     openapi = read("docs/openapi.yaml")
     metrics_doc = read("docs/METRICS.md")
-    contract_doc = read("docs/METRICS_CONTRACT_V2.md")
+    contract_doc = read("docs/archive/METRICS_CONTRACT_V2.md")
     snapshot = read(
         "crates/cortex-server/src/tests/snapshots/"
         "cortex_server__tests__response_snapshot_tests__snapshot_metrics_response.snap"
     )
-    server_source = read("crates/cortex-server/src/router.rs") + read("crates/cortex-server/src/lib.rs")
+    server_source = (
+        read("crates/cortex-server/src/router/metrics_routes.rs")
+        + read("crates/cortex-server/src/http_metrics/response.rs")
+        + read("crates/cortex-server/src/tests/snapshot_tests.rs")
+        + read("crates/cortex-server/src/lib.rs")
+    )
 
     failures.extend(missing(METRICS_FIELDS, rust_fields(responses, "MetricsResponse"), "MetricsResponse"))
     failures.extend(

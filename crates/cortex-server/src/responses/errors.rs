@@ -106,6 +106,8 @@ pub struct MetricsResponse {
     pub ann_search_latency_ms: LatencyHistogramResponse,
     pub actor_queue_depth: usize,
     pub actor_queue_capacity: usize,
+    pub actor_queue_wait_latency_ms: LatencyHistogramResponse,
+    pub actor_queue_wait_p95_ms: u64,
     pub active_readers: usize,
     pub waiting_writers: usize,
     pub request_count: u64,

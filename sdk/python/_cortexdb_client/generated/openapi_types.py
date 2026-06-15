@@ -1157,6 +1157,8 @@ OpenApiMetricsResponse = TypedDict(
     {
         'actor_queue_capacity': 'int',
         'actor_queue_depth': 'int',
+        'actor_queue_wait_latency_ms': 'OpenApiLatencyHistogramResponse',
+        'actor_queue_wait_p95_ms': 'int',
         'ann_fallbacks': 'int',
         'ann_graph_nodes': 'int',
         'ann_has_checkpoint': 'bool',

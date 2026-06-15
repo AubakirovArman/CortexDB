@@ -63,10 +63,50 @@ impl LatencyHistogram {
             gt_1000_ms: self.gt_1000_ms.load(Ordering::Relaxed),
         }
     }
+
+    pub(crate) fn p95_ms(&self) -> u64 {
+        approximate_p95_ms(&self.snapshot())
+    }
 }
 
 impl Default for LatencyHistogram {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+pub(crate) fn approximate_p95_ms(histogram: &LatencyHistogramResponse) -> u64 {
+    if histogram.count == 0 {
+        return 0;
+    }
+    let rank = histogram.count.saturating_mul(95).div_ceil(100);
+    if rank <= histogram.le_10_ms {
+        10
+    } else if rank <= histogram.le_50_ms {
+        50
+    } else if rank <= histogram.le_100_ms {
+        100
+    } else if rank <= histogram.le_500_ms {
+        500
+    } else if rank <= histogram.le_1000_ms {
+        1000
+    } else {
+        1001
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{approximate_p95_ms, LatencyHistogram};
+
+    #[test]
+    fn latency_histogram_reports_approximate_p95() {
+        let histogram = LatencyHistogram::new();
+        for latency in [4, 8, 12, 42, 87, 320, 999, 1500, 1600, 1700] {
+            histogram.observe_ms(latency);
+        }
+
+        assert_eq!(approximate_p95_ms(&histogram.snapshot()), 1001);
+        assert_eq!(histogram.p95_ms(), 1001);
     }
 }

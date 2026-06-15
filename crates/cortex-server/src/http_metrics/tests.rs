@@ -27,6 +27,7 @@ fn app_state_for_metrics() -> AppState {
         ann_no_fallback_allowed: Arc::new(AtomicU64::new(0)),
         ann_no_fallback_blocked: Arc::new(AtomicU64::new(0)),
         ann_search_latency_ms: metrics::LatencyHistogram::new(),
+        actor_queue_wait_latency_ms: metrics::LatencyHistogram::new(),
         validation_failures: Arc::new(AtomicU64::new(0)),
         principal_quota_requests_allowed: Arc::new(AtomicU64::new(0)),
         principal_quota_requests_rejected: Arc::new(AtomicU64::new(0)),

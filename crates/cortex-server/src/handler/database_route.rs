@@ -108,17 +108,42 @@ pub(super) async fn handle_database_route(
         }
     };
     let start = std::time::Instant::now();
+    let queue_wait_started = std::time::Instant::now();
     let actor = db.clone();
     let method_clone = method.to_owned();
     let target_clone = target.clone();
     let body_clone = body_bytes.to_vec();
+    let parent_span = tracing::Span::current();
 
     let res = match tokio::task::spawn_blocking(move || {
-        actor.route_with_auth(&method_clone, &target_clone, &body_clone, auth_context)
+        let _parent = parent_span.enter();
+        let queue_wait_ms = queue_wait_started.elapsed().as_millis() as u64;
+        {
+            let queue_span = tracing::info_span!(
+                "actor_queue_wait",
+                %method_clone,
+                target = %target_clone,
+                queue_wait_ms
+            );
+            let _enter = queue_span.enter();
+        }
+        let engine_span = tracing::info_span!(
+            "engine_op",
+            %method_clone,
+            target = %target_clone
+        );
+        let _engine_enter = engine_span.enter();
+        (
+            actor.route_with_auth(&method_clone, &target_clone, &body_clone, auth_context),
+            queue_wait_ms,
+        )
     })
     .await
     {
-        Ok(r) => r,
+        Ok((result, queue_wait_ms)) => {
+            state.actor_queue_wait_latency_ms.observe_ms(queue_wait_ms);
+            result
+        }
         Err(_) => Err(RouterError::Internal("internal server error".to_owned())),
     };
     if matches!(

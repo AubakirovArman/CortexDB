@@ -1,6 +1,6 @@
 # Observability Evidence
 
-Last local observability run: 2026-06-01, passed.
+Last local observability run: 2026-06-15, passed.
 
 Run:
 
@@ -23,21 +23,20 @@ This gate covers:
 - Prometheus alert examples in `examples/observability/alerts.yml`;
 - Grafana dashboard JSON in
   `examples/observability/grafana-cortexdb-core-alpha.json`;
-- operator action guidance in `docs/OBSERVABILITY_ALERTS.md`;
+- operator action guidance in `docs/archive/OBSERVABILITY_ALERTS.md`;
 - alert thresholds for WAL growth, checkpoint lag, stale backup evidence,
-  actor queue pressure, operational error rate, rate-limit spikes, ANN fallback
-  rate, and validation failures.
+  actor queue pressure, actor queue wait p95, operational error rate,
+  rate-limit spikes, ANN fallback rate, and validation failures.
 
 ## Boundary
 
 This is operational visibility for a single-node Core Alpha process. It does
-not claim production tracing, histogram-based latency SLOs, or managed alert
-routing.
+not claim managed alert routing or long-term metrics retention.
 
 ## Latest Local Checks
 
 ```text
-metrics_fields_checked: 43
+metrics_fields_checked: 45
 ann_fields_checked: 7
 prometheus_scrape: true
 alerts: true

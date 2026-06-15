@@ -370,6 +370,17 @@ Response:
   },
   "actor_queue_depth": 0,
   "actor_queue_capacity": 1024,
+  "actor_queue_wait_latency_ms": {
+    "count": 1,
+    "sum_ms": 0,
+    "le_10_ms": 1,
+    "le_50_ms": 1,
+    "le_100_ms": 1,
+    "le_500_ms": 1,
+    "le_1000_ms": 1,
+    "gt_1000_ms": 0
+  },
+  "actor_queue_wait_p95_ms": 10,
   "request_count": 10,
   "request_rejected": 0,
   "request_duration_ms_total": 42,

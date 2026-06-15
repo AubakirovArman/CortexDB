@@ -52,6 +52,8 @@ make metrics-contract-v2-check
 | `ann_search_latency_ms` | ANN search latency histogram object. |
 | `actor_queue_depth` | Current database actor queue depth. |
 | `actor_queue_capacity` | Configured database actor queue capacity. |
+| `actor_queue_wait_latency_ms` | Actor queue wait latency histogram object. |
+| `actor_queue_wait_p95_ms` | Approximate actor queue wait p95 in milliseconds. |
 | `request_count` | Total HTTP requests observed by the server. |
 | `request_rejected` | HTTP requests rejected by pressure or quotas. |
 | `request_duration_ms_total` | Total HTTP request duration in milliseconds. |
@@ -105,6 +107,10 @@ cortexdb_ann_total_edges
 cortexdb_ann_persisted_segments
 cortexdb_actor_queue_depth
 cortexdb_actor_queue_capacity
+cortexdb_actor_queue_wait_ms_bucket
+cortexdb_actor_queue_wait_ms_count
+cortexdb_actor_queue_wait_ms_sum
+cortexdb_actor_queue_wait_p95_ms
 cortexdb_request_count
 cortexdb_request_rejected
 cortexdb_request_duration_ms_total

@@ -87,6 +87,8 @@ fn snapshot_metrics_includes_actor_and_request_fields() {
     let response = handle_http(dir.path(), "GET /v1/metrics HTTP/1.1\r\n\r\n");
     assert!(response.contains(r#""actor_queue_depth":"#));
     assert!(response.contains(r#""actor_queue_capacity":"#));
+    assert!(response.contains(r#""actor_queue_wait_latency_ms":"#));
+    assert!(response.contains(r#""actor_queue_wait_p95_ms":"#));
     assert!(response.contains(r#""request_count":"#));
     assert!(response.contains(r#""request_duration_ms_total":"#));
     assert!(response.contains(r#""request_id_client_provided":"#));
@@ -120,6 +122,8 @@ fn metrics_prometheus_output_contains_contract_series() {
         "cortexdb_aql_query_cache_hits_total",
         "cortexdb_aql_query_cache_hit_rate_q16",
         "cortexdb_actor_queue_depth",
+        "cortexdb_actor_queue_wait_ms_bucket",
+        "cortexdb_actor_queue_wait_p95_ms",
         "cortexdb_request_count",
         "cortexdb_request_id_client_provided",
         "cortexdb_request_id_generated",

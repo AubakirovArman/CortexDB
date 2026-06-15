@@ -19,12 +19,12 @@ database process:
 - WAL writer activity;
 - MemTable size;
 - ANN/HNSW graph state;
-- actor queue backpressure;
+- actor queue backpressure and queue-wait latency;
 - request counters and duration totals.
 
 These metrics are suitable for smoke tests, dashboards, and release evidence.
-They are not yet a full production telemetry stack with tracing, histograms,
-alert routing, or long-term retention.
+They are not yet a managed telemetry stack with alert routing or long-term
+retention.
 
 ## HTTP Endpoints
 
@@ -74,6 +74,8 @@ Important fields:
 | `ann_search_latency_ms` | Runtime ANN search latency histogram with `count`, `sum_ms`, and cumulative buckets: `le_10_ms`, `le_50_ms`, `le_100_ms`, `le_500_ms`, `le_1000_ms`, `gt_1000_ms`. | Use with `ann_search_requests` to watch live tail latency during profile rollout. |
 | `actor_queue_depth` | Current per-tenant actor queue depth. | Sustained high values show backpressure. |
 | `actor_queue_capacity` | Configured actor queue capacity. | Used with depth to compute saturation. |
+| `actor_queue_wait_latency_ms` | Actor route admission/scheduler wait histogram with `count`, `sum_ms`, and cumulative buckets: `le_10_ms`, `le_50_ms`, `le_100_ms`, `le_500_ms`, `le_1000_ms`, `gt_1000_ms`. | Watch alongside queue depth to see whether requests are waiting before engine execution. |
+| `actor_queue_wait_p95_ms` | Approximate p95 actor queue wait from fixed buckets. | Sustained high values show backpressure before database_busy appears. |
 | `request_count` | Requests handled by the process. | Traffic counter. |
 | `request_rejected` | Requests rejected by limits/backpressure. | Alert if nonzero under normal traffic. |
 | `request_duration_ms_total` | Sum of request durations in ms. | Use with request count for rough mean latency. |
@@ -90,14 +92,19 @@ Important fields:
 ### `GET /v1/metrics?format=prometheus`
 
 Returns a minimal Prometheus text exposition for the main storage, WAL,
-MemTable, ANN/HNSW, actor pressure, request rejection, ANN fallback, ANN
-latency buckets, and validation-failure counters. JSON remains the richer
+MemTable, ANN/HNSW, actor pressure, actor queue-wait latency, request
+rejection, ANN fallback, ANN latency buckets, and validation-failure counters.
+JSON remains the richer
 source for full typed metrics.
 
 ANN latency is emitted as a Prometheus histogram named
 `cortexdb_ann_search_latency_ms` with `_bucket`, `_count`, and `_sum` samples.
 Use the `+Inf` bucket as the runtime ANN search count and the bounded buckets
 for rollout latency SLO alerts.
+
+Actor queue wait is emitted as `cortexdb_actor_queue_wait_ms` with `_bucket`,
+`_count`, and `_sum` samples, plus the convenience gauge
+`cortexdb_actor_queue_wait_p95_ms`.
 
 Example:
 
@@ -190,6 +197,8 @@ Treat these as Core Alpha operator heuristics, not production SLA guarantees:
   than 24 hours; refresh and validate backup evidence.
 - `backup_latest_age_seconds < 0`: backup age is unknown because no local
   evidence path was found.
+- `actor_queue_wait_p95_ms > 100`: requests are spending visible time waiting
+  before engine execution; inspect caller concurrency and queue saturation.
 - `actor_queue_depth == actor_queue_capacity`: callers are overdriving the
   local database actor; expect `503 database_busy`.
 - `wal_size_bytes` grows while `checkpoint_seq` does not advance: checkpoint is
@@ -223,7 +232,6 @@ Current documented release evidence is summarized in
 
 Post-Core Alpha observability should add:
 
-- structured tracing spans for request, WAL, checkpoint, compact, and search;
 - broader route-specific latency histograms beyond ANN search;
 - broader Prometheus coverage for maintenance counters;
 - configurable alert profiles;
