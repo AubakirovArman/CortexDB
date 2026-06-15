@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-D14` (`EPIC-D13` is now done along with the previously
+Current pointer: `EPIC-F01` (`EPIC-D14` is now done along with the previously
 closed epics listed in the Active Execution Queue). `EPIC-C01` is closed with
 the `ACI4` compact term dictionary/postings format, `ACI0..ACI3` dual-read
 compatibility, and persisted/search compatibility gates. `EPIC-C03` is closed
@@ -46,7 +46,8 @@ secret inputs, CLI rejection tests, audit redaction coverage, and
 budgets, slow-loris body timeout protection, timeout metrics, docs, and
 `make route-timeout-check`. `EPIC-D13` added mdBook configuration,
 `docs/SUMMARY.md` navigation, GitHub Pages deployment workflow, and
-`make docs-site-check`. `EPIC-D14` is next.
+`make docs-site-check`. `EPIC-D14` added three live integration examples with
+mock LLM smoke coverage. `EPIC-F01` is next.
 `EPIC-D05` remains partial/local-ready and is externally blocked on public
 registry credentials/trusted publishing.
 
@@ -141,7 +142,8 @@ enough to unblock the next dependency step.
 54. `EPIC-E13` — Secrets hygiene: done.
 55. `EPIC-E15` — Per-route timeouts and slow-client protection: done.
 56. `EPIC-D13` — mdBook docs site: done.
-57. `EPIC-D14` — Three live integration examples: next.
+57. `EPIC-D14` — Three live integration examples: done.
+58. `EPIC-F01` — Tiered storage v2: next.
 
 ## Summary
 
@@ -1782,15 +1784,28 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-D14 — Examples: 3 живых интеграции
 
-- status: `pending`
+- status: `done`
 - meta: Категория: adoption · P1 · 90 days · build
 - tasks:
-  - [ ] 1) OpenAI/Anthropic function-calling tool (context+verify как tools)
-  - [ ] 2) LangChain retriever
-  - [ ] 3) чат-агент с памятью (TTL/decay) — поднять examples/demo/agent_memory до first-class.
+  - [x] 1) OpenAI/Anthropic function-calling tool (context+verify как tools) —
+    `examples/integrations/llm_tool_calling`.
+  - [x] 2) LangChain retriever — `examples/integrations/langchain_retriever`
+    exposes a dependency-free LangChain-style `CortexRetriever`.
+  - [x] 3) чат-агент с памятью (TTL/decay) — поднять examples/demo/agent_memory до first-class —
+    `examples/integrations/memory_chat_agent` stores a TTL preference, retrieves
+    context, and verifies before answering.
 - acceptance:
-  - [ ] каждый пример: папка+README+CI-smoke (mock LLM).
+  - [x] каждый пример: папка+README+CI-smoke (mock LLM).
 - dependencies: D05, B01. Эффект: разработчики копируют примеры.
+- evidence: Added `examples/integrations/README.md` plus three runnable
+  integration folders: OpenAI/Anthropic-style tool calling, LangChain-style
+  retriever, and memory chat agent. Added shared CLI helpers and
+  `scripts/live_integration_examples_check.py`, wired as
+  `make live-integration-examples-check` and a stable CI step in
+  `.github/workflows/rust.yml`. The smoke builds the local `cortexdb` binary,
+  loads the investment fixture, runs all examples with mock LLMs against real
+  CortexDB `context`, `verify`, and `remember` calls, and writes
+  `target/live-integration-examples/report.json`.
 
 ### EPIC-D15 — v0.2.0-beta.2: версии, release notes, тег
 
@@ -1955,7 +1970,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
   quota-policy-check`, `make openapi-contract-check`, and `make
   load-suite-check`.
 - remaining: none for E06 acceptance.
-- next exit step: `EPIC-D13` is now done; move to `EPIC-D14` — Three live integration examples.
+- next exit step: `EPIC-D14` is now done; move to `EPIC-F01` — Tiered storage v2.
 
 ### EPIC-E07 — Audit log productization
 
@@ -1992,7 +2007,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
   --report target/security-hardening/e07-smoke.json`; `cargo clippy -p
   cortex-server --all-targets -- -D warnings`; `cargo clippy -p cortex-cli
   --all-targets -- -D warnings`.
-- next exit step: `EPIC-D13` is now done; move to `EPIC-D14` — Three live integration examples.
+- next exit step: `EPIC-D14` is now done; move to `EPIC-F01` — Tiered storage v2.
 
 ### EPIC-E08 — Tenant isolation test suite
 
@@ -2104,7 +2119,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
   `cargo test -p cortex-server denied_ingestion_audit_event_does_not_leak_query_body_or_token --all-features`;
   `python3 -m py_compile scripts/secrets_hygiene_check.py scripts/llm_inference_gate_check.py`;
   `make secrets-check`.
-- next exit step: `EPIC-D13` is now done; move to `EPIC-D14` — Three live integration examples.
+- next exit step: `EPIC-D14` is now done; move to `EPIC-F01` — Tiered storage v2.
 
 ### EPIC-E14 — Upgrade/rollback drill
 
@@ -2150,7 +2165,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
   `cargo test -p cortex-server slow_loris_body_times_out_without_blocking_follow_up_request --all-features`;
   `cargo test -p cortex-server metrics_prometheus_output_contains_contract_series --all-features`;
   `make route-timeout-check`.
-- next exit step: `EPIC-D13` is now done; move to `EPIC-D14` — Three live integration examples.
+- next exit step: `EPIC-D14` is now done; move to `EPIC-F01` — Tiered storage v2.
 
 ## Block F — Long-term database research
 

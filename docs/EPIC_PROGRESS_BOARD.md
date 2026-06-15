@@ -20,17 +20,20 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-D14` — Three live integration examples.
+`EPIC-F01` — Tiered storage v2.
 
-D14 exit steps:
+F01 exit steps:
 
-1. Pick three real integration examples.
-2. Keep examples small, runnable, and documented.
-3. Add smoke tests or scripts.
+1. Define hot/cold placement and page compression policy.
+2. Build on A08 lazy payload and cache metrics.
+3. Add eviction/readback tests.
 
-D14 current state:
+F01 current state:
 
 - next.
+- D14 is closed with three live integration examples:
+  OpenAI/Anthropic-style tool calling, LangChain-style retriever, and memory
+  chat agent with TTL memory, plus `make live-integration-examples-check`.
 - D13 is closed with `book.toml`, `docs/SUMMARY.md`, GitHub Pages deploy,
   mdBook search enabled, docs-site build/serve notes, and
   `make docs-site-check`.
@@ -1094,6 +1097,7 @@ High-signal done epics:
 - D10 OpenAPI/codegen control;
 - D11 MCP adapter;
 - D13 mdBook docs site;
+- D14 three live integration examples;
 - D15 beta.2 release/tag;
 - E01 WAL writer error surfacing;
 - E10 decode fuzzing gate;
@@ -1120,9 +1124,9 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 ## Next Exit Step
 
-Work on D14 only:
+Work on F01 only:
 
-1. inspect existing examples and smoke-test tooling;
-2. add three live integration examples with small READMEs;
-3. add mock/smoke validation for each example;
-4. move to the next ordered epic after D14 acceptance is closed.
+1. define hot/cold placement and page compression policy;
+2. build on A08 lazy payload and cache metrics;
+3. add eviction/readback tests;
+4. move to the next ordered epic after F01 acceptance is closed.

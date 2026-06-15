@@ -652,7 +652,7 @@ Exit steps:
 1. Pick three real integration examples.
 2. Keep examples small, runnable, and documented.
 3. Add smoke tests or scripts.
-4. Mark done when examples demonstrate common workflows; then move to D15.
+4. Mark done when examples demonstrate common workflows; then move to F01.
 
 ### EPIC-D15 — v0.2.0-beta release
 

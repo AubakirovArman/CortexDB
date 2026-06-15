@@ -58,6 +58,9 @@ evidence snapshots, benchmark experiments, and release working notes live in
 - [`CLI.md`](CLI.md) - CLI reference.
 - [`SDK_QUICKSTART.md`](SDK_QUICKSTART.md) - SDK usage.
 - [`MCP.md`](MCP.md) - MCP stdio adapter for agent tools.
+- [`examples/integrations`](../examples/integrations/README.md) - live
+  integration examples for tool-calling, LangChain-style retrieval, and memory
+  chat agents.
 
 ## Operations
 

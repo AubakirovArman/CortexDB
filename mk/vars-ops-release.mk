@@ -157,6 +157,7 @@ PUBLIC_BENCHMARKS_REPORT ?= target/public-benchmarks/report.json
 PUBLIC_RETRIEVAL_BENCHMARKS_REPORT ?= target/public-retrieval-benchmarks/report.json
 COMPARISON_DOCS_REPORT ?= target/comparison-docs/report.json
 DOCS_SITE_REPORT ?= target/docs-site/report.json
+LIVE_INTEGRATION_EXAMPLES_REPORT ?= target/live-integration-examples/report.json
 AGENT_MEMORY_DEMO_REPORT ?= target/agent-memory-demo/report.json
 MEMORY_QUALITY_BENCHMARK_REPORT ?= target/memory-quality-benchmark/report.json
 TOOL_REGISTRY_REPORT ?= target/tool-registry/report.json

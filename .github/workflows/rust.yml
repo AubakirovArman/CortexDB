@@ -27,6 +27,8 @@ jobs:
       - run: cargo test --workspace --all-features
       - run: cargo fmt --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
+      - run: make live-integration-examples-check
+        if: matrix.toolchain == 'stable'
       - run: make migration-policy-check
         if: matrix.toolchain == 'stable'
       - run: make storage-format-change-note-check

@@ -81,6 +81,9 @@ docs-site-check: docs-link-check
 getting-started-check:
 	python3 scripts/getting_started_check.py
 
+live-integration-examples-check:
+	python3 scripts/live_integration_examples_check.py --report "$(LIVE_INTEGRATION_EXAMPLES_REPORT)"
+
 agent-memory-demo-check:
 	python3 scripts/agent_memory_demo_check.py --report "$(AGENT_MEMORY_DEMO_REPORT)"
 
