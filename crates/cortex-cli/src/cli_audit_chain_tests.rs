@@ -122,6 +122,7 @@ fn chained_record(sequence: u64, prev_hash: &str, llm: Option<LlmAuditFields>) -
         principal_id: Some("principal-a".to_owned()),
         auth_role: Some("data".to_owned()),
         auth_agent_id: Some(7),
+        scope_decision: Some("not_applicable".to_owned()),
         method: "POST".to_owned(),
         path: if llm.is_some() {
             "/v1/inference"

@@ -186,6 +186,7 @@ RBAC_POLICY_STORE_REPORT ?= target/enterprise-rbac/rbac-policy-store.json
 QUOTA_POLICY_REPORT ?= target/enterprise-rbac/quota-policy.json
 AUDIT_CHAIN_REPORT ?= target/enterprise-rbac/audit-chain.json
 AUDIT_EXPORT_RETENTION_REPORT ?= target/audit-export-retention/report.json
+AUDIT_PRODUCTIZATION_REPORT ?= target/audit-productization/report.json
 CONSENSUS_GATE_ROOT ?= target/consensus
 CONSENSUS_CORE_REPORT ?= $(CONSENSUS_GATE_ROOT)/distributed-consensus.json
 CONSENSUS_PARTITION_SOAK_REPORT ?= $(CONSENSUS_GATE_ROOT)/partition-soak.json

@@ -1,7 +1,7 @@
 use super::{
-    parse_actor_queue_capacity, parse_audit_log_path, parse_auth_agent_id,
-    parse_auth_policy_store_file_path, parse_auth_tokens, parse_auth_tokens_file_path,
-    parse_bool_flag, parse_positive_u64, parse_request_rate_limit,
+    parse_actor_queue_capacity, parse_audit_log_fsync_policy, parse_audit_log_path,
+    parse_auth_agent_id, parse_auth_policy_store_file_path, parse_auth_tokens,
+    parse_auth_tokens_file_path, parse_bool_flag, parse_positive_u64, parse_request_rate_limit,
 };
 
 #[test]
@@ -110,4 +110,21 @@ fn parse_audit_log_path_rejects_empty_value() {
             .to_string_lossy(),
         "/tmp/cortexdb-audit.jsonl"
     );
+}
+
+#[test]
+fn parse_audit_log_fsync_policy_accepts_supported_values() {
+    assert_eq!(
+        parse_audit_log_fsync_policy("always").unwrap(),
+        cortex_server::AuditLogFsyncPolicy::Always
+    );
+    assert_eq!(
+        parse_audit_log_fsync_policy("flush-only").unwrap(),
+        cortex_server::AuditLogFsyncPolicy::FlushOnly
+    );
+    assert_eq!(
+        parse_audit_log_fsync_policy("flush").unwrap(),
+        cortex_server::AuditLogFsyncPolicy::FlushOnly
+    );
+    assert!(parse_audit_log_fsync_policy("never").is_err());
 }

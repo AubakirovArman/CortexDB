@@ -75,6 +75,13 @@ REQUIRED_MARKERS = {
         ("Makefile", "audit-export-retention-check"),
         ("scripts/audit_export_retention_check.py", "cortexdb.audit_export_retention_report.v1"),
     ],
+    "audit_productization": [
+        ("docs/AUDIT_LOG_FORMAT.md", "cortexdb.audit.v1"),
+        ("docs/AUDIT_LOG_FORMAT.md", "CORTEXDB_AUDIT_LOG_ROTATE_BYTES"),
+        ("docs/archive/SECURITY_HARDENING_EVIDENCE.md", "audit_productization_gate: true"),
+        ("Makefile", "audit-productization-check"),
+        ("scripts/audit_productization_check.py", "cortexdb.audit_productization_report.v1"),
+    ],
     "compliance_boundary_mapping": [
         ("docs/archive/COMPLIANCE_BOUNDARY_MAPPING.md", "cortexdb.compliance_boundary.v1"),
         ("docs/archive/COMPLIANCE_BOUNDARY_MAPPING.md", "Supported certified frameworks today: none."),

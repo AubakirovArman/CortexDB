@@ -35,7 +35,9 @@ and downstream archival policy.
 ## Redaction Policy
 
 Audit files and SIEM exports must not contain request bodies, full query
-strings, bearer tokens, prompts, provider responses, API keys, or secrets.
+strings, bearer tokens, prompts, provider responses, API keys, or secrets. Safe
+decision metadata includes `scope_decision`, which records only
+`allowed`, `denied`, or `not_applicable` and never stores the raw scope label.
 
 Forbidden field names include:
 

@@ -59,6 +59,14 @@ pub(crate) fn event_hash_for_record(record: &AuditRecord) -> String {
                 .map(|value| value.to_string())
                 .unwrap_or_default(),
         ),
+        (
+            "scope_decision",
+            record
+                .scope_decision
+                .as_deref()
+                .unwrap_or_default()
+                .to_owned(),
+        ),
         ("method", record.method.clone()),
         ("path", record.path.clone()),
         ("tenant", record.tenant.clone()),
@@ -126,6 +134,7 @@ pub(crate) fn test_chained_record_jsonl() -> String {
         principal_id: Some("principal-a".to_owned()),
         auth_role: Some("data".to_owned()),
         auth_agent_id: Some(7),
+        scope_decision: Some("not_applicable".to_owned()),
         method: "GET".to_owned(),
         path: "/v1/health".to_owned(),
         tenant: "default".to_owned(),

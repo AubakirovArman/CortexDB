@@ -35,6 +35,7 @@ REQUIRED_SAFE_FIELDS = {
     "principal_id",
     "auth_role",
     "auth_agent_id",
+    "scope_decision",
     "request_id",
     "audit_action",
     "chain_id",

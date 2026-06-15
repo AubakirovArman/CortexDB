@@ -42,7 +42,7 @@ mod sync_handler;
 mod tests;
 
 pub use auth::{parse_auth_tokens, AuthRole, AuthTokenPolicy};
-pub use config::{ServerOptions, DEFAULT_ACTOR_QUEUE_CAPACITY};
+pub use config::{AuditLogFsyncPolicy, ServerOptions, DEFAULT_ACTOR_QUEUE_CAPACITY};
 pub use lifecycle::{serve, serve_with_options};
 pub use router::{
     cell_id, json_error, json_response, query_param, query_param_decoded, query_param_opt,

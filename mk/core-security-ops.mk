@@ -29,7 +29,14 @@ audit-export-retention-check:
 	cargo test -p cortex-cli cli_audit_siem_tests
 	python3 scripts/audit_export_retention_check.py --report "$(AUDIT_EXPORT_RETENTION_REPORT)"
 
-security-hardening-check: security-check rbac-policy-store-check quota-policy-check audit-chain-check audit-export-retention-check
+audit-productization-check:
+	cargo test -p cortex-server audit_tests
+	cargo test -p cortex-server denied_ingestion_audit_event_does_not_leak_query_body_or_token
+	cargo test -p cortex-cli audit_command_filters_and_checks_redaction
+	cargo test -p cortex-cli cli_audit_siem_tests
+	python3 scripts/audit_productization_check.py --report "$(AUDIT_PRODUCTIZATION_REPORT)"
+
+security-hardening-check: security-check rbac-policy-store-check quota-policy-check audit-chain-check audit-export-retention-check audit-productization-check
 	python3 scripts/security_hardening_check.py --report "$(SECURITY_HARDENING_REPORT)"
 
 security-gate-v2-check: security-hardening-check

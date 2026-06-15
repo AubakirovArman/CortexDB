@@ -25,6 +25,8 @@ pub struct AuditRecord {
     pub auth_role: Option<String>,
     #[serde(default)]
     pub auth_agent_id: Option<u64>,
+    #[serde(default)]
+    pub scope_decision: Option<String>,
     pub method: String,
     pub path: String,
     pub tenant: String,
@@ -234,12 +236,13 @@ fn format_plain(response: &AuditReviewResponse, summary_only: bool) -> String {
     if !summary_only {
         for record in &response.records {
             lines.push(format!(
-                "record method={} path={} tenant={} status={} action={} error_code={} duration_ms={}",
+                "record method={} path={} tenant={} status={} action={} scope_decision={} error_code={} duration_ms={}",
                 record.method,
                 record.path,
                 record.tenant,
                 record.status,
                 record.audit_action,
+                record.scope_decision.as_deref().unwrap_or(""),
                 empty_as_dash(&record.error_code),
                 record.duration_ms
             ));

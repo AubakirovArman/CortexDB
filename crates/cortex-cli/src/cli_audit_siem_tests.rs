@@ -33,6 +33,7 @@ fn audit_export_siem_writes_normalized_jsonl() {
     assert_eq!(value["event_outcome"], "success");
     assert_eq!(value["principal_id"], "principal-a");
     assert_eq!(value["auth_role"], "data");
+    assert_eq!(value["scope_decision"], "not_applicable");
     assert_eq!(value["audit_sequence"], 1);
     assert!(!exported.contains("Bearer"));
 

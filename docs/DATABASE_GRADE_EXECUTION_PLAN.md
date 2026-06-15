@@ -131,7 +131,8 @@ enough to unblock the next dependency step.
 50. `EPIC-E03` — WAL archive to point-in-time recovery: done.
 51. `EPIC-E05` — Observability tracing + Prometheus metrics: done.
 52. `EPIC-E06` — Backpressure tuning and per-tenant limits: done.
-53. `EPIC-E07` — Audit log productization: next.
+53. `EPIC-E07` — Audit log productization: done.
+54. `EPIC-E13` — Secrets hygiene: next.
 
 ## Summary
 
@@ -1936,20 +1937,44 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
   quota-policy-check`, `make openapi-contract-check`, and `make
   load-suite-check`.
 - remaining: none for E06 acceptance.
-- next exit step: move to `EPIC-E07` — Audit log productization.
+- next exit step: `EPIC-E07` is now done; move to `EPIC-E13` — Secrets hygiene.
 
 ### EPIC-E07 — Audit log productization
 
-- status: `pending`
+- status: `done`
 - meta: Категория: security · P1 · 90 days · improve
 - tasks:
-  - [ ] 1) JSONL-sink: ротация, fsync-политика, схема-версия
-  - [ ] 2) обязательные поля: agent_id, route, scope-решения (allowed/denied), seq
-  - [ ] 3) SIEM-доки → архив (фриз).
+  - [x] 1) JSONL-sink: ротация, fsync-политика, схема-версия
+  - [x] 2) обязательные поля: agent_id, route, scope-решения (allowed/denied), seq
+  - [x] 3) SIEM-доки → архив (фриз).
 - acceptance:
-  - [ ] 1) denied-доступы видны в аудите (тест)
-  - [ ] 2) формат задокументирован одной страницей.
+  - [x] 1) denied-доступы видны в аудите (тест)
+  - [x] 2) формат задокументирован одной страницей.
 - files: server/audit*.rs.
+- evidence: Added file-backed audit rotation through
+  `CORTEXDB_AUDIT_LOG_ROTATE_BYTES`, explicit fsync policy through
+  `CORTEXDB_AUDIT_LOG_FSYNC=always|flush`, and `scope_decision` metadata on
+  local audit records and SIEM export without logging raw scopes, query
+  strings, request bodies, or tokens. Added `docs/AUDIT_LOG_FORMAT.md` as the
+  one-page schema contract and `make audit-productization-check` as the local
+  E07 gate. Denied scoped ingestion now asserts `scope_decision=denied`; audit
+  sink tests cover rotation and allowed/denied decisions.
+- verification: `cargo fmt --check`; `cargo test -p cortex-server audit_tests
+  --all-features`; `cargo test -p cortex-server
+  denied_ingestion_audit_event_does_not_leak_query_body_or_token
+  --all-features`; `cargo test -p cortex-server
+  parse_audit_log_fsync_policy_accepts_supported_values --all-features`;
+  `cargo test -p cortex-cli cli_audit_chain_tests --all-features`;
+  `cargo test -p cortex-cli cli_audit_siem_tests --all-features`; `cargo test
+  -p cortex-cli audit_command_filters_and_checks_redaction --all-features`;
+  `cargo test -p cortex-cli
+  audit_review_verify_chain_accepts_valid_sequence_and_rejects_tampering
+  --all-features`; `make audit-productization-check`; `make
+  audit-export-retention-check`; `python3 scripts/security_hardening_check.py
+  --report target/security-hardening/e07-smoke.json`; `cargo clippy -p
+  cortex-server --all-targets -- -D warnings`; `cargo clippy -p cortex-cli
+  --all-targets -- -D warnings`.
+- next exit step: move to `EPIC-E13` — Secrets hygiene.
 
 ### EPIC-E08 — Tenant isolation test suite
 

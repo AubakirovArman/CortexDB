@@ -400,10 +400,11 @@ include route category, method, path, tenant, `request_id`, status code, stable
 error code, duration, and authenticated principal metadata when available:
 `principal_id`, `auth_role`, and `auth_agent_id`. File-backed audit records also
 include local chain metadata: `chain_id`, `sequence`, `prev_hash`, and
-`event_hash`. Request bodies, query strings, and bearer tokens are intentionally
-not logged. Current route categories include `read`, `write`, `delete`, `aql`,
-`search`, `context`, `verify`, `ingest`, `memory`, `admin`, `metrics`, and
-`health`.
+`event_hash`. File-backed records include `scope_decision` with only
+`allowed`, `denied`, or `not_applicable`; raw scope labels are not logged.
+Request bodies, query strings, and bearer tokens are intentionally not logged.
+Current route categories include `read`, `write`, `delete`, `aql`, `search`,
+`context`, `verify`, `ingest`, `memory`, `admin`, `metrics`, and `health`.
 
 Every HTTP response includes `x-request-id`. Clients may supply a safe
 `x-request-id` header to correlate their logs with CortexDB audit records. If
@@ -415,14 +416,21 @@ To persist route-level audit events to a local JSONL file, set:
 
 ```bash
 export CORTEXDB_AUDIT_LOG_FILE="./audit/http.jsonl"
+export CORTEXDB_AUDIT_LOG_ROTATE_BYTES=104857600
+export CORTEXDB_AUDIT_LOG_FSYNC=always
 cargo run -p cortex-server -- ./data 127.0.0.1:8181
 ```
 
 `CORTEXDB_AUDIT_LOG_FILE` implies audit logging. The server creates parent
 directories if needed, appends one JSON object per response, flushes the file,
-and calls `sync_data()` after each event. File sink failures after startup are
-reported through `tracing` target `cortexdb_audit` as `sink_error` events; they
-do not include request bodies or query strings.
+and uses the configured fsync policy after each event. `always` calls
+`sync_data()` per event; `flush` and `flush-only` flush without `sync_data()`.
+`CORTEXDB_AUDIT_LOG_ROTATE_BYTES` rotates the active JSONL file after the
+configured byte limit; rotated files are local JSONL segments with independent
+chain verification. File sink failures after startup are reported through
+`tracing` target `cortexdb_audit` as `sink_error` events; they do not include
+request bodies or query strings. The complete record contract is documented in
+[`AUDIT_LOG_FORMAT.md`](AUDIT_LOG_FORMAT.md).
 
 Review a persisted audit file with the CLI instead of hand-parsing JSONL:
 

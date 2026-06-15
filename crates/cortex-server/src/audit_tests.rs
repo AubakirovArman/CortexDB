@@ -1,5 +1,8 @@
-use super::audit::{classify, emit_http_response, AuditAction, AuditSink, HttpResponseAudit};
+use super::audit::{
+    classify, emit_http_response, AuditAction, AuditSink, AuditSinkOptions, HttpResponseAudit,
+};
 use super::audit_chain;
+use super::AuditLogFsyncPolicy;
 
 #[test]
 fn classify_core_api_actions() {
@@ -58,6 +61,7 @@ fn audit_sink_writes_jsonl_without_body_or_query() {
     assert_eq!(value["principal_id"], "principal-a");
     assert_eq!(value["auth_role"], "data");
     assert_eq!(value["auth_agent_id"], 7);
+    assert_eq!(value["scope_decision"], "denied");
     assert_eq!(value["method"], "POST");
     assert_eq!(value["path"], "/v1/cell");
     assert_eq!(value["tenant"], "tenant-a");
@@ -66,6 +70,79 @@ fn audit_sink_writes_jsonl_without_body_or_query() {
     assert_eq!(value["error_code"], "permission_denied");
     assert!(!line.contains("secret_payload"));
     assert!(!line.contains('?'));
+}
+
+#[test]
+fn audit_sink_records_allowed_scope_decision_for_successful_data_route() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("audit").join("http.jsonl");
+    let sink = AuditSink::open(&path).unwrap();
+
+    emit_http_response(
+        HttpResponseAudit {
+            method: "GET",
+            path: "/v1/search",
+            tenant: "tenant-a",
+            request_id: "req-allowed",
+            principal_id: Some("principal-a"),
+            auth_role: Some("data"),
+            auth_agent_id: Some(7),
+            status: 200,
+            error_code: None,
+            duration_ms: 3,
+        },
+        Some(&sink),
+    );
+
+    let line = std::fs::read_to_string(path).unwrap();
+    let value = serde_json::from_str::<serde_json::Value>(line.trim()).unwrap();
+    assert_eq!(value["audit_action"], "search");
+    assert_eq!(value["scope_decision"], "allowed");
+}
+
+#[test]
+fn audit_sink_rotates_active_jsonl_and_keeps_each_file_verifiable() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("audit").join("http.jsonl");
+    let sink = AuditSink::open_with_options(
+        &path,
+        AuditSinkOptions::from_parts(Some(260), AuditLogFsyncPolicy::FlushOnly),
+    )
+    .unwrap();
+
+    for index in 0..3 {
+        emit_http_response(
+            HttpResponseAudit {
+                method: "GET",
+                path: "/v1/health",
+                tenant: "default",
+                request_id: &format!("req-{index}"),
+                principal_id: None,
+                auth_role: None,
+                auth_agent_id: None,
+                status: 200,
+                error_code: None,
+                duration_ms: 1,
+            },
+            Some(&sink),
+        );
+    }
+
+    let rotated = std::fs::read_dir(path.parent().unwrap())
+        .unwrap()
+        .filter_map(Result::ok)
+        .map(|entry| entry.path())
+        .filter(|candidate| candidate != &path)
+        .collect::<Vec<_>>();
+    assert!(!rotated.is_empty(), "audit log should rotate");
+    let active = std::fs::read_to_string(&path).unwrap();
+    let first_active =
+        serde_json::from_str::<serde_json::Value>(active.lines().next().unwrap()).unwrap();
+    assert_eq!(first_active["sequence"], 1);
+    assert_eq!(first_active["prev_hash"], "0000000000000000");
+    assert!(first_active["event_hash"]
+        .as_str()
+        .is_some_and(audit_chain::is_hex_hash));
 }
 
 #[test]

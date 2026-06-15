@@ -312,6 +312,8 @@ cargo run -p cortex-cli -- audit ./audit/http.jsonl --action write --tenant-filt
 
 Use this during incident review to count route activity by action/status/tenant
 and confirm the audit sink did not persist query strings or body-like fields.
+Use [`AUDIT_LOG_FORMAT.md`](AUDIT_LOG_FORMAT.md) for the JSONL schema,
+`scope_decision` semantics, rotation, fsync, and SIEM export boundary.
 
 ## 8) Performance/reliability smoke
 

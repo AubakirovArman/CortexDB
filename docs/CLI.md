@@ -96,7 +96,8 @@ best-effort WAL safe offset.
 
 #### `audit <audit_jsonl_path>`
 Review a persisted server audit JSONL file. The command supports route, status,
-action, and tenant filters plus an automated redaction check.
+action, and tenant filters plus an automated redaction check. Records follow
+[`AUDIT_LOG_FORMAT.md`](AUDIT_LOG_FORMAT.md).
 
 ```bash
 cortexdb audit ./audit/http.jsonl --summary --redaction-check

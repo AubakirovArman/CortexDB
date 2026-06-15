@@ -6,6 +6,13 @@ use crate::auth::{AuthRole, AuthTokenPolicy};
 
 pub const DEFAULT_ACTOR_QUEUE_CAPACITY: usize = 1024;
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum AuditLogFsyncPolicy {
+    #[default]
+    Always,
+    FlushOnly,
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ServerOptions {
     pub auth_token: Option<String>,
@@ -61,10 +68,13 @@ pub struct ServerOptions {
     pub audit_log_enabled: bool,
     /// Optional JSONL file sink for audit events.
     ///
-    /// If set, audit events are written to this append-only local file and the
-    /// file is synced after each event. The sink stores route metadata only,
-    /// never request bodies or query strings.
+    /// If set, audit events are written to this append-only local file. The
+    /// sink stores route metadata only, never request bodies or query strings.
     pub audit_log_path: Option<PathBuf>,
+    /// Optional active audit JSONL size limit in bytes before rotation.
+    pub audit_log_rotate_bytes: Option<u64>,
+    /// File durability policy for the audit JSONL sink.
+    pub audit_log_fsync_policy: AuditLogFsyncPolicy,
     /// Enables the deterministic local LLM inference test-double endpoint.
     ///
     /// Disabled by default. This does not enable a production model runtime or

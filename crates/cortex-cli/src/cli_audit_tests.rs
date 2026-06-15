@@ -274,6 +274,11 @@ fn chained_record(
     path: &str,
     status: u16,
 ) -> AuditRecord {
+    let scope_decision = if status == 200 {
+        "not_applicable"
+    } else {
+        "denied"
+    };
     let mut record = AuditRecord {
         schema_version: "cortexdb.audit.v1".to_owned(),
         audit_event: "http_response".to_owned(),
@@ -285,6 +290,7 @@ fn chained_record(
         principal_id: Some("principal-a".to_owned()),
         auth_role: Some("data".to_owned()),
         auth_agent_id: Some(7),
+        scope_decision: Some(scope_decision.to_owned()),
         method: method.to_owned(),
         path: path.to_owned(),
         tenant: "default".to_owned(),

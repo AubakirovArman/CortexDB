@@ -53,6 +53,8 @@ evidence snapshots, benchmark experiments, and release working notes live in
 ## Operations
 
 - [`OPERATIONS.md`](OPERATIONS.md) - operator guidance.
+- [`AUDIT_LOG_FORMAT.md`](AUDIT_LOG_FORMAT.md) - local audit JSONL schema,
+  rotation, fsync, and SIEM export boundary.
 - [`DOCKER.md`](DOCKER.md) - Docker image, compose quickstart, and GHCR release path.
   Deployment artifacts: [`docker-compose.production.yml`](../docker-compose.production.yml),
   [`auth.tokens.example`](deployment/auth.tokens.example), and

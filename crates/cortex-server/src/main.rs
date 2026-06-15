@@ -87,6 +87,20 @@ fn main() -> ExitCode {
             return ExitCode::FAILURE;
         }
     };
+    let audit_log_rotate_bytes = match audit_log_rotate_bytes_from_env() {
+        Ok(limit) => limit,
+        Err(error) => {
+            eprintln!("{error}");
+            return ExitCode::FAILURE;
+        }
+    };
+    let audit_log_fsync_policy = match audit_log_fsync_policy_from_env() {
+        Ok(policy) => policy,
+        Err(error) => {
+            eprintln!("{error}");
+            return ExitCode::FAILURE;
+        }
+    };
     let engine_config = match cortex_engine::EngineConfig::from_env() {
         Ok(config) => config,
         Err(error) => {
@@ -108,6 +122,8 @@ fn main() -> ExitCode {
         request_rate_limit_per_minute,
         audit_log_enabled: audit_log_enabled_from_env() || audit_log_path.is_some(),
         audit_log_path,
+        audit_log_rotate_bytes,
+        audit_log_fsync_policy,
         llm_test_double_enabled: llm_test_double_enabled_from_env(),
         dashboard_enabled: engine_config.database_options.feature_flags.dashboard,
         engine_database_options: engine_config.database_options,
@@ -184,6 +200,26 @@ fn parse_audit_log_path(raw: &str) -> Result<PathBuf, String> {
         Err("CORTEXDB_AUDIT_LOG_FILE must not be empty".to_owned())
     } else {
         Ok(PathBuf::from(trimmed))
+    }
+}
+
+fn audit_log_rotate_bytes_from_env() -> Result<Option<u64>, String> {
+    optional_positive_u64_from_env("CORTEXDB_AUDIT_LOG_ROTATE_BYTES")
+}
+
+fn audit_log_fsync_policy_from_env() -> Result<cortex_server::AuditLogFsyncPolicy, String> {
+    match env::var("CORTEXDB_AUDIT_LOG_FSYNC") {
+        Ok(raw) => parse_audit_log_fsync_policy(&raw),
+        Err(env::VarError::NotPresent) => Ok(cortex_server::AuditLogFsyncPolicy::Always),
+        Err(error) => Err(format!("invalid CORTEXDB_AUDIT_LOG_FSYNC: {error}")),
+    }
+}
+
+fn parse_audit_log_fsync_policy(raw: &str) -> Result<cortex_server::AuditLogFsyncPolicy, String> {
+    match raw.trim().to_ascii_lowercase().as_str() {
+        "always" => Ok(cortex_server::AuditLogFsyncPolicy::Always),
+        "flush" | "flush_only" | "flush-only" => Ok(cortex_server::AuditLogFsyncPolicy::FlushOnly),
+        _ => Err("CORTEXDB_AUDIT_LOG_FSYNC must be always or flush".to_owned()),
     }
 }
 

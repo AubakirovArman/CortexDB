@@ -61,6 +61,7 @@
       "principal_id",
       "auth_role",
       "auth_agent_id",
+      "scope_decision",
       "method",
       "path",
       "tenant",

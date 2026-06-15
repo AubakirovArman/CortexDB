@@ -20,17 +20,21 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-E07` — Audit log productization.
+`EPIC-E13` — Secrets hygiene.
 
-E07 exit steps:
+E13 exit steps:
 
-1. Add JSONL sink rotation, fsync policy, and schema version.
-2. Ensure audit records include agent id, route, scope decisions, and seq.
-3. Archive SIEM documentation.
+1. Audit repository, docs, scripts, and CI for secrets.
+2. Ensure tokens are accepted from env/file only where sensitive.
+3. Verify tracing/audit redaction with tests.
 
-E07 current state:
+E13 current state:
 
 - next.
+- E07 is closed with audit JSONL rotation, fsync policy, schema-versioned
+  `cortexdb.audit.v1` records, `scope_decision`, SIEM field propagation,
+  denied-access audit coverage, `docs/AUDIT_LOG_FORMAT.md`, and
+  `make audit-productization-check`.
 - E06 is closed with per-tenant cell/memory/queue quotas, `quota_exceeded`,
   OpenAPI/SDK taxonomy alignment, operations tuning docs, and 50-tenant load
   coverage.

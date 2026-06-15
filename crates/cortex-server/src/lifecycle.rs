@@ -27,7 +27,15 @@ pub fn serve_with_options(root: &Path, addr: &str, options: ServerOptions) -> st
         let audit_sink = options
             .audit_log_path
             .as_ref()
-            .map(|path| audit::AuditSink::open(path))
+            .map(|path| {
+                audit::AuditSink::open_with_options(
+                    path,
+                    audit::AuditSinkOptions::from_parts(
+                        options.audit_log_rotate_bytes,
+                        options.audit_log_fsync_policy,
+                    ),
+                )
+            })
             .transpose()?
             .map(Arc::new);
         let rate_limit = options

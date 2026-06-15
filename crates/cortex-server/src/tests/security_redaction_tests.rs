@@ -60,6 +60,7 @@ fn denied_ingestion_audit_event_does_not_leak_query_body_or_token() {
     assert_eq!(value["path"], "/v1/ingest/text");
     assert_eq!(value["tenant"], "alpha");
     assert_eq!(value["status"], 403);
+    assert_eq!(value["scope_decision"], "denied");
     for leaked in [
         "secret-source",
         "super-secret-payload",
