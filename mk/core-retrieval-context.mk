@@ -2,6 +2,12 @@ retrieval-quality-history-check:
 	python3 scripts/retrieval_quality_history_self_test.py
 	python3 scripts/retrieval_quality_history.py --domain-root examples/real_domains --output "$(RETRIEVAL_QUALITY_HISTORY_REPORT)" --min-domains 4 --history-runs $(RETRIEVAL_QUALITY_HISTORY_RUNS) --fail-on-regression --max-p95-regression-nanos $(RETRIEVAL_QUALITY_MAX_P95_REGRESSION_NANOS) --max-p99-regression-nanos $(RETRIEVAL_QUALITY_MAX_P99_REGRESSION_NANOS) --max-max-regression-nanos $(RETRIEVAL_QUALITY_MAX_MAX_REGRESSION_NANOS)
 
+baseline-comparison-check:
+	python3 scripts/baseline_comparison_check.py --self-test
+	python3 scripts/retrieval_beta_report.py --domain-root examples/real_domains --output "$(RETRIEVAL_BETA_REPORT)" --min-domains 4 --repeat-runs $(BASELINE_COMPARISON_REPEAT_RUNS)
+	python3 scripts/context_pack_quality_v3_check.py --seed-fixture "$(CONTEXT_PACK_QUALITY_FIXTURE)" --datasets "$(CONTEXT_PACK_QUALITY_V3_DATASETS)" --thresholds "$(CONTEXT_PACK_QUALITY_V3_THRESHOLDS)" --report "$(CONTEXT_PACK_QUALITY_V3_REPORT)"
+	python3 scripts/baseline_comparison_check.py --datasets "$(CONTEXT_PACK_QUALITY_V3_DATASETS)" --features "$(BASELINE_COMPARISON_FEATURES)" --cortexdb-retrieval-report "$(RETRIEVAL_BETA_REPORT)" --context-pack-report "$(CONTEXT_PACK_QUALITY_V3_REPORT)" --report "$(BASELINE_COMPARISON_REPORT)" --markdown "$(BASELINE_COMPARISON_MARKDOWN)" --top-k $(BASELINE_COMPARISON_TOP_K) --repeat-runs $(BASELINE_COMPARISON_REPEAT_RUNS) --min-domains 4
+
 search-quality-gate-v2-check:
 	python3 scripts/search_quality_gate_v2.py --self-test
 	python3 scripts/search_quality_gate_v2.py --thresholds "$(SEARCH_QUALITY_GATE_V2_THRESHOLDS)" --beta-report "$(RETRIEVAL_BETA_REPORT)" --history-report "$(RETRIEVAL_QUALITY_HISTORY_REPORT)" --ann-history "$(ANN_REAL_EMBEDDING_HISTORY_REPORT)" --output "$(SEARCH_QUALITY_GATE_V2_REPORT)"

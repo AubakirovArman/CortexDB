@@ -192,6 +192,26 @@ fixed-payload 10K/100K scale reports, then uploads the benchmark report bundle
 as `continuous-benchmark-reports`. Hosted runs use the same ratio and delta
 policy through `HOSTED_BENCHMARK_MIN_REGRESSION_DELTA_MS`.
 
+For the C20 naive-stack baseline comparison:
+
+```bash
+make baseline-comparison-check
+```
+
+This writes:
+
+```text
+target/baseline-comparison/report.json
+docs/BASELINE_COMPARISON.md
+```
+
+The gate compares SQLite FTS5, deterministic exact hashed-vector retrieval, and
+hybrid RRF against the CortexDB retrieval-quality evidence on the same four
+real-domain corpora. It also publishes the feature matrix for permissions,
+token budgets, citations/provenance, and VerifyFact/conflict coverage. The dense
+side stays dependency-free by design; the report calls out that boundary instead
+of treating the CI-safe vector fallback as hosted FAISS evidence.
+
 The ANN section also emits a stable JSON line:
 
 ```text

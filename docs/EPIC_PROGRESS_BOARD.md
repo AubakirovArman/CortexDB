@@ -20,17 +20,20 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-C20` — Baseline comparison with naive stack.
+`EPIC-E03` — WAL archive to point-in-time recovery.
 
-C20 exit steps:
+E03 exit steps:
 
-1. Define fair naive baseline stack and workloads.
-2. Compare retrieval/pack/verify latency and quality.
-3. Document honest wins/losses with reproducible evidence.
+1. Add an option to archive closed WAL files.
+2. Add restore to a target seq.
+3. Cover point-in-time recovery with crash/recovery tests and operations docs.
 
-C20 current state:
+E03 current state:
 
 - next.
+- C20 is closed with a reproducible SQLite FTS5 + exact hashed-vector + hybrid
+  RRF baseline, four-domain retrieval/latency comparison, ContextPack evidence,
+  and a published feature matrix.
 - C19 is closed with resumable batched embedding backfill, WriteBatch ingestion
   throughput reporting, C17 trend integration, hosted artifact upload, and an
   explicit 100K target.
@@ -72,6 +75,25 @@ D05 split state:
 - do not block kernel/database epics on D05.
 
 ## Recently Closed
+
+### EPIC-C20 — Baseline comparison with naive stack
+
+Status: `done`
+
+What closed it:
+
+- Added `baseline-comparison-check` with self-test, SQLite FTS5 lexical search,
+  deterministic exact hashed-vector retrieval, and hybrid RRF.
+- Ran the same four quality domains and wrote
+  `target/baseline-comparison/report.json`.
+- Published `docs/BASELINE_COMPARISON.md` with quality/latency and feature
+  matrix rows for permissions, token budgets, citations/provenance, and
+  VerifyFact/conflict coverage.
+- Evidence: `make baseline-comparison-check` passed; investment_projects
+  hybrid recall was `87.50%` vs CortexDB gate `95.00%`; the other three domains
+  were `100.00%` for both hybrid and CortexDB gate.
+- Boundary: the dense baseline is dependency-free hashed-vector exact search,
+  not a hosted FAISS/BGE run.
 
 ### EPIC-C19 — Ingestion throughput + batch embedding pipeline
 

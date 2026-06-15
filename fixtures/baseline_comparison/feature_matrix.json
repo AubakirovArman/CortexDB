@@ -1,0 +1,41 @@
+{
+  "schema_version": "cortexdb.baseline_comparison.features.v1",
+  "rows": [
+    {
+      "feature": "Top-k retrieval quality",
+      "naive_stack": "Measured on the same four real-domain corpora with SQLite FTS5, deterministic exact vector search, and hybrid RRF.",
+      "cortexdb": "Measured by the CortexDB retrieval-quality beta gate on the same four real-domain corpora.",
+      "evidence": "target/retrieval-quality/beta-report.json"
+    },
+    {
+      "feature": "Retrieval latency",
+      "naive_stack": "Measured per query in the baseline runner.",
+      "cortexdb": "Measured by the CortexDB retrieval-quality beta gate.",
+      "evidence": "target/retrieval-quality/beta-report.json"
+    },
+    {
+      "feature": "Agent permissions",
+      "naive_stack": "Not built in; every app must add its own ACL filter before or after retrieval.",
+      "cortexdb": "Built into AgentView, PolicyRewrite, and permission-aware index pruning.",
+      "evidence": "B04, B16, C09, E09 gates"
+    },
+    {
+      "feature": "Token budget and ContextPack",
+      "naive_stack": "Not built in; app code must trim and order chunks.",
+      "cortexdb": "ContextPack gate checks evidence coverage, deterministic order, token reduction, and redundancy suppression.",
+      "evidence": "target/context-pack-quality/v3-report.json"
+    },
+    {
+      "feature": "Citations and provenance",
+      "naive_stack": "Not built in; app code must preserve chunk ids and source refs.",
+      "cortexdb": "Typed provenance and ContextPack citation pressure are first-class gates.",
+      "evidence": "B06, B14, target/context-pack-quality/v3-report.json"
+    },
+    {
+      "feature": "VerifyFact and conflict visibility",
+      "naive_stack": "Not built in; app code must run a separate verifier/conflict store.",
+      "cortexdb": "VerifyOp, numeric conflict index, temporal guard, and context conflict visibility gates.",
+      "evidence": "B07, B08, B09, C13, C14"
+    }
+  ]
+}

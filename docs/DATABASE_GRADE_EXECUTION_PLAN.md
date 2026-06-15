@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-C20` (`EPIC-C19` is now done along with the previously
+Current pointer: `EPIC-E03` (`EPIC-C20` is now done along with the previously
 closed epics listed in the Active Execution Queue). `EPIC-C01` is closed with
 the `ACI4` compact term dictionary/postings format, `ACI0..ACI3` dual-read
 compatibility, and persisted/search compatibility gates. `EPIC-C03` is closed
@@ -33,7 +33,8 @@ OpenAPI/SDK models, and configurable bounded FIFO policy. `EPIC-C18` published
 the concurrent read throughput curve and wired it into the C17 trend check.
 `EPIC-C19` added resumable batched embedding backfill, WriteBatch ingestion
 throughput reporting, C17 trend integration, and an explicit 100K gate target.
-`EPIC-C20` is next.
+`EPIC-C20` added the reproducible baseline comparison gate and published the
+four-domain quality/latency/feature matrix. `EPIC-E03` is next.
 `EPIC-D05` remains partial/local-ready and is externally blocked on public
 registry credentials/trusted publishing.
 
@@ -120,7 +121,8 @@ enough to unblock the next dependency step.
 46. `EPIC-C11` — AQL query cache: metrics and policy: done.
 47. `EPIC-C18` — Concurrent read throughput benchmark: done.
 48. `EPIC-C19` — Ingestion throughput + batch embedding pipeline: done.
-49. `EPIC-C20` — Baseline comparison with naive stack: next.
+49. `EPIC-C20` — Baseline comparison with naive stack: done.
+50. `EPIC-E03` — WAL archive to point-in-time recovery: next.
 
 ## Summary
 
@@ -1502,18 +1504,20 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-C20 — Baseline-сравнение с наивным стеком
 
-- status: `pending`
+- status: `done`
 - meta: Категория: benchmarks · P2 · 90 days · benchmark
 - goal: честный ответ на «зачем вы, если есть SQLite FTS5 + faiss»: если по качеству ретрива не выигрываем — надо знать; выигрываем по governance — показать.
 - tasks:
-  - [ ] 1) референс-стек (SQLite FTS5 + faiss + 50 строк python) в cortex-bench
-  - [ ] 2) прогон на ваших 4 quality-доменах + латентность
-  - [ ] 3) публикация таблицы качество/латентность/фичи (permissions/budget/citations).
+  - [x] 1) референс-стек (SQLite FTS5 + CI-safe exact hashed-vector fallback вместо обязательного faiss dependency) в cortex-bench
+  - [x] 2) прогон на ваших 4 quality-доменах + латентность
+  - [x] 3) публикация таблицы качество/латентность/фичи (permissions/budget/citations).
 - acceptance:
-  - [ ] 1) воспроизводимый скрипт
-  - [ ] 2) результат опубликован, каким бы ни был.
-- files: cortex-bench.
-- risks: неприятный результат = ценность. Зависимости: A19. Эффект: позиция «зачем мы» получает данные.
+  - [x] 1) воспроизводимый скрипт — `make baseline-comparison-check`
+  - [x] 2) результат опубликован, каким бы ни был — `docs/BASELINE_COMPARISON.md`.
+- files: `scripts/baseline_comparison_check.py`, `fixtures/baseline_comparison/feature_matrix.json`, `docs/BASELINE_COMPARISON.md`, `docs/BENCHMARKS.md`, `mk/core-retrieval-context.mk`, `mk/vars-core.mk`, `mk/phony.mk`.
+- evidence: `make baseline-comparison-check` passed and wrote `target/baseline-comparison/report.json` plus `docs/BASELINE_COMPARISON.md`. Four-domain result: investment_projects `SQLite FTS5=92.50%`, `hash_vector=75.00%`, `hybrid=87.50%`, CortexDB retrieval gate `95.00%`; legal_policies/support_tickets/technical_docs all `100.00%` for hybrid and CortexDB. ContextPack v3 evidence stayed passed with 4 external datasets, 105 cases, 100% evidence/citation coverage, and 56.65% token reduction.
+- risks: dense side is a deterministic stdlib exact vector fallback, not a hosted FAISS/BGE run, to preserve the no-new-dependencies rule; report calls this out explicitly. Зависимости: A19. Эффект: позиция «зачем мы» получает данные.
+- next exit step: move to `EPIC-E03` — WAL archive to point-in-time recovery.
 
 ## Block D — Developer experience and adoption
 
@@ -1822,7 +1826,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-E03 — WAL-архив → point-in-time recovery (groundwork)
 
-- status: `pending`
+- status: `next`
 - meta: Категория: storage · P2 · 6 months · build
 - goal: после A17 (ротация) PITR становится дешёвым: архивируй WAL-сегменты, восстанавливай до seq.
 - tasks:

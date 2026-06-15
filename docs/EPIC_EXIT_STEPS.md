@@ -538,7 +538,7 @@ Exit steps:
 1. Define fair baseline stack and workloads.
 2. Compare retrieval/pack/verify latency and quality.
 3. Document honest wins/losses.
-4. Mark done when claims are backed by comparable evidence; then move to public docs.
+4. Mark done when claims are backed by comparable evidence; then move to E03.
 
 ## Block D — Developer experience and adoption
 
@@ -686,7 +686,7 @@ Exit steps:
 1. Define archive file naming and retention.
 2. Add safe archive hooks around checkpoint/rotation.
 3. Add restore-to-seq groundwork tests.
-4. Mark done when PITR has durable prerequisites; then move to E02.
+4. Mark done when PITR has durable prerequisites; then move to E05.
 
 ### EPIC-E04 — Corruption handling
 
