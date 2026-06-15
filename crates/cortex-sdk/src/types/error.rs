@@ -9,6 +9,7 @@ pub enum ErrorCode {
     Forbidden,
     PayloadTooLarge,
     RateLimited,
+    QuotaExceeded,
     ServiceUnavailable,
     Internal,
     InvalidAql,

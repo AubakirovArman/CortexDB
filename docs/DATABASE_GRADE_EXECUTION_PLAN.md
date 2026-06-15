@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-E06` (`EPIC-E05` is now done along with the previously
+Current pointer: `EPIC-E07` (`EPIC-E06` is now done along with the previously
 closed epics listed in the Active Execution Queue). `EPIC-C01` is closed with
 the `ACI4` compact term dictionary/postings format, `ACI0..ACI3` dual-read
 compatibility, and persisted/search compatibility gates. `EPIC-C03` is closed
@@ -37,7 +37,10 @@ throughput reporting, C17 trend integration, and an explicit 100K gate target.
 four-domain quality/latency/feature matrix. `EPIC-E03` added retained closed
 WAL archives, restore-to-seq, and PITR operations docs. `EPIC-E05` added
 HTTP/queue/engine tracing spans, actor queue-wait latency metrics with p95,
-Prometheus scrape coverage, and Grafana/alert docs. `EPIC-E06` is next.
+Prometheus scrape coverage, and Grafana/alert docs. `EPIC-E06` added
+per-tenant cell, estimated-memory, and queue quotas with `quota_exceeded`
+responses, 50-tenant load coverage, and backpressure tuning docs. `EPIC-E07`
+is next.
 `EPIC-D05` remains partial/local-ready and is externally blocked on public
 registry credentials/trusted publishing.
 
@@ -127,7 +130,8 @@ enough to unblock the next dependency step.
 49. `EPIC-C20` — Baseline comparison with naive stack: done.
 50. `EPIC-E03` — WAL archive to point-in-time recovery: done.
 51. `EPIC-E05` — Observability tracing + Prometheus metrics: done.
-52. `EPIC-E06` — Backpressure tuning and per-tenant limits: next.
+52. `EPIC-E06` — Backpressure tuning and per-tenant limits: done.
+53. `EPIC-E07` — Audit log productization: next.
 
 ## Summary
 
@@ -1902,16 +1906,37 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-E06 — Backpressure-тюнинг и лимиты per tenant
 
-- status: `pending`
+- status: `done`
 - meta: Категория: ops · P1 · 90 days · improve
 - tasks:
-  - [ ] 1) квоты: max cells / max RAM-estimate / max queue per tenant (отказ с кодом quota_exceeded)
-  - [ ] 2) гайд тюнинга CORTEXDB_ACTOR_QUEUE_CAPACITY против латентности
-  - [ ] 3) 50-тенантный load-тест.
+  - [x] 1) квоты: max cells / max RAM-estimate / max queue per tenant (отказ с кодом quota_exceeded)
+  - [x] 2) гайд тюнинга CORTEXDB_ACTOR_QUEUE_CAPACITY против латентности
+  - [x] 3) 50-тенантный load-тест.
 - acceptance:
-  - [ ] 1) квоты enforce'ятся (тесты)
-  - [ ] 2) capacity-формула в OPERATIONS (с A19/C16 числами).
+  - [x] 1) квоты enforce'ятся (тесты)
+  - [x] 2) capacity-формула в OPERATIONS (с A19/C16 числами).
 - files: server/actor.rs, router; docs.
+- evidence: Added server options/env guards `CORTEXDB_TENANT_MAX_CELLS`,
+  `CORTEXDB_TENANT_MAX_MEMORY_BYTES`, and `CORTEXDB_TENANT_QUEUE_QUOTA`.
+  Database routes now acquire per-tenant queue permits and preflight write
+  routes against logical cell count plus estimated memory before entering the
+  actor. Quota exhaustion uses stable `429 quota_exceeded` across server,
+  OpenAPI, SDK generated types, Rust SDK, docs, and snapshots. Added quota
+  regressions for per-tenant cell isolation, projected memory rejection, tenant
+  queue permit accounting, and a 50-tenant HTTP load smoke. `load-suite-check`
+  now runs a 50-tenant mixed workload. `docs/OPERATIONS.md` documents the
+  actor queue formula and A19/C17 p95/jitter guidance.
+- verification: `cargo fmt --check`, `cargo test -p cortex-server
+  security_quota_tests --all-features`, `cargo test -p cortex-server
+  rate_limit::tests::tenant_queue_budget_rejects_per_tenant --all-features`,
+  `cargo test -p cortex-server snapshot_all_sdk_visible_error_responses
+  --all-features`, `cargo test -p cortex-sdk
+  error_code_decodes_full_core_alpha_taxonomy --all-features`,
+  `python3 scripts/check_error_taxonomy_contract.py`, `make
+  quota-policy-check`, `make openapi-contract-check`, and `make
+  load-suite-check`.
+- remaining: none for E06 acceptance.
+- next exit step: move to `EPIC-E07` — Audit log productization.
 
 ### EPIC-E07 — Audit log productization
 

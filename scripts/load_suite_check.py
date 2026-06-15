@@ -123,9 +123,8 @@ def ingest_heavy(base_url: str) -> tuple[dict[str, Any], list[str]]:
 def mixed_tenant(base_url: str) -> tuple[dict[str, Any], list[str]]:
     errors: list[str] = []
     latencies: list[float] = []
-    tenants = ("tenant-a", "tenant-b")
-    for index in range(12):
-        tenant = tenants[index % len(tenants)]
+    tenants = [f"tenant-{index:02d}" for index in range(50)]
+    for index, tenant in enumerate(tenants):
         cell_id = 1_000 + index
         payload = (
             "scope=load\n"
@@ -150,7 +149,9 @@ def mixed_tenant(base_url: str) -> tuple[dict[str, Any], list[str]]:
             latencies.append((time.perf_counter() - start) * 1000.0)
         except Exception as error:
             errors.append(f"mixed_tenant[{index}]: {error}")
-    return summarize("mixed_tenant", latencies, errors), errors
+    report = summarize("mixed_tenant", latencies, errors)
+    report["tenant_count"] = len(tenants)
+    return report, errors
 
 
 WORKLOADS: dict[str, WorkloadFn] = {

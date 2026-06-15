@@ -262,6 +262,7 @@ test("CortexDBError decodes full Core Alpha taxonomy", async () => {
     "forbidden",
     "payload_too_large",
     "rate_limited",
+    "quota_exceeded",
     "service_unavailable",
     "internal",
     "invalid_aql",

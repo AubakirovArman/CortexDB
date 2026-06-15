@@ -430,6 +430,7 @@ fn error_code_decodes_full_core_alpha_taxonomy() {
         ("forbidden", ErrorCode::Forbidden),
         ("payload_too_large", ErrorCode::PayloadTooLarge),
         ("rate_limited", ErrorCode::RateLimited),
+        ("quota_exceeded", ErrorCode::QuotaExceeded),
         ("service_unavailable", ErrorCode::ServiceUnavailable),
         ("internal", ErrorCode::Internal),
         ("invalid_aql", ErrorCode::InvalidAql),

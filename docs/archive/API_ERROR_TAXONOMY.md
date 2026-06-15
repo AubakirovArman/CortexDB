@@ -30,6 +30,7 @@ filesystem internals, private scope names, brain names, or stack traces.
 | `404` | `not_found` | Unknown route or missing resource such as an ingestion job. | Fix the path/id or handle missing resource. |
 | `413` | `payload_too_large` | Request body exceeds the server body boundary. | Reduce body size. |
 | `429` | `rate_limited` | Optional fixed-window server rate limit is exhausted. | Back off and retry later. |
+| `429` | `quota_exceeded` | Per-principal or per-tenant quota is exhausted. | Reduce write/load volume, raise the relevant quota, or retry after the local window/queue drains. |
 | `500` | `storage_corruption` | Storage checksum, format, missing-file, or invariant failure. | Stop writes; run validation/repair workflow. |
 | `500` | `internal` | Unexpected internal error not classified above. | Treat as server fault. |
 | `503` | `database_busy` | Database actor queue is full or the local database lock is busy. | Back off and retry later. |

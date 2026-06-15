@@ -20,17 +20,20 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-E06` — Backpressure tuning and per-tenant limits.
+`EPIC-E07` — Audit log productization.
 
-E06 exit steps:
+E07 exit steps:
 
-1. Enforce per-tenant quota limits for cells/RAM-estimate/queue.
-2. Document `CORTEXDB_ACTOR_QUEUE_CAPACITY` tuning against latency.
-3. Add a 50-tenant load test.
+1. Add JSONL sink rotation, fsync policy, and schema version.
+2. Ensure audit records include agent id, route, scope decisions, and seq.
+3. Archive SIEM documentation.
 
-E06 current state:
+E07 current state:
 
 - next.
+- E06 is closed with per-tenant cell/memory/queue quotas, `quota_exceeded`,
+  OpenAPI/SDK taxonomy alignment, operations tuning docs, and 50-tenant load
+  coverage.
 - E05 is closed with HTTP/queue/engine tracing spans, queue-wait histogram and
   p95 metrics, Prometheus scrape coverage, Grafana/alert examples, and
   OpenAPI/SDK contract alignment.
@@ -80,6 +83,23 @@ D05 split state:
 - do not block kernel/database epics on D05.
 
 ## Recently Closed
+
+### EPIC-E06 — Backpressure tuning and per-tenant limits
+
+Status: `done`
+
+What closed it:
+
+- Added `CORTEXDB_TENANT_MAX_CELLS`,
+  `CORTEXDB_TENANT_MAX_MEMORY_BYTES`, and `CORTEXDB_TENANT_QUEUE_QUOTA`.
+- Enforced per-tenant queue permits and storage quota preflight before write
+  routes enter the actor.
+- Added stable `429 quota_exceeded` across server, OpenAPI, SDK generated
+  types, Rust SDK, docs, and snapshots.
+- Added per-tenant cell, memory, queue, and 50-tenant load-smoke tests; the
+  load-suite mixed-tenant workload now covers 50 tenants.
+- Documented actor queue capacity sizing and A19/C17 p95/jitter guidance in
+  `docs/OPERATIONS.md`.
 
 ### EPIC-E05 — Observability tracing + Prometheus metrics
 

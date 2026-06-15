@@ -49,7 +49,7 @@ fn policy_store_principal_quota_is_isolated_per_principal() {
         "second principal-a request should be quota limited: {second_a}"
     );
     assert!(
-        second_a.contains("rate_limited"),
+        second_a.contains("quota_exceeded"),
         "quota response should use typed error code: {second_a}"
     );
 
@@ -108,7 +108,7 @@ fn policy_store_principal_body_quota_limits_uploaded_bytes_and_reports_metrics()
         "body over principal quota should be rejected: {second}"
     );
     assert!(
-        second.contains("rate_limited"),
+        second.contains("quota_exceeded"),
         "body quota response should use typed error code: {second}"
     );
 
@@ -158,6 +158,161 @@ fn policy_store_principal_queue_quota_reports_actor_queue_metrics() {
     assert_eq!(value["principal_quota_queue_rejected"], 0);
 }
 
+#[test]
+fn tenant_max_cells_quota_is_isolated_per_tenant() {
+    let dir = tempfile::tempdir().unwrap();
+    let local_addr = spawn_server_with_options(
+        dir.path().join("db"),
+        ServerOptions {
+            tenant_max_cells: Some(1),
+            ..Default::default()
+        },
+    );
+
+    let first_alpha_body = "scope=default\nstatus=ready\none";
+    let first_alpha = request(
+        local_addr,
+        &format!(
+            "POST /v1/cell?tenant=alpha&cell_id=1 HTTP/1.1\r\ncontent-length: {}\r\n\r\n{}",
+            first_alpha_body.len(),
+            first_alpha_body
+        ),
+    );
+    assert!(
+        first_alpha.contains("200 OK"),
+        "first alpha write should pass: {first_alpha}"
+    );
+
+    let second_alpha_body = "scope=default\nstatus=ready\ntwo";
+    let second_alpha = request(
+        local_addr,
+        &format!(
+            "POST /v1/cell?tenant=alpha&cell_id=2 HTTP/1.1\r\ncontent-length: {}\r\n\r\n{}",
+            second_alpha_body.len(),
+            second_alpha_body
+        ),
+    );
+    assert!(
+        second_alpha.contains("429 Too Many Requests"),
+        "second alpha write should hit tenant cell quota: {second_alpha}"
+    );
+    assert!(second_alpha.contains("quota_exceeded"));
+
+    let first_beta_body = "scope=default\nstatus=ready\nbeta";
+    let first_beta = request(
+        local_addr,
+        &format!(
+            "POST /v1/cell?tenant=beta&cell_id=1 HTTP/1.1\r\ncontent-length: {}\r\n\r\n{}",
+            first_beta_body.len(),
+            first_beta_body
+        ),
+    );
+    assert!(
+        first_beta.contains("200 OK"),
+        "beta tenant quota should be independent: {first_beta}"
+    );
+}
+
+#[test]
+fn tenant_max_memory_quota_rejects_projected_payload_bytes() {
+    let dir = tempfile::tempdir().unwrap();
+    let local_addr = spawn_server_with_options(
+        dir.path().join("db"),
+        ServerOptions {
+            tenant_max_memory_bytes: Some(8),
+            ..Default::default()
+        },
+    );
+
+    let body = "scope=default\nstatus=ready\npayload-too-large";
+    let rejected = request(
+        local_addr,
+        &format!(
+            "POST /v1/cell?tenant=alpha&cell_id=1 HTTP/1.1\r\ncontent-length: {}\r\n\r\n{}",
+            body.len(),
+            body
+        ),
+    );
+    assert!(
+        rejected.contains("429 Too Many Requests"),
+        "payload should hit tenant memory quota: {rejected}"
+    );
+    assert!(rejected.contains("quota_exceeded"));
+
+    let missing = request(
+        local_addr,
+        "GET /v1/cell?tenant=alpha&cell_id=1 HTTP/1.1\r\n\r\n",
+    );
+    assert!(
+        missing.contains(r#""cell":null"#),
+        "rejected quota write must not create the cell: {missing}"
+    );
+}
+
+#[test]
+fn tenant_quota_50_tenant_load_smoke() {
+    let dir = tempfile::tempdir().unwrap();
+    let local_addr = spawn_server_with_options(
+        dir.path().join("db"),
+        ServerOptions {
+            tenant_max_cells: Some(2),
+            tenant_max_memory_bytes: Some(8 * 1024),
+            tenant_queue_quota: Some(4),
+            ..Default::default()
+        },
+    );
+
+    for index in 0..50 {
+        let tenant = format!("tenant_{index}");
+        let payload = format!("scope=default\nstatus=ready\npayload-{index}");
+        let put = request(
+            local_addr,
+            &format!(
+                "POST /v1/cell?tenant={tenant}&cell_id=1 HTTP/1.1\r\ncontent-length: {}\r\n\r\n{}",
+                payload.len(),
+                payload
+            ),
+        );
+        assert!(put.contains("200 OK"), "put failed for {tenant}: {put}");
+
+        let get = request(
+            local_addr,
+            &format!("GET /v1/cell?tenant={tenant}&cell_id=1 HTTP/1.1\r\n\r\n"),
+        );
+        assert!(
+            get.contains(&format!("payload-{index}")),
+            "get failed for {tenant}: {get}"
+        );
+    }
+
+    let third_body = "scope=default\nstatus=ready\nthird";
+    let second_body = "scope=default\nstatus=ready\nsecond";
+    let second = request(
+        local_addr,
+        &format!(
+            "POST /v1/cell?tenant=tenant_0&cell_id=2 HTTP/1.1\r\ncontent-length: {}\r\n\r\n{}",
+            second_body.len(),
+            second_body
+        ),
+    );
+    assert!(
+        second.contains("200 OK"),
+        "second cell should fit: {second}"
+    );
+    let third = request(
+        local_addr,
+        &format!(
+            "POST /v1/cell?tenant=tenant_0&cell_id=3 HTTP/1.1\r\ncontent-length: {}\r\n\r\n{}",
+            third_body.len(),
+            third_body
+        ),
+    );
+    assert!(
+        third.contains("429 Too Many Requests") && third.contains("quota_exceeded"),
+        "third cell should exceed per-tenant quota: {third}"
+    );
+}
+
 fn request(addr: std::net::SocketAddr, request: &str) -> String {
     use std::io::{Read, Write};
     use std::net::TcpStream;
@@ -196,16 +351,25 @@ fn spawn_server(
     root_path: std::path::PathBuf,
     policy_store: std::path::PathBuf,
 ) -> std::net::SocketAddr {
+    spawn_server_with_options(
+        root_path,
+        ServerOptions {
+            auth_policy_store_file: Some(policy_store),
+            ..Default::default()
+        },
+    )
+}
+
+fn spawn_server_with_options(
+    root_path: std::path::PathBuf,
+    options: ServerOptions,
+) -> std::net::SocketAddr {
     let addr = "127.0.0.1:0";
     let listener = std::net::TcpListener::bind(addr).unwrap();
     let local_addr = listener.local_addr().unwrap();
     drop(listener);
 
     std::thread::spawn(move || {
-        let options = ServerOptions {
-            auth_policy_store_file: Some(policy_store),
-            ..Default::default()
-        };
         let _ = crate::serve_with_options(&root_path, &local_addr.to_string(), options);
     });
 

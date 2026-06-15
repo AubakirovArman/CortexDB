@@ -1145,7 +1145,7 @@ OpenApiIngestionProgress = TypedDict(
 OpenApiErrorResponse = TypedDict(
     'OpenApiErrorResponse',
     {
-        'code': "Literal['not_found', 'bad_request', 'unauthorized', 'forbidden', 'payload_too_large', 'rate_limited', 'service_unavailable', 'internal', 'invalid_aql', 'unknown_field', 'unsupported_operator', 'permission_denied', 'database_busy', 'storage_corruption', 'invalid_tenant']",
+        'code': "Literal['not_found', 'bad_request', 'unauthorized', 'forbidden', 'payload_too_large', 'rate_limited', 'quota_exceeded', 'service_unavailable', 'internal', 'invalid_aql', 'unknown_field', 'unsupported_operator', 'permission_denied', 'database_busy', 'storage_corruption', 'invalid_tenant']",
         'error': 'str',
         'message': 'str',
     },

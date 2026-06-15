@@ -100,6 +100,54 @@ struct PrincipalQuotaState {
     queue_in_flight: u64,
 }
 
+#[derive(Clone, Debug, Default)]
+pub(crate) struct TenantQueueLimits {
+    states: Arc<Mutex<BTreeMap<String, TenantQueueState>>>,
+}
+
+impl TenantQueueLimits {
+    pub(crate) fn acquire_queue(&self, tenant: &str, limit: u64) -> Option<TenantQueuePermit> {
+        let Ok(mut states) = self.states.lock() else {
+            return None;
+        };
+        let state = states.entry(tenant.to_owned()).or_default();
+        if state.queue_in_flight >= limit {
+            return None;
+        }
+        state.queue_in_flight += 1;
+        Some(TenantQueuePermit {
+            limits: self.clone(),
+            tenant: tenant.to_owned(),
+        })
+    }
+
+    fn release_queue(&self, tenant: &str) {
+        let Ok(mut states) = self.states.lock() else {
+            return;
+        };
+        let Some(state) = states.get_mut(tenant) else {
+            return;
+        };
+        state.queue_in_flight = state.queue_in_flight.saturating_sub(1);
+    }
+}
+
+pub(crate) struct TenantQueuePermit {
+    limits: TenantQueueLimits,
+    tenant: String,
+}
+
+impl Drop for TenantQueuePermit {
+    fn drop(&mut self) {
+        self.limits.release_queue(&self.tenant);
+    }
+}
+
+#[derive(Debug, Default)]
+struct TenantQueueState {
+    queue_in_flight: u64,
+}
+
 #[derive(Debug)]
 struct RollingBudgetState {
     limit: u64,
@@ -146,7 +194,7 @@ impl Default for RollingBudgetState {
 
 #[cfg(test)]
 mod tests {
-    use super::PrincipalRateLimits;
+    use super::{PrincipalRateLimits, TenantQueueLimits};
 
     #[test]
     fn body_byte_budget_counts_bytes_per_principal() {
@@ -168,5 +216,19 @@ mod tests {
 
         drop(first);
         assert!(limits.acquire_queue("a", 1).is_some());
+    }
+
+    #[test]
+    fn tenant_queue_budget_rejects_per_tenant() {
+        let limits = TenantQueueLimits::default();
+
+        let first = limits
+            .acquire_queue("tenant-a", 1)
+            .expect("first tenant permit");
+        assert!(limits.acquire_queue("tenant-a", 1).is_none());
+        assert!(limits.acquire_queue("tenant-b", 1).is_some());
+
+        drop(first);
+        assert!(limits.acquire_queue("tenant-a", 1).is_some());
     }
 }

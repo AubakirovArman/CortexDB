@@ -9,7 +9,7 @@ use tower_http::limit::RequestBodyLimitLayer;
 
 use crate::config::ServerOptions;
 use crate::handler::axum_handler;
-use crate::rate_limit::{GlobalRateLimit, PrincipalRateLimits};
+use crate::rate_limit::{GlobalRateLimit, PrincipalRateLimits, TenantQueueLimits};
 use crate::state::AppState;
 use crate::{audit, auth, metrics};
 
@@ -65,6 +65,7 @@ pub fn serve_with_options(root: &Path, addr: &str, options: ServerOptions) -> st
             compaction_paused: Arc::new(AtomicBool::new(false)),
             rate_limit,
             principal_rate_limits: PrincipalRateLimits::default(),
+            tenant_queue_limits: TenantQueueLimits::default(),
         };
 
         let mut app = Router::new()
@@ -208,6 +209,24 @@ fn validate_server_options(options: &ServerOptions) -> std::io::Result<()> {
     }
     if let Err(error) = auth::validate_token_policies(options) {
         return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, error));
+    }
+    if matches!(options.tenant_max_cells, Some(0)) {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "tenant_max_cells must be greater than zero",
+        ));
+    }
+    if matches!(options.tenant_max_memory_bytes, Some(0)) {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "tenant_max_memory_bytes must be greater than zero",
+        ));
+    }
+    if matches!(options.tenant_queue_quota, Some(0)) {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "tenant_queue_quota must be greater than zero",
+        ));
     }
     Ok(())
 }

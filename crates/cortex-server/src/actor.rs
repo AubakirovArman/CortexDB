@@ -15,6 +15,14 @@ use cortex_engine::{Database, DatabaseOptions};
 use crate::responses::RouterError;
 use crate::DEFAULT_ACTOR_QUEUE_CAPACITY;
 
+pub(crate) use routing::is_write_route;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct TenantQuotaSnapshot {
+    pub(crate) logical_cells: u64,
+    pub(crate) estimated_memory_bytes: u64,
+}
+
 /// A concurrent handle to a tenant database.
 ///
 /// `DatabaseActor` replaces the previous single-threaded actor with a
@@ -91,6 +99,22 @@ impl DatabaseActor {
 
     pub fn waiting_writers(&self) -> usize {
         self.db.waiting_writers()
+    }
+
+    pub(crate) fn tenant_quota_snapshot(&self) -> Result<TenantQuotaSnapshot, RouterError> {
+        self.ensure_open()?;
+        let guard = self.db.read();
+        let stats = guard.storage_stats()?;
+        let persisted_cells = guard
+            .manifest()
+            .live_segments
+            .iter()
+            .map(|segment| u64::from(segment.cell_count))
+            .sum::<u64>();
+        Ok(TenantQuotaSnapshot {
+            logical_cells: persisted_cells.saturating_add(stats.memtable.cell_count as u64),
+            estimated_memory_bytes: stats.estimated_total_memory_bytes as u64,
+        })
     }
 
     pub fn close(&self) -> Result<(), RouterError> {

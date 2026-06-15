@@ -6,7 +6,9 @@ use axum::{
 use std::sync::atomic::Ordering;
 
 use super::error::error_response;
-use crate::quota::acquire_principal_queue_permit;
+use crate::quota::{
+    acquire_principal_queue_permit, acquire_tenant_queue_permit, enforce_tenant_storage_quota,
+};
 use crate::request_audit::{audit_http_response, RequestAudit};
 use crate::request_id::with_request_id;
 use crate::responses::{ErrorCode, RouterError};
@@ -87,6 +89,39 @@ pub(super) async fn handle_database_route(
     } else {
         format!("{path}?{query}")
     };
+    let _tenant_queue_permit = match acquire_tenant_queue_permit(state, &tenant) {
+        Ok(permit) => permit,
+        Err(error) => {
+            state.request_rejected.fetch_add(1, Ordering::Relaxed);
+            let status =
+                StatusCode::from_u16(error.status_code()).unwrap_or(StatusCode::TOO_MANY_REQUESTS);
+            audit_http_response(state, audit_event, status, Some(error.code()));
+            return with_request_id(
+                (
+                    status,
+                    Json(error_response(error.code(), error.to_string())),
+                )
+                    .into_response(),
+                request_id,
+            );
+        }
+    };
+    if crate::actor::is_write_route(method, &target) {
+        if let Err(error) = enforce_tenant_storage_quota(state, &db, method, &target, body_bytes) {
+            state.request_rejected.fetch_add(1, Ordering::Relaxed);
+            let status =
+                StatusCode::from_u16(error.status_code()).unwrap_or(StatusCode::TOO_MANY_REQUESTS);
+            audit_http_response(state, audit_event, status, Some(error.code()));
+            return with_request_id(
+                (
+                    status,
+                    Json(error_response(error.code(), error.to_string())),
+                )
+                    .into_response(),
+                request_id,
+            );
+        }
+    }
     let _queue_permit = match acquire_principal_queue_permit(state, auth_decision) {
         Ok(permit) => permit,
         Err(error) => {

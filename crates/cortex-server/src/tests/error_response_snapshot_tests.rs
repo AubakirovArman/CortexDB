@@ -14,6 +14,7 @@ fn snapshot_all_sdk_visible_error_responses() {
         ErrorCode::NotFound,
         ErrorCode::PayloadTooLarge,
         ErrorCode::RateLimited,
+        ErrorCode::QuotaExceeded,
         ErrorCode::StorageCorruption,
         ErrorCode::Internal,
         ErrorCode::DatabaseBusy,

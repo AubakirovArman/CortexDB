@@ -9,7 +9,7 @@ use super::DatabaseActor;
 /// Returns `true` for routes that mutate database state and therefore require a
 /// write lock. This classification must stay in sync with the route handlers in
 /// `router.rs`.
-pub(super) fn is_write_route(method: &str, target: &str) -> bool {
+pub(crate) fn is_write_route(method: &str, target: &str) -> bool {
     let (path, _query) = target.split_once('?').unwrap_or((target, ""));
     matches!(
         (method, path),

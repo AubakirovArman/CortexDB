@@ -22,6 +22,7 @@ CODE_STATUS = {
     "not_found": 404,
     "payload_too_large": 413,
     "rate_limited": 429,
+    "quota_exceeded": 429,
     "storage_corruption": 500,
     "internal": 500,
     "database_busy": 503,

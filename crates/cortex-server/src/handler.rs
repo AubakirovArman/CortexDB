@@ -101,7 +101,7 @@ pub(crate) async fn axum_handler(State(state): State<AppState>, req: Request) ->
 
     if !request_allowed_by_principal_quota(&state, &auth_decision) {
         state.request_rejected.fetch_add(1, Ordering::Relaxed);
-        return rate_limit_response(
+        return quota_exceeded_response(
             &state,
             &audit_event,
             &request_id,
@@ -134,7 +134,7 @@ pub(crate) async fn axum_handler(State(state): State<AppState>, req: Request) ->
 
     if !request_body_allowed_by_principal_quota(&state, &auth_decision, body_bytes.len()) {
         state.request_rejected.fetch_add(1, Ordering::Relaxed);
-        return rate_limit_response(
+        return quota_exceeded_response(
             &state,
             &audit_event,
             &request_id,
@@ -259,6 +259,28 @@ fn rate_limit_response(
         (
             StatusCode::TOO_MANY_REQUESTS,
             Json(error_response(ErrorCode::RateLimited, message)),
+        )
+            .into_response(),
+        request_id,
+    )
+}
+
+fn quota_exceeded_response(
+    state: &AppState,
+    audit_event: &RequestAudit<'_>,
+    request_id: &str,
+    message: &'static str,
+) -> Response {
+    audit_http_response(
+        state,
+        audit_event,
+        StatusCode::TOO_MANY_REQUESTS,
+        Some(ErrorCode::QuotaExceeded),
+    );
+    with_request_id(
+        (
+            StatusCode::TOO_MANY_REQUESTS,
+            Json(error_response(ErrorCode::QuotaExceeded, message)),
         )
             .into_response(),
         request_id,

@@ -5,7 +5,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::config::ServerOptions;
 use crate::metrics;
-use crate::rate_limit::PrincipalRateLimits;
+use crate::rate_limit::{PrincipalRateLimits, TenantQueueLimits};
 use crate::state::AppState;
 
 use super::record_ann_search_metrics;
@@ -43,6 +43,7 @@ fn app_state_for_metrics() -> AppState {
         compaction_paused: Arc::new(AtomicBool::new(false)),
         rate_limit: None,
         principal_rate_limits: PrincipalRateLimits::default(),
+        tenant_queue_limits: TenantQueueLimits::default(),
     }
 }
 

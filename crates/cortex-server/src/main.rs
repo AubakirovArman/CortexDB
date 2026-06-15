@@ -26,6 +26,27 @@ fn main() -> ExitCode {
             return ExitCode::FAILURE;
         }
     };
+    let tenant_max_cells = match tenant_max_cells_from_env() {
+        Ok(limit) => limit,
+        Err(error) => {
+            eprintln!("{error}");
+            return ExitCode::FAILURE;
+        }
+    };
+    let tenant_max_memory_bytes = match tenant_max_memory_bytes_from_env() {
+        Ok(limit) => limit,
+        Err(error) => {
+            eprintln!("{error}");
+            return ExitCode::FAILURE;
+        }
+    };
+    let tenant_queue_quota = match tenant_queue_quota_from_env() {
+        Ok(limit) => limit,
+        Err(error) => {
+            eprintln!("{error}");
+            return ExitCode::FAILURE;
+        }
+    };
     let auth_agent_id = match auth_agent_id_from_env() {
         Ok(agent_id) => agent_id,
         Err(error) => {
@@ -80,6 +101,9 @@ fn main() -> ExitCode {
         auth_tokens_file,
         auth_policy_store_file,
         actor_queue_capacity,
+        tenant_max_cells,
+        tenant_max_memory_bytes,
+        tenant_queue_quota,
         cors_allowed_origin: env::var("CORTEXDB_CORS_ALLOW_ORIGIN").ok(),
         request_rate_limit_per_minute,
         audit_log_enabled: audit_log_enabled_from_env() || audit_log_path.is_some(),
@@ -215,13 +239,27 @@ fn request_rate_limit_from_env() -> Result<Option<u64>, String> {
 }
 
 fn parse_request_rate_limit(raw: &str) -> Result<u64, String> {
-    let limit = raw
-        .parse::<u64>()
-        .map_err(|_| "CORTEXDB_RATE_LIMIT_PER_MINUTE must be a positive integer".to_owned())?;
-    if limit == 0 {
-        return Err("CORTEXDB_RATE_LIMIT_PER_MINUTE must be greater than zero".to_owned());
+    parse_positive_u64(raw, "CORTEXDB_RATE_LIMIT_PER_MINUTE")
+}
+
+fn tenant_max_cells_from_env() -> Result<Option<u64>, String> {
+    optional_positive_u64_from_env("CORTEXDB_TENANT_MAX_CELLS")
+}
+
+fn tenant_max_memory_bytes_from_env() -> Result<Option<u64>, String> {
+    optional_positive_u64_from_env("CORTEXDB_TENANT_MAX_MEMORY_BYTES")
+}
+
+fn tenant_queue_quota_from_env() -> Result<Option<u64>, String> {
+    optional_positive_u64_from_env("CORTEXDB_TENANT_QUEUE_QUOTA")
+}
+
+fn optional_positive_u64_from_env(var: &str) -> Result<Option<u64>, String> {
+    match env::var(var) {
+        Ok(raw) => parse_positive_u64(&raw, var).map(Some),
+        Err(env::VarError::NotPresent) => Ok(None),
+        Err(error) => Err(format!("invalid {var}: {error}")),
     }
-    Ok(limit)
 }
 
 fn actor_queue_capacity_from_env() -> Result<usize, String> {

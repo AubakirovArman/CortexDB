@@ -4,7 +4,7 @@ use std::sync::atomic::{AtomicBool, AtomicU64};
 use std::sync::{Arc, Mutex};
 
 use crate::config::ServerOptions;
-use crate::rate_limit::{GlobalRateLimit, PrincipalRateLimits};
+use crate::rate_limit::{GlobalRateLimit, PrincipalRateLimits, TenantQueueLimits};
 use crate::{actor, audit, metrics};
 
 /// Validates that a tenant ID is safe and conforms to the alphanumeric format,
@@ -57,6 +57,7 @@ pub struct AppState {
     pub(crate) compaction_paused: Arc<AtomicBool>,
     pub(crate) rate_limit: Option<GlobalRateLimit>,
     pub(crate) principal_rate_limits: PrincipalRateLimits,
+    pub(crate) tenant_queue_limits: TenantQueueLimits,
 }
 
 impl AppState {

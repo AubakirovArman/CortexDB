@@ -37,6 +37,12 @@ pub struct ServerOptions {
     pub auth_policy_store_file: Option<PathBuf>,
     /// Capacity of the bounded actor command queue. Default is 1024.
     pub actor_queue_capacity: usize,
+    /// Optional per-tenant logical cell limit. Checked before write routes.
+    pub tenant_max_cells: Option<u64>,
+    /// Optional per-tenant estimated memory limit in bytes. Checked before write routes.
+    pub tenant_max_memory_bytes: Option<u64>,
+    /// Optional per-tenant in-flight actor command quota.
+    pub tenant_queue_quota: Option<u64>,
     /// Optional exact browser origin allowed for cross-origin API requests.
     ///
     /// CORS is disabled by default. Set this only for deployments that expose

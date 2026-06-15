@@ -47,6 +47,7 @@ Stable Core Alpha error codes:
 | `404` | `not_found` | Unknown route or missing resource such as an ingestion job. |
 | `413` | `payload_too_large` | Request body exceeds server limit. |
 | `429` | `rate_limited` | Optional server request-rate limit is exceeded. |
+| `429` | `quota_exceeded` | Per-principal or per-tenant quota is exceeded. |
 | `503` | `database_busy` | Database actor queue or database lock is busy. |
 | `503` | `service_unavailable` | Server component is unavailable but not classified as queue/lock pressure. |
 | `500` | `storage_corruption` | Storage checksum, format, or invariant failure. |
@@ -164,7 +165,7 @@ fingerprint, not the raw token.
 
 If `capabilities` is present, the principal is further restricted to those API
 action classes. Omitting the field preserves the default behavior for the
-principal role. Quota fields are optional fixed-window local guards:
+principal role. Principal quota fields are optional fixed-window local guards:
 `request_quota_per_minute` counts requests, `body_quota_bytes_per_minute`
 counts accepted request body bytes, and `queue_quota` limits concurrent actor
 commands for the token/principal. `context_budget_tokens` clamps the bound

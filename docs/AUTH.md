@@ -379,8 +379,8 @@ local per-principal/per-token quotas:
 }
 ```
 
-If that principal exhausts any configured quota, the server returns the same
-typed `rate_limited` response. Other principals continue using their own
+If that principal exhausts any configured quota, the server returns typed
+`429 quota_exceeded`. Other principals continue using their own
 independent quota windows. `/v1/metrics` exposes aggregate quota counters for
 allowed/rejected request checks, body bytes, and queue permits, but not raw
 tokens or principal IDs.

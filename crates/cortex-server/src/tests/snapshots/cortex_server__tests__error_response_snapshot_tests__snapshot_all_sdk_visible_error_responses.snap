@@ -60,6 +60,11 @@ expression: responses
     "message": "rate_limited message"
   },
   {
+    "code": "quota_exceeded",
+    "error": "quota_exceeded",
+    "message": "quota_exceeded message"
+  },
+  {
     "code": "storage_corruption",
     "error": "storage_corruption",
     "message": "storage_corruption message"

@@ -64,6 +64,12 @@ fn all_router_errors_have_stable_codes_and_statuses() {
             "rate_limited",
         ),
         (
+            RouterError::QuotaExceeded("quota exceeded".to_owned()),
+            429,
+            ErrorCode::QuotaExceeded,
+            "quota_exceeded",
+        ),
+        (
             RouterError::DatabaseBusy("busy".to_owned()),
             503,
             ErrorCode::DatabaseBusy,

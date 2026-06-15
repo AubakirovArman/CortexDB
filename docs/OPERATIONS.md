@@ -131,7 +131,49 @@ make production-candidate-check
 make production-v1-check
 ```
 
-## 4) Operational Runbooks
+## 4) Backpressure and Tenant Quotas
+
+The server has two local backpressure layers:
+
+- `CORTEXDB_ACTOR_QUEUE_CAPACITY` sets each tenant actor's bounded command
+  queue. Default: `1024`.
+- `CORTEXDB_TENANT_QUEUE_QUOTA` optionally caps in-flight actor commands per
+  tenant below the actor capacity.
+
+Tenant storage quotas are also optional and enforced before write routes:
+
+```bash
+export CORTEXDB_TENANT_MAX_CELLS=1000000
+export CORTEXDB_TENANT_MAX_MEMORY_BYTES=$((8 * 1024 * 1024 * 1024))
+export CORTEXDB_TENANT_QUEUE_QUOTA=128
+export CORTEXDB_ACTOR_QUEUE_CAPACITY=256
+```
+
+Quota exhaustion returns `429 quota_exceeded`. The process-wide request-rate
+guard remains `429 rate_limited`.
+
+Capacity sizing:
+
+```text
+tenant_queue_quota <= actor_queue_capacity
+actor_queue_capacity >= ceil(tenant_peak_rps * tolerated_queue_window_ms / 1000)
+```
+
+Use A19/C17 evidence as the starting safety margin: keep
+`actor_queue_wait_p95_ms <= max(50ms, baseline_p95_ms * 1.2 + 25ms)`. The
+`25ms` term is the existing C17 jitter floor. If p95 crosses that bound while
+CPU/RSS are still healthy, raise `CORTEXDB_ACTOR_QUEUE_CAPACITY` and
+`CORTEXDB_TENANT_QUEUE_QUOTA` together. If RSS or `estimated_total_memory_bytes`
+is the limiting factor, lower tenant queue/storage quotas instead.
+
+Local gate:
+
+```bash
+cargo test -p cortex-server tenant_quota_50_tenant_load_smoke --all-features
+make load-suite-check
+```
+
+## 5) Operational Runbooks
 
 The beta RC operator path is split by activity:
 
@@ -149,7 +191,7 @@ The beta RC operator path is split by activity:
 | upgrade | [`UPGRADE_ROLLBACK.md`](archive/UPGRADE_ROLLBACK.md), [`UPGRADE_MIGRATION.md`](archive/UPGRADE_MIGRATION.md) | `make deployment-upgrade-check` |
 | rollback | [`UPGRADE_ROLLBACK.md`](archive/UPGRADE_ROLLBACK.md) | restore previous backup and validate |
 
-## 5) Backup and recovery
+## 6) Backup and recovery
 
 ```bash
 cortexdb backup ./data ./backups/data-$(date -u +%Y%m%dT%H%M%SZ)
@@ -186,7 +228,7 @@ Release evidence:
 make backup-restore-production-pack-check
 ```
 
-## 6) Troubleshooting
+## 7) Troubleshooting
 
 ### Stale lock or `database_busy`
 
@@ -271,7 +313,7 @@ cargo run -p cortex-cli -- audit ./audit/http.jsonl --action write --tenant-filt
 Use this during incident review to count route activity by action/status/tenant
 and confirm the audit sink did not persist query strings or body-like fields.
 
-## 7) Performance/reliability smoke
+## 8) Performance/reliability smoke
 
 - Runbook coverage: `make operations-runbook-check`
 - Service manager examples: `make service-manager-smoke-check`
@@ -284,7 +326,7 @@ and confirm the audit sink did not persist query strings or body-like fields.
 - Production boundary: `make production-candidate-check`,
   `make production-v1-check`
 
-## 8) Known operational limits
+## 9) Known operational limits
 
 - Single-node model first.
 - Production multi-node is experimental.
@@ -297,7 +339,7 @@ and confirm the audit sink did not persist query strings or body-like fields.
 - For distributed security/compliance needs, wait for dedicated production
   hardening milestone.
 
-## 9) Operator evidence bundle
+## 10) Operator evidence bundle
 
 Before publishing or handing a build to another operator, collect:
 

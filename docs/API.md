@@ -666,6 +666,7 @@ If an error occurs, the server responds with a corresponding HTTP status code an
 | **`404 Not Found`** | `not_found` | Resource or route not found. |
 | **`413 Payload Too Large`** | `payload_too_large` | Body size exceeds 2MB boundary. |
 | **`429 Too Many Requests`** | `rate_limited` | Optional request-rate limit exceeded. |
+| **`429 Too Many Requests`** | `quota_exceeded` | Per-principal or per-tenant quota exceeded. |
 | **`500 Internal Error`** | `storage_corruption` | Storage checksum, format, or invariant failure. |
 | **`500 Internal Error`** | `internal` | Unexpected internal failure. |
 | **`503 Service Unavailable`** | `database_busy` | Database actor queue or database lock is busy. |
