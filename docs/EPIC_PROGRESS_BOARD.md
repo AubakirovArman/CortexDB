@@ -20,17 +20,22 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-F06` — Semantic compression памяти.
+`EPIC-F07` — Query optimization для LLM-контекста.
 
-F06 exit steps:
+F07 exit steps:
 
-1. Define compression contract and loss boundaries.
-2. Preserve provenance and answerability metadata.
-3. Add quality/regression tests.
+1. Define “value per token” cost model inputs.
+2. Integrate with ContextPack planning.
+3. Add tests showing better budget allocation.
 
-F06 current state:
+F07 current state:
 
 - next.
+- F06 is closed with `docs/SEMANTIC_MEMORY_COMPRESSION.md`,
+  `SemanticCompressionOptions`, `CORTEXDB_SEMANTIC_COMPRESSION`,
+  permission-checked source provenance, answerability gating, audit metadata
+  preserved in `CellMetadata`/ContextPack, and
+  `make semantic-memory-compression-check`.
 - F05 is closed with `docs/LEARNED_RANKING_CALIBRATION.md`,
   `LearnedRankingOptions`, `CORTEXDB_LEARNED_RANKING`, non-overlapping
   offline train/heldout fixture data, and `make learned-ranking-calibration-check`.
@@ -110,6 +115,23 @@ D05 split state:
 - do not block kernel/database epics on D05.
 
 ## Recently Closed
+
+### EPIC-F06 — Semantic compression памяти
+
+Status: `done`
+
+What closed it:
+
+- Added the semantic compression contract and loss boundaries in
+  `docs/SEMANTIC_MEMORY_COMPRESSION.md`.
+- Added opt-in `SemanticCompressionOptions` and
+  `CORTEXDB_SEMANTIC_COMPRESSION`.
+- Added `Database::commit_semantic_memory_compression` for external-worker
+  summary commits with readable source provenance, writable-scope validation,
+  answerability thresholding, and audit metadata checks.
+- Preserved compression audit fields through `CellMetadata` and ContextPack.
+- Added `crates/cortex-engine/tests/semantic_compression.rs` and
+  `make semantic-memory-compression-check`.
 
 ### EPIC-E06 — Backpressure tuning and per-tenant limits
 
@@ -1134,9 +1156,9 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 ## Next Exit Step
 
-Work on F06 only:
+Work on F07 only:
 
-1. define compression contract and loss boundaries;
-2. preserve provenance and answerability metadata;
-3. add quality/regression tests;
-4. move to the next ordered epic after F06 acceptance is closed.
+1. define value-per-token cost model inputs;
+2. integrate with ContextPack planning;
+3. add tests showing better budget allocation;
+4. move to the next ordered epic after F07 acceptance is closed.

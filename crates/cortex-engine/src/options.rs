@@ -84,6 +84,23 @@ pub struct LearnedRankingOptions {
     pub enabled: bool,
 }
 
+pub const DEFAULT_SEMANTIC_COMPRESSION_MIN_ANSWERABILITY_Q16: u16 = 32_768;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct SemanticCompressionOptions {
+    pub enabled: bool,
+    pub min_answerability_q16: u16,
+}
+
+impl Default for SemanticCompressionOptions {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            min_answerability_q16: DEFAULT_SEMANTIC_COMPRESSION_MIN_ANSWERABILITY_Q16,
+        }
+    }
+}
+
 pub const DEFAULT_PAYLOAD_CACHE_BYTES: usize = 64 * 1024 * 1024;
 pub const DEFAULT_AQL_QUERY_CACHE_MAX_ENTRIES: usize = 128;
 pub const DEFAULT_WAL_ARCHIVE_MAX_FILES: usize = 1024;
@@ -169,6 +186,7 @@ pub struct DatabaseOptions {
     pub tiered_storage: TieredStorageOptions,
     pub agent_transactions: AgentTransactionOptions,
     pub learned_ranking: LearnedRankingOptions,
+    pub semantic_compression: SemanticCompressionOptions,
     pub aql_query_cache_max_entries: usize,
     pub wal_archive_enabled: bool,
     pub wal_archive_max_files: usize,
@@ -191,6 +209,7 @@ impl Default for DatabaseOptions {
             tiered_storage: TieredStorageOptions::default(),
             agent_transactions: AgentTransactionOptions::default(),
             learned_ranking: LearnedRankingOptions::default(),
+            semantic_compression: SemanticCompressionOptions::default(),
             aql_query_cache_max_entries: DEFAULT_AQL_QUERY_CACHE_MAX_ENTRIES,
             wal_archive_enabled: false,
             wal_archive_max_files: DEFAULT_WAL_ARCHIVE_MAX_FILES,

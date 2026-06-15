@@ -2,6 +2,7 @@
 
 use crate::query::metadata::{non_empty, CellMetadata};
 use crate::source_trust::{parse_source_trust_class, SourceTrust};
+use cortex_core::CellId;
 
 mod checks;
 mod errors;
@@ -43,6 +44,10 @@ impl CellMetadata {
         let mut valid_to = None;
         let mut supersedes = None;
         let mut superseded_by = None;
+        let mut compression_kind = None;
+        let mut compression_source_cells = Vec::new();
+        let mut compression_answerability_q16 = None;
+        let mut compression_worker = None;
         let mut table_id = None;
         let mut table_headers = None;
         let mut row_label = None;
@@ -142,6 +147,14 @@ impl CellMetadata {
                     supersedes = non_empty(value);
                 } else if let Some(value) = line.strip_prefix("superseded_by=") {
                     superseded_by = non_empty(value);
+                } else if let Some(value) = line.strip_prefix("compression_kind=") {
+                    compression_kind = non_empty(value);
+                } else if let Some(value) = line.strip_prefix("compression_source_cells=") {
+                    compression_source_cells = parse_cell_id_list(value);
+                } else if let Some(value) = line.strip_prefix("compression_answerability_q16=") {
+                    compression_answerability_q16 = value.trim().parse().ok();
+                } else if let Some(value) = line.strip_prefix("compression_worker=") {
+                    compression_worker = non_empty(value);
                 } else if let Some(value) = line.strip_prefix("table_id=") {
                     table_id = non_empty(value);
                 } else if let Some(value) = line.strip_prefix("table_headers=") {
@@ -259,6 +272,10 @@ impl CellMetadata {
             valid_to,
             supersedes,
             superseded_by,
+            compression_kind,
+            compression_source_cells,
+            compression_answerability_q16,
+            compression_worker,
             table_id,
             table_headers,
             row_label,
@@ -267,6 +284,14 @@ impl CellMetadata {
             source_ref,
         })
     }
+}
+
+fn parse_cell_id_list(value: &str) -> Vec<CellId> {
+    value
+        .split(',')
+        .filter_map(|item| item.trim().parse::<u64>().ok())
+        .map(CellId)
+        .collect()
 }
 
 #[cfg(test)]

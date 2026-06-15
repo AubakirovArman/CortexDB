@@ -1,5 +1,5 @@
 use cortex_core::memtable::CellVersion;
-use cortex_core::CellDescriptor;
+use cortex_core::{CellDescriptor, CellId};
 
 use crate::search::tokenize;
 use crate::source_trust::{parse_source_trust_class, SourceTrust};
@@ -64,6 +64,10 @@ impl CellMetadata {
         let mut valid_to = descriptor.and_then(|value| value.valid_to.clone());
         let mut supersedes = None;
         let mut superseded_by = None;
+        let mut compression_kind = None;
+        let mut compression_source_cells = Vec::new();
+        let mut compression_answerability_q16 = None;
+        let mut compression_worker = None;
         let mut table_id = None;
         let mut table_headers = None;
         let mut row_label = None;
@@ -219,6 +223,18 @@ impl CellMetadata {
                 } else if let Some(value) = line.strip_prefix("superseded_by=") {
                     superseded_by = non_empty(value);
                     continue;
+                } else if let Some(value) = line.strip_prefix("compression_kind=") {
+                    compression_kind = non_empty(value);
+                    continue;
+                } else if let Some(value) = line.strip_prefix("compression_source_cells=") {
+                    compression_source_cells = parse_cell_id_list(value);
+                    continue;
+                } else if let Some(value) = line.strip_prefix("compression_answerability_q16=") {
+                    compression_answerability_q16 = value.trim().parse().ok();
+                    continue;
+                } else if let Some(value) = line.strip_prefix("compression_worker=") {
+                    compression_worker = non_empty(value);
+                    continue;
                 } else if let Some(value) = line.strip_prefix("table_id=") {
                     table_id = non_empty(value);
                     continue;
@@ -322,6 +338,10 @@ impl CellMetadata {
             valid_to,
             supersedes,
             superseded_by,
+            compression_kind,
+            compression_source_cells,
+            compression_answerability_q16,
+            compression_worker,
             table_id,
             table_headers,
             row_label,
@@ -359,4 +379,12 @@ impl CellMetadata {
     pub(crate) fn legacy_payload_metadata_parse_profile() -> usize {
         LEGACY_PAYLOAD_METADATA_PARSE_CALLS.with(TestCell::get)
     }
+}
+
+fn parse_cell_id_list(value: &str) -> Vec<CellId> {
+    value
+        .split(',')
+        .filter_map(|item| item.trim().parse::<u64>().ok())
+        .map(CellId)
+        .collect()
 }

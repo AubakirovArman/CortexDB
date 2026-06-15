@@ -17,7 +17,8 @@ use crate::error::{EngineError, EngineResult};
 use crate::lock::DatabaseLock;
 use crate::options::{
     AgentTransactionOptions, DatabaseOptions, EngineFeature, EngineFeatureFlags,
-    LearnedRankingOptions, PayloadResidency, RecoveryMode, StaleLockPolicy, TieredStorageOptions,
+    LearnedRankingOptions, PayloadResidency, RecoveryMode, SemanticCompressionOptions,
+    StaleLockPolicy, TieredStorageOptions,
 };
 use crate::query::cache::AqlQueryCache;
 use crate::query::AqlDeltaIndex;
@@ -62,6 +63,10 @@ impl Database {
 
     pub fn learned_ranking_options(&self) -> LearnedRankingOptions {
         self.learned_ranking
+    }
+
+    pub fn semantic_compression_options(&self) -> SemanticCompressionOptions {
+        self.semantic_compression
     }
 
     pub(crate) fn require_feature(&self, feature: EngineFeature) -> EngineResult<()> {
@@ -142,6 +147,7 @@ impl Database {
             tiered_storage: options.tiered_storage,
             agent_transactions: options.agent_transactions,
             learned_ranking: options.learned_ranking,
+            semantic_compression: options.semantic_compression,
             hnsw_build_config: options.hnsw_build_config.normalized(),
             feature_flags: options.feature_flags,
             ingestion_backpressure_policy: options.ingestion_backpressure,

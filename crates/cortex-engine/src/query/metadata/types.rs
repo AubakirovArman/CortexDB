@@ -1,4 +1,5 @@
 use cortex_aql::MemoryType;
+use cortex_core::CellId;
 
 use crate::source_trust::SourceTrustClass;
 
@@ -47,6 +48,10 @@ pub struct CellMetadata {
     pub valid_to: Option<String>,
     pub supersedes: Option<String>,
     pub superseded_by: Option<String>,
+    pub compression_kind: Option<String>,
+    pub compression_source_cells: Vec<CellId>,
+    pub compression_answerability_q16: Option<u16>,
+    pub compression_worker: Option<String>,
     pub table_id: Option<String>,
     pub table_headers: Option<String>,
     pub row_label: Option<String>,

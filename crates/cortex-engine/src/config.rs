@@ -6,9 +6,10 @@ use cortex_storage::wal::DurabilityMode;
 
 use crate::options::{
     AgentTransactionOptions, CompactionPolicy, DatabaseOptions, EngineFeatureFlags,
-    LearnedRankingOptions, PayloadResidency, RecoveryMode, StaleLockPolicy,
-    TieredStorageCompressionPolicy, TieredStorageOptions, DEFAULT_AQL_QUERY_CACHE_MAX_ENTRIES,
-    DEFAULT_PAYLOAD_CACHE_BYTES, DEFAULT_WAL_ARCHIVE_MAX_FILES,
+    LearnedRankingOptions, PayloadResidency, RecoveryMode, SemanticCompressionOptions,
+    StaleLockPolicy, TieredStorageCompressionPolicy, TieredStorageOptions,
+    DEFAULT_AQL_QUERY_CACHE_MAX_ENTRIES, DEFAULT_PAYLOAD_CACHE_BYTES,
+    DEFAULT_WAL_ARCHIVE_MAX_FILES,
 };
 use crate::search::{HnswBuildConfig, HnswBuildProfile};
 
@@ -54,6 +55,7 @@ impl EngineConfig {
             tiered_storage: parse_tiered_storage_options(&vars)?,
             agent_transactions: parse_agent_transaction_options(&vars)?,
             learned_ranking: parse_learned_ranking_options(&vars)?,
+            semantic_compression: parse_semantic_compression_options(&vars)?,
             aql_query_cache_max_entries: parse_usize_var(
                 &vars,
                 "CORTEXDB_AQL_QUERY_CACHE_MAX_ENTRIES",
@@ -244,6 +246,19 @@ fn parse_learned_ranking_options(
     })
 }
 
+fn parse_semantic_compression_options(
+    vars: &BTreeMap<String, String>,
+) -> Result<SemanticCompressionOptions, EngineConfigError> {
+    Ok(SemanticCompressionOptions {
+        enabled: parse_bool_var(vars, "CORTEXDB_SEMANTIC_COMPRESSION", false)?,
+        min_answerability_q16: parse_u16_var(
+            vars,
+            "CORTEXDB_SEMANTIC_COMPRESSION_MIN_ANSWERABILITY_Q16",
+            SemanticCompressionOptions::default().min_answerability_q16,
+        )?,
+    })
+}
+
 fn parse_usize_var(
     vars: &BTreeMap<String, String>,
     name: &'static str,
@@ -255,6 +270,19 @@ fn parse_usize_var(
     raw.trim()
         .parse::<usize>()
         .map_err(|_| EngineConfigError::new(name, raw, "a non-negative integer"))
+}
+
+fn parse_u16_var(
+    vars: &BTreeMap<String, String>,
+    name: &'static str,
+    default: u16,
+) -> Result<u16, EngineConfigError> {
+    let Some(raw) = var(vars, name) else {
+        return Ok(default);
+    };
+    raw.trim()
+        .parse::<u16>()
+        .map_err(|_| EngineConfigError::new(name, raw, "an integer from 0 to 65535"))
 }
 
 fn parse_hnsw_build_config(
@@ -305,6 +333,11 @@ mod tests {
             ("CORTEXDB_TIERED_STORAGE_COMPRESSION", "zstd_reserved"),
             ("CORTEXDB_AGENT_TRANSACTIONS", "true"),
             ("CORTEXDB_LEARNED_RANKING", "true"),
+            ("CORTEXDB_SEMANTIC_COMPRESSION", "true"),
+            (
+                "CORTEXDB_SEMANTIC_COMPRESSION_MIN_ANSWERABILITY_Q16",
+                "49152",
+            ),
             ("CORTEXDB_AQL_QUERY_CACHE_MAX_ENTRIES", "64"),
             ("CORTEXDB_WAL_ARCHIVE", "true"),
             ("CORTEXDB_WAL_ARCHIVE_MAX_FILES", "8"),
@@ -338,6 +371,14 @@ mod tests {
         );
         assert!(config.database_options.agent_transactions.enabled);
         assert!(config.database_options.learned_ranking.enabled);
+        assert!(config.database_options.semantic_compression.enabled);
+        assert_eq!(
+            config
+                .database_options
+                .semantic_compression
+                .min_answerability_q16,
+            49_152
+        );
         assert_eq!(config.database_options.aql_query_cache_max_entries, 64);
         assert!(config.database_options.wal_archive_enabled);
         assert_eq!(config.database_options.wal_archive_max_files, 8);
@@ -372,5 +413,14 @@ mod tests {
             EngineConfig::from_env_vars([("CORTEXDB_AQL_QUERY_CACHE_MAX_ENTRIES", "maybe")])
                 .unwrap_err();
         assert_eq!(error.variable, "CORTEXDB_AQL_QUERY_CACHE_MAX_ENTRIES");
+        let error = EngineConfig::from_env_vars([(
+            "CORTEXDB_SEMANTIC_COMPRESSION_MIN_ANSWERABILITY_Q16",
+            "70000",
+        )])
+        .unwrap_err();
+        assert_eq!(
+            error.variable,
+            "CORTEXDB_SEMANTIC_COMPRESSION_MIN_ANSWERABILITY_Q16"
+        );
     }
 }

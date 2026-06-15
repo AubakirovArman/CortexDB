@@ -40,6 +40,7 @@
 - [Lexical Index](LEXICAL_INDEX.md)
 - [Embedding Integration](EMBEDDING_INTEGRATION.md)
 - [Learned Ranking Calibration](LEARNED_RANKING_CALIBRATION.md)
+- [Semantic Memory Compression](SEMANTIC_MEMORY_COMPRESSION.md)
 
 # Agent-Native Features
 

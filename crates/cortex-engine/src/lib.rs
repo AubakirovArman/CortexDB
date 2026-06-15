@@ -61,6 +61,7 @@ pub mod replication;
 mod retrieval_quality;
 mod retrieval_rank;
 pub mod search;
+pub mod semantic_compression;
 pub mod session;
 pub mod source_trust;
 pub mod tool_registry;
@@ -151,8 +152,9 @@ pub use operation::{
 };
 pub use options::{
     AgentTransactionOptions, CompactionPolicy, DatabaseOptions, EngineFeature, EngineFeatureFlags,
-    LearnedRankingOptions, PayloadResidency, RecoveryMode, StaleLockPolicy,
-    TieredStorageCompressionPolicy, TieredStorageOptions,
+    LearnedRankingOptions, PayloadResidency, RecoveryMode, SemanticCompressionOptions,
+    StaleLockPolicy, TieredStorageCompressionPolicy, TieredStorageOptions,
+    DEFAULT_SEMANTIC_COMPRESSION_MIN_ANSWERABILITY_Q16,
 };
 pub use plan::{
     CostModelDecision, CostModelEstimate, CostModelOptions, ExecutionPath, LogicalPlan,
@@ -172,6 +174,9 @@ pub use replay::{
 pub use replication::*;
 pub use search::*;
 pub use search::{Language, TextAnalyzer, TextAnalyzerConfig};
+pub use semantic_compression::{
+    SemanticCompressionReport, SemanticCompressionRequest, SemanticCompressionSourceRef,
+};
 pub use session::{AgentSession, SessionMemory};
 pub use source_trust::{
     parse_source_trust_class, SourceTrust, SourceTrustBasis, SourceTrustCategory, SourceTrustClass,

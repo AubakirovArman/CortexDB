@@ -117,6 +117,8 @@ pub enum EngineError {
     InvalidAgentSession(String),
     #[error("agent session expired: {0}")]
     AgentSessionExpired(String),
+    #[error("invalid semantic compression request: {0}")]
+    InvalidSemanticCompression(String),
     #[error("engine feature is disabled: {0}")]
     FeatureDisabled(&'static str),
     #[error("missing WAL section: {0}")]
@@ -176,6 +178,7 @@ impl EngineError {
             Self::InvalidOperation
             | Self::InvalidAgentSession(_)
             | Self::AgentSessionExpired(_)
+            | Self::InvalidSemanticCompression(_)
             | Self::FeatureDisabled(_)
             | Self::InvalidAnnFixture(_)
             | Self::InvalidAnnCorpus(_)

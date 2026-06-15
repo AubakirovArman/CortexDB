@@ -54,6 +54,8 @@ evidence snapshots, benchmark experiments, and release working notes live in
 - [`SCORING.md`](SCORING.md) - BM25, field weights, and query scoring.
 - [`LEARNED_RANKING_CALIBRATION.md`](LEARNED_RANKING_CALIBRATION.md) -
   offline train/heldout ranking calibration and opt-in runtime flag.
+- [`SEMANTIC_MEMORY_COMPRESSION.md`](SEMANTIC_MEMORY_COMPRESSION.md) -
+  opt-in external-worker semantic summary commit contract and audit metadata.
 - [`INGESTION.md`](INGESTION.md) - ingestion behavior.
 
 ## API, CLI, SDK

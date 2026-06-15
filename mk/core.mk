@@ -1,4 +1,4 @@
-.PHONY: memtable-clone-gate-check descriptor-hot-path-gate-check indexed-retrieve-gate-check query-scan-inventory-check policy-rewrite-gate-check multi-brain-contract-check lexical-index-contract-check context-pack-schema-contract-check provenance-model-inventory decode-fuzz-check erb-oracle-audit
+.PHONY: memtable-clone-gate-check descriptor-hot-path-gate-check indexed-retrieve-gate-check query-scan-inventory-check policy-rewrite-gate-check multi-brain-contract-check lexical-index-contract-check context-pack-schema-contract-check provenance-model-inventory decode-fuzz-check erb-oracle-audit semantic-memory-compression-check
 
 check: memtable-clone-gate-check descriptor-hot-path-gate-check indexed-retrieve-gate-check query-scan-inventory-check policy-rewrite-gate-check multi-brain-contract-check lexical-index-contract-check tool-registry-check knowledge-graph-check context-pack-schema-contract-check decode-fuzz-check erb-oracle-audit erb-category-regression-check
 	cargo check --workspace
@@ -41,6 +41,9 @@ learned-ranking-calibration-check:
 	  --report "$(LEARNED_RANKING_CALIBRATION_REPORT)" \
 	  --min-heldout-mrr-lift-bps "$(LEARNED_RANKING_MIN_HELDOUT_MRR_LIFT_BPS)" \
 	  --min-heldout-win-rate-pct "$(LEARNED_RANKING_MIN_HELDOUT_WIN_RATE_PCT)"
+
+semantic-memory-compression-check:
+	python3 scripts/semantic_memory_compression_check.py --report "$(SEMANTIC_MEMORY_COMPRESSION_REPORT)"
 
 provenance-model-inventory: ; python3 scripts/provenance_model_inventory.py
 erb-oracle-audit:

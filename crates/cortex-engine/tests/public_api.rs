@@ -5,8 +5,10 @@ use cortex_engine::{
     ContextPack, ContextPackOptions, Database, DatabaseOptions, DbOperation, EngineAqlIndex,
     EngineConfig, EngineConfigError, EngineError, EngineErrorCategory, EngineErrorCode,
     EngineFeature, EngineFeatureFlags, EngineResult, Language, LearnedRankingOptions, RecoveryMode,
-    RepairReport, RestoreReport, RetrievedCell, StaleLockPolicy, StorageStats,
-    StorageValidationReport, TextAnalyzer, TextAnalyzerConfig,
+    RepairReport, RestoreReport, RetrievedCell, SemanticCompressionOptions,
+    SemanticCompressionReport, SemanticCompressionRequest, SemanticCompressionSourceRef,
+    StaleLockPolicy, StorageStats, StorageValidationReport, TextAnalyzer, TextAnalyzerConfig,
+    DEFAULT_SEMANTIC_COMPRESSION_MIN_ANSWERABILITY_Q16,
 };
 
 #[test]
@@ -69,6 +71,11 @@ fn stable_public_types_are_importable() {
     let _ = std::mem::size_of::<AqlQueryCacheStats>();
     let _ = std::mem::size_of::<AgentTransactionOptions>();
     let _ = std::mem::size_of::<LearnedRankingOptions>();
+    let _ = std::mem::size_of::<SemanticCompressionOptions>();
+    let _ = std::mem::size_of::<SemanticCompressionRequest>();
+    let _ = std::mem::size_of::<SemanticCompressionSourceRef>();
+    let _ = std::mem::size_of::<SemanticCompressionReport>();
+    assert_eq!(DEFAULT_SEMANTIC_COMPRESSION_MIN_ANSWERABILITY_Q16, 32_768);
     let _ = std::mem::size_of::<AgentTransactionRequest>();
     let _ = std::mem::size_of::<AgentTransactionReport>();
     let _ = std::mem::size_of::<AgentTransactionConflict>();
