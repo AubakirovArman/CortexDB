@@ -1,9 +1,10 @@
 use std::collections::BTreeMap;
 
+use cortex_aql::AgentView;
 use cortex_core::CellId;
 
 use crate::context::grounding::{ground_answer, AnswerGroundingOptions, AnswerGroundingReport};
-use crate::context::{ContextPack, ContextPackOptions};
+use crate::context::{ContextPack, ContextPackBuilder, ContextPackOptions};
 use crate::database::RetrievedCell;
 
 impl ContextPack {
@@ -63,5 +64,25 @@ impl ContextPack {
             feedback_scores,
             None,
         )
+    }
+
+    pub fn from_retrieved_with_feedback_options_and_view(
+        cells: Vec<RetrievedCell>,
+        token_budget_tokens: u32,
+        citations_required: bool,
+        options: &ContextPackOptions,
+        query: &str,
+        feedback_scores: &BTreeMap<CellId, i32>,
+        access_view: Option<&AgentView>,
+    ) -> Self {
+        ContextPackBuilder::new(
+            token_budget_tokens,
+            citations_required,
+            options,
+            query,
+            feedback_scores,
+            access_view,
+        )
+        .build_from_retrieved(cells)
     }
 }

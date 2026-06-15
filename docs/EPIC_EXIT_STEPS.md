@@ -857,7 +857,7 @@ Exit steps:
 1. Define “value per token” cost model inputs.
 2. Integrate with ContextPack planning.
 3. Add tests showing better budget allocation.
-4. Mark done when planner optimizes context value, not only document score; then move to A13/B03.
+4. Mark done when planner optimizes context value, not only document score; then move to F08 because A13/B03 are already closed.
 
 ### EPIC-F08 — Multi-agent memory consistency
 

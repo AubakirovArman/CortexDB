@@ -36,8 +36,13 @@ context-pack-quality-check:
 	$(MAKE) context-pack-token-estimator-check
 	$(MAKE) context-pack-large-cell-policy-check
 	$(MAKE) context-pack-span-packing-check
+	$(MAKE) context-pack-value-per-token-check
 	python3 scripts/context_pack_quality_check.py --fixture "$(CONTEXT_PACK_QUALITY_FIXTURE)" --report "$(CONTEXT_PACK_QUALITY_REPORT)"
 	$(MAKE) context-pack-quality-v3-check
+
+.PHONY: context-pack-value-per-token-check
+context-pack-value-per-token-check:
+	python3 scripts/context_pack_value_per_token_check.py --report "$(CONTEXT_PACK_VALUE_PER_TOKEN_REPORT)"
 
 .PHONY: context-pack-span-packing-check
 context-pack-span-packing-check:

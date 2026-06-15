@@ -164,6 +164,7 @@ CONTEXT_PACK_PRIVATE_SCOPE_REPORT ?= target/context-pack-quality/private-scope-r
 CONTEXT_PACK_TOKEN_ESTIMATOR_REPORT ?= target/context-pack-quality/token-estimator-report.json
 CONTEXT_PACK_LARGE_CELL_POLICY_REPORT ?= target/context-pack-quality/large-cell-policy-report.json
 CONTEXT_PACK_SPAN_PACKING_REPORT ?= target/context-pack-quality/span-packing-report.json
+CONTEXT_PACK_VALUE_PER_TOKEN_REPORT ?= target/context-pack-quality/value-per-token-report.json
 VERIFICATION_QUALITY_FIXTURE ?= examples/eval/verification_cases.jsonl
 VERIFICATION_QUALITY_REPORT ?= target/verification-quality/report.json
 VERIFICATION_QUALITY_DASHBOARD_JSON ?= target/verification-quality/dashboard.json

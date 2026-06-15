@@ -165,6 +165,7 @@ fn assert_context_quality(db: &Database) {
                 large_cell_policy: cortex_engine::ContextLargeCellPolicy::default(),
                 span_level_packing: false,
                 span_context_lines: 2,
+                optimize_value_per_token: false,
             },
         )
         .unwrap();

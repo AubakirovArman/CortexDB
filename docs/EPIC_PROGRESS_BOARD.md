@@ -20,17 +20,21 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-F07` — Query optimization для LLM-контекста.
+`EPIC-F08` — Multi-agent memory consistency model.
 
-F07 exit steps:
+F08 exit steps:
 
-1. Define “value per token” cost model inputs.
-2. Integrate with ContextPack planning.
-3. Add tests showing better budget allocation.
+1. Define consistency levels for shared/private memory.
+2. Add conflict and visibility tests.
+3. Document operational tradeoffs.
 
-F07 current state:
+F08 current state:
 
 - next.
+- F07 is closed with `docs/LLM_CONTEXT_VALUE_OPTIMIZATION.md`,
+  `ContextPackOptions.optimize_value_per_token`, deterministic value-per-token
+  candidate planning, better tight-budget answerability coverage, and
+  `make context-pack-value-per-token-check`.
 - F06 is closed with `docs/SEMANTIC_MEMORY_COMPRESSION.md`,
   `SemanticCompressionOptions`, `CORTEXDB_SEMANTIC_COMPRESSION`,
   permission-checked source provenance, answerability gating, audit metadata
@@ -115,6 +119,22 @@ D05 split state:
 - do not block kernel/database epics on D05.
 
 ## Recently Closed
+
+### EPIC-F07 — Query optimization для LLM-контекста
+
+Status: `done`
+
+What closed it:
+
+- Added `docs/LLM_CONTEXT_VALUE_OPTIMIZATION.md` with value-per-token cost
+  model inputs and compatibility boundaries.
+- Added opt-in `ContextPackOptions.optimize_value_per_token`.
+- Added deterministic ContextPack candidate planning by marginal query-term
+  coverage, BM25, source trust/freshness, citations, feedback, redundancy, and
+  token cost.
+- Added a focused regression proving better budget allocation and higher
+  `answerability_q16` than legacy candidate order under a tight budget.
+- Added `make context-pack-value-per-token-check`.
 
 ### EPIC-F06 — Semantic compression памяти
 
@@ -1156,9 +1176,9 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 ## Next Exit Step
 
-Work on F07 only:
+Work on F08 only:
 
-1. define value-per-token cost model inputs;
-2. integrate with ContextPack planning;
-3. add tests showing better budget allocation;
-4. move to the next ordered epic after F07 acceptance is closed.
+1. define consistency levels for shared/private memory;
+2. add conflict and visibility tests;
+3. document operational tradeoffs;
+4. move to the next ordered epic after F08 acceptance is closed.

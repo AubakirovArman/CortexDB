@@ -34,6 +34,7 @@
 - [Search](SEARCH.md)
 - [Scoring](SCORING.md)
 - [Context Pack](CONTEXT_PACK.md)
+- [LLM Context Value Optimization](LLM_CONTEXT_VALUE_OPTIMIZATION.md)
 - [Verify Fact](VERIFY_FACT.md)
 - [Explain](EXPLAIN.md)
 - [Explain Analyze](EXPLAIN_ANALYZE.md)

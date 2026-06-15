@@ -12,3 +12,5 @@ mod redundancy;
 mod scoring;
 #[path = "context_pack/span.rs"]
 mod span;
+#[path = "context_pack/value_per_token.rs"]
+mod value_per_token;

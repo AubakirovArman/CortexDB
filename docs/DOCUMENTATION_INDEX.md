@@ -48,6 +48,8 @@ evidence snapshots, benchmark experiments, and release working notes live in
 - [`BRAIN_SEMANTICS.md`](BRAIN_SEMANTICS.md) - single-brain contract and
   deprecated alias migration plan.
 - [`CONTEXT_PACK.md`](CONTEXT_PACK.md) - ContextPack contract.
+- [`LLM_CONTEXT_VALUE_OPTIMIZATION.md`](LLM_CONTEXT_VALUE_OPTIMIZATION.md) -
+  opt-in ContextPack value-per-token planner and cost model inputs.
 - [`VERIFY_FACT.md`](VERIFY_FACT.md) - deterministic verification.
 - [`AGENT_MEMORY.md`](AGENT_MEMORY.md) - agent memory behavior.
 - [`SEARCH.md`](SEARCH.md) - lexical/vector/hybrid search.

@@ -4,7 +4,7 @@ use cortex_aql::AgentView;
 use cortex_core::CellId;
 
 use super::access::context_access_decision;
-use super::ordering::diversity_aware_order;
+use super::ordering::plan_candidate_order;
 use crate::context::dedup::{
     effective_redundancy_threshold, is_redundant, term_set, weighted_jaccard_q16,
 };
@@ -72,11 +72,15 @@ impl<'a> ContextPackBuilder<'a> {
         let query_terms = extract_query_terms(query);
         let base_bm25_scores = context_base_bm25_scores(&cells, query);
         let source_freshness_range = SourceFreshnessRange::from_cells(&cells);
-        let cells = if options.reduce_redundancy {
-            diversity_aware_order(cells, &query_terms)
-        } else {
-            cells
-        };
+        let cells = plan_candidate_order(
+            cells,
+            &query_terms,
+            options,
+            citations_required,
+            &base_bm25_scores,
+            source_freshness_range,
+            feedback_scores,
+        );
 
         for cell in cells {
             let metadata = cell.metadata();
@@ -273,27 +277,5 @@ impl<'a> ContextPackBuilder<'a> {
             visible_conflict_count: conflict_visibility.visible_conflict_count,
             anomalies,
         }
-    }
-}
-
-impl ContextPack {
-    pub fn from_retrieved_with_feedback_options_and_view(
-        cells: Vec<RetrievedCell>,
-        token_budget_tokens: u32,
-        citations_required: bool,
-        options: &ContextPackOptions,
-        query: &str,
-        feedback_scores: &BTreeMap<CellId, i32>,
-        access_view: Option<&AgentView>,
-    ) -> Self {
-        ContextPackBuilder::new(
-            token_budget_tokens,
-            citations_required,
-            options,
-            query,
-            feedback_scores,
-            access_view,
-        )
-        .build_from_retrieved(cells)
     }
 }

@@ -49,6 +49,13 @@ Implemented in `cortex-engine`:
   text, preserves source metadata above the selected span, and records explicit
   span provenance with the source cell id, byte range, line range, and optional
   structured SourceRef.
+- Value-per-token planning: when explicitly enabled through
+  `ContextPackOptions.optimize_value_per_token`, ContextPack reorders the
+  already retrieved candidate set by expected answerability value per token
+  before budget packing. The deterministic cost model uses marginal query-term
+  coverage, ContextPack BM25, source trust, source freshness, citation
+  availability, feedback, redundancy, and configured token cost. See
+  [`LLM_CONTEXT_VALUE_OPTIMIZATION.md`](LLM_CONTEXT_VALUE_OPTIMIZATION.md).
 - Dedup-aware budget packing: redundant candidates are filtered before budget
   overload checks, and oversized middle candidates are skipped so smaller later
   candidates can still fit.
@@ -179,7 +186,8 @@ existing compact summary default unless `--json` or `--format` is passed.
 ## Invariants
 
 1. Context packing never bypasses AQL policy, binder, bitmap VM, or AgentView.
-2. Ordering follows the retrieve candidate order.
+2. Ordering follows the retrieve candidate order unless the caller explicitly
+   enables `ContextPackOptions.optimize_value_per_token`.
 3. Token estimates are deterministic integer estimates and include citation
    overhead when citations are required.
 4. Requested budget is clamped by `AgentView::effective_budget`.

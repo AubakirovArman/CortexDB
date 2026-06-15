@@ -17,6 +17,7 @@ mod scoring;
 mod span;
 mod token_estimator;
 mod trace;
+mod value_per_token;
 
 pub use answerability::DEFAULT_ANSWERABILITY_THRESHOLD_Q16;
 pub use explain::{ContextCellExplain, ContextCellExplainOutcome};
@@ -48,6 +49,7 @@ pub struct ContextPackOptions {
     pub large_cell_policy: ContextLargeCellPolicy,
     pub span_level_packing: bool,
     pub span_context_lines: usize,
+    pub optimize_value_per_token: bool,
 }
 
 impl Default for ContextPackOptions {
@@ -62,6 +64,7 @@ impl Default for ContextPackOptions {
             large_cell_policy: ContextLargeCellPolicy::default(),
             span_level_packing: false,
             span_context_lines: 2,
+            optimize_value_per_token: false,
         }
     }
 }

@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-F07` (`EPIC-F06` is now done along with the previously
+Current pointer: `EPIC-F08` (`EPIC-F07` is now done along with the previously
 closed epics listed in the Active Execution Queue). `EPIC-C01` is closed with
 the `ACI4` compact term dictionary/postings format, `ACI0..ACI3` dual-read
 compatibility, and persisted/search compatibility gates. `EPIC-C03` is closed
@@ -56,7 +56,10 @@ heldout calibration data, a deterministic-vs-learned comparison gate, and
 `docs/LEARNED_RANKING_CALIBRATION.md`. `EPIC-F06` added an opt-in semantic
 memory compression commit contract, external-worker audit metadata,
 permission-checked source provenance, answerability gating, and
-`docs/SEMANTIC_MEMORY_COMPRESSION.md`. `EPIC-F07` is next.
+`docs/SEMANTIC_MEMORY_COMPRESSION.md`. `EPIC-F07` added opt-in ContextPack
+value-per-token planning, deterministic cost model inputs, budget allocation
+regression coverage, and `docs/LLM_CONTEXT_VALUE_OPTIMIZATION.md`. `EPIC-F08`
+is next.
 `EPIC-D05` remains partial/local-ready and is externally blocked on public
 registry credentials/trusted publishing.
 
@@ -156,7 +159,8 @@ enough to unblock the next dependency step.
 59. `EPIC-F04` — Agent transaction semantics: done.
 60. `EPIC-F05` — Learned/calibrated ranking: done.
 61. `EPIC-F06` — Semantic compression памяти: done.
-62. `EPIC-F07` — Query optimization для LLM-контекста: next.
+62. `EPIC-F07` — Query optimization для LLM-контекста: done.
+63. `EPIC-F08` — Multi-agent memory consistency model: next.
 
 ## Summary
 
@@ -2274,12 +2278,36 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-F07 — Query optimization для LLM-контекста («ценность на токен» cost model)
 
-- status: `next`
+- status: `done`
 - meta: Категория: research · P3 · 12 months · research
+- tasks:
+  - [x] Define “value per token” cost model inputs.
+  - [x] Integrate with ContextPack planning.
+  - [x] Add tests showing better budget allocation.
+- evidence:
+  - `docs/LLM_CONTEXT_VALUE_OPTIMIZATION.md` defines the opt-in planner
+    contract and local cost model inputs.
+  - `ContextPackOptions.optimize_value_per_token` keeps the planner disabled
+    by default for compatibility.
+  - `context/value_per_token.rs` greedily ranks the already retrieved
+    candidate set by marginal query-term coverage, ContextPack BM25, source
+    trust, source freshness, citation availability, feedback, redundancy, and
+    deterministic token cost.
+  - `ContextPackBuilder` uses the planned order before existing budget,
+    large-cell, span, citation, answerability, and conflict checks.
+  - `crates/cortex-engine/tests/context_pack/value_per_token.rs` proves the
+    planner chooses smaller high-value cells under a tight budget and improves
+    `answerability_q16` versus legacy candidate order.
+  - `make context-pack-value-per-token-check` runs the F07 contract gate.
+- latest checks: `python3 -m py_compile
+  scripts/context_pack_value_per_token_check.py`; `cargo test -p cortex-engine
+  --test context_pack --all-features value_per_token`; `make
+  context-pack-value-per-token-check`.
+- next exit step: move to `EPIC-F08` — Multi-agent memory consistency model.
 
 ### EPIC-F08 — Multi-agent memory consistency model
 
-- status: `pending`
+- status: `next`
 - meta: Категория: research · P3 · long-term · research
 - tasks:
   - [ ] Семантика shared scopes: видимость записей агента A для агента B (immediate/sequenced), handoff-пакеты (пак как сообщение между агентами с pack hash + seq). Дизайн-док.

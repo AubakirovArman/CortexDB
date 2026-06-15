@@ -1,8 +1,41 @@
 use std::collections::BTreeSet;
 
+use std::collections::BTreeMap;
+
+use cortex_core::CellId;
+
 use crate::context::dedup::weighted_jaccard_q16;
+use crate::context::freshness::SourceFreshnessRange;
+use crate::context::value_per_token::order_by_value_per_token;
+use crate::context::ContextPackOptions;
 use crate::database::RetrievedCell;
 use crate::search::tokenize;
+
+pub(super) fn plan_candidate_order(
+    cells: Vec<RetrievedCell>,
+    query_terms: &[String],
+    options: &ContextPackOptions,
+    citations_required: bool,
+    base_bm25_scores: &BTreeMap<CellId, u32>,
+    source_freshness_range: SourceFreshnessRange,
+    feedback_scores: &BTreeMap<CellId, i32>,
+) -> Vec<RetrievedCell> {
+    if options.optimize_value_per_token {
+        order_by_value_per_token(
+            cells,
+            query_terms,
+            citations_required,
+            options,
+            base_bm25_scores,
+            source_freshness_range,
+            feedback_scores,
+        )
+    } else if options.reduce_redundancy {
+        diversity_aware_order(cells, query_terms)
+    } else {
+        cells
+    }
+}
 
 pub(super) fn diversity_aware_order(
     cells: Vec<RetrievedCell>,
