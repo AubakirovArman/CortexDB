@@ -77,6 +77,9 @@ storage-soak-72h-evidence-check:
 storage-soak-epic-finalize:
 	python3 scripts/storage_soak_epic_finalize.py
 
+tiered-storage-v2-check:
+	python3 scripts/tiered_storage_v2_check.py --report "$(TIERED_STORAGE_V2_REPORT)"
+
 next-60-epics-audit:
 	python3 scripts/next_60_epics_audit.py
 
@@ -91,4 +94,3 @@ replication-lifecycle-check:
 
 production-evidence-sweep:
 	scripts/production_evidence_sweep.sh "$(PRODUCTION_EVIDENCE_ROOT)" "$(PRODUCTION_EVIDENCE_REPORT)"
-

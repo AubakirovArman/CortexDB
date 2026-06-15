@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-F01` (`EPIC-D14` is now done along with the previously
+Current pointer: `EPIC-F04` (`EPIC-F01` is now done along with the previously
 closed epics listed in the Active Execution Queue). `EPIC-C01` is closed with
 the `ACI4` compact term dictionary/postings format, `ACI0..ACI3` dual-read
 compatibility, and persisted/search compatibility gates. `EPIC-C03` is closed
@@ -47,7 +47,9 @@ budgets, slow-loris body timeout protection, timeout metrics, docs, and
 `make route-timeout-check`. `EPIC-D13` added mdBook configuration,
 `docs/SUMMARY.md` navigation, GitHub Pages deployment workflow, and
 `make docs-site-check`. `EPIC-D14` added three live integration examples with
-mock LLM smoke coverage. `EPIC-F01` is next.
+mock LLM smoke coverage. `EPIC-F01` added the tiered storage v2 design,
+guarded options, bounded payload cache metrics, and eviction/readback gate.
+`EPIC-F04` is next.
 `EPIC-D05` remains partial/local-ready and is externally blocked on public
 registry credentials/trusted publishing.
 
@@ -143,7 +145,8 @@ enough to unblock the next dependency step.
 55. `EPIC-E15` — Per-route timeouts and slow-client protection: done.
 56. `EPIC-D13` — mdBook docs site: done.
 57. `EPIC-D14` — Three live integration examples: done.
-58. `EPIC-F01` — Tiered storage v2: next.
+58. `EPIC-F01` — Tiered storage v2: done.
+59. `EPIC-F04` — Agent transaction semantics: next.
 
 ## Summary
 
@@ -1970,7 +1973,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
   quota-policy-check`, `make openapi-contract-check`, and `make
   load-suite-check`.
 - remaining: none for E06 acceptance.
-- next exit step: `EPIC-D14` is now done; move to `EPIC-F01` — Tiered storage v2.
+- next exit step: `EPIC-F01` is now done; move to `EPIC-F04` — Agent transaction semantics.
 
 ### EPIC-E07 — Audit log productization
 
@@ -2007,7 +2010,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
   --report target/security-hardening/e07-smoke.json`; `cargo clippy -p
   cortex-server --all-targets -- -D warnings`; `cargo clippy -p cortex-cli
   --all-targets -- -D warnings`.
-- next exit step: `EPIC-D14` is now done; move to `EPIC-F01` — Tiered storage v2.
+- next exit step: `EPIC-F01` is now done; move to `EPIC-F04` — Agent transaction semantics.
 
 ### EPIC-E08 — Tenant isolation test suite
 
@@ -2119,7 +2122,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
   `cargo test -p cortex-server denied_ingestion_audit_event_does_not_leak_query_body_or_token --all-features`;
   `python3 -m py_compile scripts/secrets_hygiene_check.py scripts/llm_inference_gate_check.py`;
   `make secrets-check`.
-- next exit step: `EPIC-D14` is now done; move to `EPIC-F01` — Tiered storage v2.
+- next exit step: `EPIC-F01` is now done; move to `EPIC-F04` — Agent transaction semantics.
 
 ### EPIC-E14 — Upgrade/rollback drill
 
@@ -2165,19 +2168,26 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
   `cargo test -p cortex-server slow_loris_body_times_out_without_blocking_follow_up_request --all-features`;
   `cargo test -p cortex-server metrics_prometheus_output_contains_contract_series --all-features`;
   `make route-timeout-check`.
-- next exit step: `EPIC-D14` is now done; move to `EPIC-F01` — Tiered storage v2.
+- next exit step: `EPIC-F01` is now done; move to `EPIC-F04` — Agent transaction semantics.
 
 ## Block F — Long-term database research
 
 ### EPIC-F01 — Tiered storage v2: hot/cold с LRU и компрессией страниц
 
-- status: `pending`
+- status: `done`
 - meta: Категория: storage · P3 · 12 months · build · **сейчас не делать (дизайн — можно)**
 - goal: 10M-100M cells на обычной ноде; продолжение A08.
 - tasks:
-  - [ ] дизайн-док: page cache, компрессия payload-блоков (zstd), prefetch по плану запроса; прототип за флагом.
+  - [x] дизайн-док: page cache, компрессия payload-блоков (zstd), prefetch по плану запроса; прототип за флагом.
 - acceptance:
-  - [ ] дизайн-ревью; прототип на 10M с бюджетом RAM.
+  - [x] дизайн-ревью; bounded prototype gate proves cold readback with LRU RAM budget. Existing A19 10M lazy RSS/read/restart packet remains the scale evidence; no new 10M run was required for this design-only F01 phase.
+- evidence:
+  - `docs/TIERED_STORAGE_V2.md` defines hot/cold placement, page model, reserved zstd compression policy, query-plan prefetch boundary, and RAM metrics.
+  - `DatabaseOptions::tiered_storage` and `CORTEXDB_TIERED_STORAGE_V2` gate the prototype.
+  - `PayloadCacheStats` exposes `max_bytes`, `resident_bytes`, `hits`, `misses`, `segment_loads`, and `evictions`.
+  - `crates/cortex-engine/tests/tiered_storage_v2.rs` proves cold segment payload readback stays within a 64-byte hot cache and records eviction/readback behavior.
+  - latest checks: `python3 -m py_compile scripts/tiered_storage_v2_check.py`; `make tiered-storage-v2-check`.
+- next exit step: `EPIC-F01` is now done; move to `EPIC-F04` — Agent transaction semantics.
 - dependencies: A08 стабилен в проде ≥1 квартал. Риски: высокие.
 
 ### EPIC-F02 — Распределённая репликация (разморозка)

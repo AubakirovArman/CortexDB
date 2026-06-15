@@ -53,6 +53,27 @@ pub enum PayloadResidency {
     Lazy,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TieredStorageCompressionPolicy {
+    None,
+    ZstdReserved,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct TieredStorageOptions {
+    pub enabled: bool,
+    pub compression_policy: TieredStorageCompressionPolicy,
+}
+
+impl Default for TieredStorageOptions {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            compression_policy: TieredStorageCompressionPolicy::None,
+        }
+    }
+}
+
 pub const DEFAULT_PAYLOAD_CACHE_BYTES: usize = 64 * 1024 * 1024;
 pub const DEFAULT_AQL_QUERY_CACHE_MAX_ENTRIES: usize = 128;
 pub const DEFAULT_WAL_ARCHIVE_MAX_FILES: usize = 1024;
@@ -135,6 +156,7 @@ pub struct DatabaseOptions {
     pub stale_lock_policy: StaleLockPolicy,
     pub payload_residency: PayloadResidency,
     pub payload_cache_bytes: usize,
+    pub tiered_storage: TieredStorageOptions,
     pub aql_query_cache_max_entries: usize,
     pub wal_archive_enabled: bool,
     pub wal_archive_max_files: usize,
@@ -154,6 +176,7 @@ impl Default for DatabaseOptions {
             stale_lock_policy: StaleLockPolicy::Reject,
             payload_residency: PayloadResidency::Memory,
             payload_cache_bytes: DEFAULT_PAYLOAD_CACHE_BYTES,
+            tiered_storage: TieredStorageOptions::default(),
             aql_query_cache_max_entries: DEFAULT_AQL_QUERY_CACHE_MAX_ENTRIES,
             wal_archive_enabled: false,
             wal_archive_max_files: DEFAULT_WAL_ARCHIVE_MAX_FILES,

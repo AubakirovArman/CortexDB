@@ -146,7 +146,7 @@ pub use operation::{
 };
 pub use options::{
     CompactionPolicy, DatabaseOptions, EngineFeature, EngineFeatureFlags, PayloadResidency,
-    RecoveryMode, StaleLockPolicy,
+    RecoveryMode, StaleLockPolicy, TieredStorageCompressionPolicy, TieredStorageOptions,
 };
 pub use plan::{
     CostModelDecision, CostModelEstimate, CostModelOptions, ExecutionPath, LogicalPlan,

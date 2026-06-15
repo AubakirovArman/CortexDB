@@ -19,6 +19,7 @@
 - [Data Model](DATA_MODEL.md)
 - [Cell Metadata Model](CELL_METADATA_MODEL.md)
 - [Storage Formats](STORAGE_FORMATS.md)
+- [Tiered Storage V2](TIERED_STORAGE_V2.md)
 - [Engine API](ENGINE_API.md)
 - [Engine API Evidence](ENGINE_API_EVIDENCE.md)
 - [Engine Config](ENGINE_CONFIG.md)

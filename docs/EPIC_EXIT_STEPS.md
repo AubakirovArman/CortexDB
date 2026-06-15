@@ -652,7 +652,7 @@ Exit steps:
 1. Pick three real integration examples.
 2. Keep examples small, runnable, and documented.
 3. Add smoke tests or scripts.
-4. Mark done when examples demonstrate common workflows; then move to F01.
+4. Mark done when examples demonstrate common workflows; then move to F04.
 
 ### EPIC-D15 — v0.2.0-beta release
 
@@ -809,7 +809,7 @@ Exit steps:
 1. Define hot/cold placement and page compression policy.
 2. Build on A08 lazy payload and cache metrics.
 3. Add eviction/readback tests.
-4. Mark done when cold data can be served with bounded RAM; then move to F06.
+4. Mark done when cold data can be served with bounded RAM; then move to F04.
 
 ### EPIC-F02 — Распределённая репликация
 
@@ -833,7 +833,7 @@ Exit steps:
 1. Define multi-agent write conflicts and isolation semantics.
 2. Add transaction tests for concurrent agent writes.
 3. Document conflict outcomes.
-4. Mark done when multi-agent writes have deterministic behavior; then move to F08.
+4. Mark done when multi-agent writes have deterministic behavior; then move to F05.
 
 ### EPIC-F05 — Learned/calibrated ranking
 
@@ -849,7 +849,7 @@ Exit steps:
 1. Define compression contract and loss boundaries.
 2. Preserve provenance and answerability metadata.
 3. Add quality/regression tests.
-4. Mark done when compressed memory remains auditable; then move to F01.
+4. Mark done when compressed memory remains auditable; then move to F07.
 
 ### EPIC-F07 — Query optimization для LLM-контекста
 

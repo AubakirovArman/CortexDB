@@ -6,7 +6,8 @@ use cortex_storage::wal::DurabilityMode;
 
 use crate::options::{
     CompactionPolicy, DatabaseOptions, EngineFeatureFlags, PayloadResidency, RecoveryMode,
-    StaleLockPolicy, DEFAULT_AQL_QUERY_CACHE_MAX_ENTRIES, DEFAULT_PAYLOAD_CACHE_BYTES,
+    StaleLockPolicy, TieredStorageCompressionPolicy, TieredStorageOptions,
+    DEFAULT_AQL_QUERY_CACHE_MAX_ENTRIES, DEFAULT_PAYLOAD_CACHE_BYTES,
     DEFAULT_WAL_ARCHIVE_MAX_FILES,
 };
 use crate::search::{HnswBuildConfig, HnswBuildProfile};
@@ -50,6 +51,7 @@ impl EngineConfig {
                 "CORTEXDB_PAYLOAD_CACHE_BYTES",
                 DEFAULT_PAYLOAD_CACHE_BYTES,
             )?,
+            tiered_storage: parse_tiered_storage_options(&vars)?,
             aql_query_cache_max_entries: parse_usize_var(
                 &vars,
                 "CORTEXDB_AQL_QUERY_CACHE_MAX_ENTRIES",
@@ -196,6 +198,34 @@ fn parse_payload_residency(
     }
 }
 
+fn parse_tiered_storage_options(
+    vars: &BTreeMap<String, String>,
+) -> Result<TieredStorageOptions, EngineConfigError> {
+    Ok(TieredStorageOptions {
+        enabled: parse_bool_var(vars, "CORTEXDB_TIERED_STORAGE_V2", false)?,
+        compression_policy: parse_tiered_storage_compression_policy(vars)?,
+    })
+}
+
+fn parse_tiered_storage_compression_policy(
+    vars: &BTreeMap<String, String>,
+) -> Result<TieredStorageCompressionPolicy, EngineConfigError> {
+    let Some(raw) = var(vars, "CORTEXDB_TIERED_STORAGE_COMPRESSION") else {
+        return Ok(TieredStorageCompressionPolicy::None);
+    };
+    match raw.trim().to_ascii_lowercase().as_str() {
+        "none" => Ok(TieredStorageCompressionPolicy::None),
+        "zstd_reserved" | "zstd-reserved" | "zstd" => {
+            Ok(TieredStorageCompressionPolicy::ZstdReserved)
+        }
+        _ => Err(EngineConfigError::new(
+            "CORTEXDB_TIERED_STORAGE_COMPRESSION",
+            raw,
+            "none or zstd_reserved",
+        )),
+    }
+}
+
 fn parse_usize_var(
     vars: &BTreeMap<String, String>,
     name: &'static str,
@@ -253,6 +283,8 @@ mod tests {
             ("CORTEXDB_STALE_LOCK_POLICY", "break"),
             ("CORTEXDB_PAYLOAD_RESIDENCY", "lazy"),
             ("CORTEXDB_PAYLOAD_CACHE_BYTES", "4096"),
+            ("CORTEXDB_TIERED_STORAGE_V2", "true"),
+            ("CORTEXDB_TIERED_STORAGE_COMPRESSION", "zstd_reserved"),
             ("CORTEXDB_AQL_QUERY_CACHE_MAX_ENTRIES", "64"),
             ("CORTEXDB_WAL_ARCHIVE", "true"),
             ("CORTEXDB_WAL_ARCHIVE_MAX_FILES", "8"),
@@ -279,6 +311,11 @@ mod tests {
             PayloadResidency::Lazy
         );
         assert_eq!(config.database_options.payload_cache_bytes, 4096);
+        assert!(config.database_options.tiered_storage.enabled);
+        assert_eq!(
+            config.database_options.tiered_storage.compression_policy,
+            TieredStorageCompressionPolicy::ZstdReserved
+        );
         assert_eq!(config.database_options.aql_query_cache_max_entries, 64);
         assert!(config.database_options.wal_archive_enabled);
         assert_eq!(config.database_options.wal_archive_max_files, 8);
@@ -306,6 +343,9 @@ mod tests {
         let error =
             EngineConfig::from_env_vars([("CORTEXDB_PAYLOAD_CACHE_BYTES", "maybe")]).unwrap_err();
         assert_eq!(error.variable, "CORTEXDB_PAYLOAD_CACHE_BYTES");
+        let error = EngineConfig::from_env_vars([("CORTEXDB_TIERED_STORAGE_COMPRESSION", "maybe")])
+            .unwrap_err();
+        assert_eq!(error.variable, "CORTEXDB_TIERED_STORAGE_COMPRESSION");
         let error =
             EngineConfig::from_env_vars([("CORTEXDB_AQL_QUERY_CACHE_MAX_ENTRIES", "maybe")])
                 .unwrap_err();

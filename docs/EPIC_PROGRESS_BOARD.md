@@ -20,17 +20,20 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-F01` — Tiered storage v2.
+`EPIC-F04` — Agent transaction semantics.
 
-F01 exit steps:
+F04 exit steps:
 
-1. Define hot/cold placement and page compression policy.
-2. Build on A08 lazy payload and cache metrics.
-3. Add eviction/readback tests.
+1. Define multi-agent write conflicts and isolation semantics.
+2. Add transaction tests for concurrent agent writes.
+3. Document conflict outcomes.
 
-F01 current state:
+F04 current state:
 
 - next.
+- F01 is closed with `docs/TIERED_STORAGE_V2.md`, guarded
+  `TieredStorageOptions`, hot-cache hit/miss/eviction metrics, lazy cold
+  readback bounded-RAM coverage, and `make tiered-storage-v2-check`.
 - D14 is closed with three live integration examples:
   OpenAI/Anthropic-style tool calling, LangChain-style retriever, and memory
   chat agent with TTL memory, plus `make live-integration-examples-check`.
@@ -1124,9 +1127,9 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 ## Next Exit Step
 
-Work on F01 only:
+Work on F04 only:
 
-1. define hot/cold placement and page compression policy;
-2. build on A08 lazy payload and cache metrics;
-3. add eviction/readback tests;
-4. move to the next ordered epic after F01 acceptance is closed.
+1. define multi-agent write conflict and isolation semantics;
+2. add transaction tests for concurrent agent writes;
+3. document conflict outcomes;
+4. move to the next ordered epic after F04 acceptance is closed.

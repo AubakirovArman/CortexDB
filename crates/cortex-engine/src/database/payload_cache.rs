@@ -21,14 +21,21 @@ pub(crate) struct SegmentPayloadCache {
     resident_bytes: usize,
     clock: u64,
     segment_loads: u64,
+    hits: u64,
+    misses: u64,
+    evictions: u64,
     entries: BTreeMap<SegmentPayloadCacheKey, CacheEntry>,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct PayloadCacheStats {
+    pub max_bytes: usize,
     pub resident_bytes: usize,
     pub entries: usize,
+    pub hits: u64,
+    pub misses: u64,
     pub segment_loads: u64,
+    pub evictions: u64,
 }
 
 #[derive(Debug)]
@@ -45,15 +52,24 @@ impl SegmentPayloadCache {
             resident_bytes: 0,
             clock: 0,
             segment_loads: 0,
+            hits: 0,
+            misses: 0,
+            evictions: 0,
             entries: BTreeMap::new(),
         }
     }
 
     pub(crate) fn get(&mut self, key: SegmentPayloadCacheKey) -> Option<Vec<u8>> {
         let next_clock = self.next_clock();
-        let entry = self.entries.get_mut(&key)?;
-        entry.last_used = next_clock;
-        Some(entry.payload.clone())
+        if let Some(entry) = self.entries.get_mut(&key) {
+            entry.last_used = next_clock;
+            let payload = entry.payload.clone();
+            self.hits = self.hits.saturating_add(1);
+            Some(payload)
+        } else {
+            self.misses = self.misses.saturating_add(1);
+            None
+        }
     }
 
     pub(crate) fn insert(&mut self, key: SegmentPayloadCacheKey, payload: Vec<u8>) {
@@ -83,9 +99,13 @@ impl SegmentPayloadCache {
 
     pub(crate) fn stats(&self) -> PayloadCacheStats {
         PayloadCacheStats {
+            max_bytes: self.max_bytes,
             resident_bytes: self.resident_bytes,
             entries: self.entries.len(),
+            hits: self.hits,
+            misses: self.misses,
             segment_loads: self.segment_loads,
+            evictions: self.evictions,
         }
     }
 
@@ -94,9 +114,12 @@ impl SegmentPayloadCache {
         self.clock
     }
 
-    fn remove(&mut self, key: SegmentPayloadCacheKey) {
+    fn remove(&mut self, key: SegmentPayloadCacheKey) -> bool {
         if let Some(entry) = self.entries.remove(&key) {
             self.resident_bytes = self.resident_bytes.saturating_sub(entry.bytes);
+            true
+        } else {
+            false
         }
     }
 
@@ -110,7 +133,9 @@ impl SegmentPayloadCache {
             else {
                 break;
             };
-            self.remove(key);
+            if self.remove(key) {
+                self.evictions = self.evictions.saturating_add(1);
+            }
         }
     }
 }
@@ -134,6 +159,10 @@ mod tests {
         assert_eq!(cache.get(first), Some(b"aa".to_vec()));
         assert_eq!(cache.get(second), None);
         assert_eq!(cache.get(third), Some(b"cccc".to_vec()));
+        assert_eq!(cache.stats().resident_bytes, 6);
+        assert_eq!(cache.stats().evictions, 1);
+        assert_eq!(cache.stats().hits, 3);
+        assert_eq!(cache.stats().misses, 1);
     }
 
     #[test]
@@ -144,5 +173,8 @@ mod tests {
         cache.insert(key, b"large".to_vec());
 
         assert_eq!(cache.get(key), None);
+        assert_eq!(cache.stats().max_bytes, 2);
+        assert_eq!(cache.stats().entries, 0);
+        assert_eq!(cache.stats().resident_bytes, 0);
     }
 }

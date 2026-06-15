@@ -31,6 +31,8 @@ evidence snapshots, benchmark experiments, and release working notes live in
 - [`DATA_MODEL.md`](DATA_MODEL.md) - cell and metadata model overview.
 - [`CELL_METADATA_MODEL.md`](CELL_METADATA_MODEL.md) - metadata source of truth.
 - [`STORAGE_FORMATS.md`](STORAGE_FORMATS.md) - WAL/segment/index/manifest formats.
+- [`TIERED_STORAGE_V2.md`](TIERED_STORAGE_V2.md) - hot/cold lazy payload cache
+  policy and F01 prototype gate.
 - [`LEXICAL_INDEX.md`](LEXICAL_INDEX.md) - compact lexical term dictionary and
   postings contract.
 - [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) - backup and restore operations.
