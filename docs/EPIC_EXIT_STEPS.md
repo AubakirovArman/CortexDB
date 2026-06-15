@@ -841,7 +841,7 @@ Exit steps:
 1. Define offline training/evaluation data without benchmark overfit.
 2. Add calibrated ranking behind a feature/config.
 3. Compare against deterministic ranking with held-out data.
-4. Mark done when learned ranking improves without policy regressions; then move to C07.
+4. Mark done when learned ranking improves without policy regressions; then move to F06.
 
 ### EPIC-F06 — Semantic compression памяти
 

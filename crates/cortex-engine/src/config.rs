@@ -5,9 +5,9 @@ use std::fmt;
 use cortex_storage::wal::DurabilityMode;
 
 use crate::options::{
-    CompactionPolicy, DatabaseOptions, EngineFeatureFlags, PayloadResidency, RecoveryMode,
-    StaleLockPolicy, TieredStorageCompressionPolicy, TieredStorageOptions,
-    DEFAULT_AQL_QUERY_CACHE_MAX_ENTRIES, DEFAULT_PAYLOAD_CACHE_BYTES,
+    AgentTransactionOptions, CompactionPolicy, DatabaseOptions, EngineFeatureFlags,
+    PayloadResidency, RecoveryMode, StaleLockPolicy, TieredStorageCompressionPolicy,
+    TieredStorageOptions, DEFAULT_AQL_QUERY_CACHE_MAX_ENTRIES, DEFAULT_PAYLOAD_CACHE_BYTES,
     DEFAULT_WAL_ARCHIVE_MAX_FILES,
 };
 use crate::search::{HnswBuildConfig, HnswBuildProfile};
@@ -52,6 +52,7 @@ impl EngineConfig {
                 DEFAULT_PAYLOAD_CACHE_BYTES,
             )?,
             tiered_storage: parse_tiered_storage_options(&vars)?,
+            agent_transactions: parse_agent_transaction_options(&vars)?,
             aql_query_cache_max_entries: parse_usize_var(
                 &vars,
                 "CORTEXDB_AQL_QUERY_CACHE_MAX_ENTRIES",
@@ -226,6 +227,14 @@ fn parse_tiered_storage_compression_policy(
     }
 }
 
+fn parse_agent_transaction_options(
+    vars: &BTreeMap<String, String>,
+) -> Result<AgentTransactionOptions, EngineConfigError> {
+    Ok(AgentTransactionOptions {
+        enabled: parse_bool_var(vars, "CORTEXDB_AGENT_TRANSACTIONS", false)?,
+    })
+}
+
 fn parse_usize_var(
     vars: &BTreeMap<String, String>,
     name: &'static str,
@@ -285,6 +294,7 @@ mod tests {
             ("CORTEXDB_PAYLOAD_CACHE_BYTES", "4096"),
             ("CORTEXDB_TIERED_STORAGE_V2", "true"),
             ("CORTEXDB_TIERED_STORAGE_COMPRESSION", "zstd_reserved"),
+            ("CORTEXDB_AGENT_TRANSACTIONS", "true"),
             ("CORTEXDB_AQL_QUERY_CACHE_MAX_ENTRIES", "64"),
             ("CORTEXDB_WAL_ARCHIVE", "true"),
             ("CORTEXDB_WAL_ARCHIVE_MAX_FILES", "8"),
@@ -316,6 +326,7 @@ mod tests {
             config.database_options.tiered_storage.compression_policy,
             TieredStorageCompressionPolicy::ZstdReserved
         );
+        assert!(config.database_options.agent_transactions.enabled);
         assert_eq!(config.database_options.aql_query_cache_max_entries, 64);
         assert!(config.database_options.wal_archive_enabled);
         assert_eq!(config.database_options.wal_archive_max_files, 8);

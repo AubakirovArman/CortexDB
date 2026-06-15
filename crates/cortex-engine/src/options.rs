@@ -74,6 +74,11 @@ impl Default for TieredStorageOptions {
     }
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct AgentTransactionOptions {
+    pub enabled: bool,
+}
+
 pub const DEFAULT_PAYLOAD_CACHE_BYTES: usize = 64 * 1024 * 1024;
 pub const DEFAULT_AQL_QUERY_CACHE_MAX_ENTRIES: usize = 128;
 pub const DEFAULT_WAL_ARCHIVE_MAX_FILES: usize = 1024;
@@ -157,6 +162,7 @@ pub struct DatabaseOptions {
     pub payload_residency: PayloadResidency,
     pub payload_cache_bytes: usize,
     pub tiered_storage: TieredStorageOptions,
+    pub agent_transactions: AgentTransactionOptions,
     pub aql_query_cache_max_entries: usize,
     pub wal_archive_enabled: bool,
     pub wal_archive_max_files: usize,
@@ -177,6 +183,7 @@ impl Default for DatabaseOptions {
             payload_residency: PayloadResidency::Memory,
             payload_cache_bytes: DEFAULT_PAYLOAD_CACHE_BYTES,
             tiered_storage: TieredStorageOptions::default(),
+            agent_transactions: AgentTransactionOptions::default(),
             aql_query_cache_max_entries: DEFAULT_AQL_QUERY_CACHE_MAX_ENTRIES,
             wal_archive_enabled: false,
             wal_archive_max_files: DEFAULT_WAL_ARCHIVE_MAX_FILES,

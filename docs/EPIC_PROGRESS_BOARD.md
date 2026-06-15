@@ -20,17 +20,21 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-F04` — Agent transaction semantics.
+`EPIC-F05` — Learned/calibrated ranking.
 
-F04 exit steps:
+F05 exit steps:
 
-1. Define multi-agent write conflicts and isolation semantics.
-2. Add transaction tests for concurrent agent writes.
-3. Document conflict outcomes.
+1. Define offline training/evaluation data without benchmark overfit.
+2. Add calibrated ranking behind a feature/config.
+3. Compare against deterministic ranking with held-out data.
 
-F04 current state:
+F05 current state:
 
 - next.
+- F04 is closed with `docs/AGENT_TRANSACTION_SEMANTICS.md`, guarded
+  `AgentTransactionOptions`, `Database::commit_agent_transaction`, structured
+  stale/tombstoned target conflict reports, concurrent agent write tests, and
+  `make agent-transaction-semantics-check`.
 - F01 is closed with `docs/TIERED_STORAGE_V2.md`, guarded
   `TieredStorageOptions`, hot-cache hit/miss/eviction metrics, lazy cold
   readback bounded-RAM coverage, and `make tiered-storage-v2-check`.
@@ -1127,9 +1131,9 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 ## Next Exit Step
 
-Work on F04 only:
+Work on F05 only:
 
-1. define multi-agent write conflict and isolation semantics;
-2. add transaction tests for concurrent agent writes;
-3. document conflict outcomes;
-4. move to the next ordered epic after F04 acceptance is closed.
+1. define offline training/evaluation data without benchmark overfit;
+2. add calibrated ranking behind a feature/config;
+3. compare against deterministic ranking with held-out data;
+4. move to the next ordered epic after F05 acceptance is closed.

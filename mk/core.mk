@@ -32,6 +32,8 @@ lexical-index-contract-check:
 
 context-pack-schema-contract-check:
 	python3 scripts/context_pack_schema_contract_check.py
+agent-transaction-semantics-check:
+	python3 scripts/agent_transaction_semantics_check.py --report "$(AGENT_TRANSACTION_SEMANTICS_REPORT)"
 provenance-model-inventory: ; python3 scripts/provenance_model_inventory.py
 erb-oracle-audit:
 	python3 scripts/enterprise_rag_bench/oracle_inference_guard.py

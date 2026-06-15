@@ -41,6 +41,8 @@ evidence snapshots, benchmark experiments, and release working notes live in
 
 ## Agent-Native Surface
 
+- [`AGENT_TRANSACTION_SEMANTICS.md`](AGENT_TRANSACTION_SEMANTICS.md) -
+  multi-agent write conflict and isolation semantics.
 - [`AQL_V0_5.md`](AQL_V0_5.md) - current AQL REMEMBER write contract.
 - [`AQL_V0_4.md`](AQL_V0_4.md) - frozen AQL grammar.
 - [`BRAIN_SEMANTICS.md`](BRAIN_SEMANTICS.md) - single-brain contract and

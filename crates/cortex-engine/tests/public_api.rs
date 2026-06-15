@@ -1,11 +1,12 @@
 use cortex_core::CellId;
 use cortex_engine::{
-    AqlQueryCacheStats, BackupReport, CandidateId, CheckpointStats, ContextPack,
-    ContextPackOptions, Database, DatabaseOptions, DbOperation, EngineAqlIndex, EngineConfig,
-    EngineConfigError, EngineError, EngineErrorCategory, EngineErrorCode, EngineFeature,
-    EngineFeatureFlags, EngineResult, Language, RecoveryMode, RepairReport, RestoreReport,
-    RetrievedCell, StaleLockPolicy, StorageStats, StorageValidationReport, TextAnalyzer,
-    TextAnalyzerConfig,
+    AgentTransactionConflict, AgentTransactionOptions, AgentTransactionReport,
+    AgentTransactionRequest, AqlQueryCacheStats, BackupReport, CandidateId, CheckpointStats,
+    ContextPack, ContextPackOptions, Database, DatabaseOptions, DbOperation, EngineAqlIndex,
+    EngineConfig, EngineConfigError, EngineError, EngineErrorCategory, EngineErrorCode,
+    EngineFeature, EngineFeatureFlags, EngineResult, Language, RecoveryMode, RepairReport,
+    RestoreReport, RetrievedCell, StaleLockPolicy, StorageStats, StorageValidationReport,
+    TextAnalyzer, TextAnalyzerConfig,
 };
 
 #[test]
@@ -66,4 +67,8 @@ fn stable_public_types_are_importable() {
     let _ = std::mem::size_of::<RetrievedCell>();
     let _ = std::mem::size_of::<StorageStats>();
     let _ = std::mem::size_of::<AqlQueryCacheStats>();
+    let _ = std::mem::size_of::<AgentTransactionOptions>();
+    let _ = std::mem::size_of::<AgentTransactionRequest>();
+    let _ = std::mem::size_of::<AgentTransactionReport>();
+    let _ = std::mem::size_of::<AgentTransactionConflict>();
 }

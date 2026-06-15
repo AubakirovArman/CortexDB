@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-F04` (`EPIC-F01` is now done along with the previously
+Current pointer: `EPIC-F05` (`EPIC-F04` is now done along with the previously
 closed epics listed in the Active Execution Queue). `EPIC-C01` is closed with
 the `ACI4` compact term dictionary/postings format, `ACI0..ACI3` dual-read
 compatibility, and persisted/search compatibility gates. `EPIC-C03` is closed
@@ -49,7 +49,9 @@ budgets, slow-loris body timeout protection, timeout metrics, docs, and
 `make docs-site-check`. `EPIC-D14` added three live integration examples with
 mock LLM smoke coverage. `EPIC-F01` added the tiered storage v2 design,
 guarded options, bounded payload cache metrics, and eviction/readback gate.
-`EPIC-F04` is next.
+`EPIC-F04` added agent transaction semantics docs, guarded engine prototype,
+deterministic optimistic same-cell conflict reporting, and concurrent agent
+write tests. `EPIC-F05` is next.
 `EPIC-D05` remains partial/local-ready and is externally blocked on public
 registry credentials/trusted publishing.
 
@@ -146,7 +148,8 @@ enough to unblock the next dependency step.
 56. `EPIC-D13` — mdBook docs site: done.
 57. `EPIC-D14` — Three live integration examples: done.
 58. `EPIC-F01` — Tiered storage v2: done.
-59. `EPIC-F04` — Agent transaction semantics: next.
+59. `EPIC-F04` — Agent transaction semantics: done.
+60. `EPIC-F05` — Learned/calibrated ranking: next.
 
 ## Summary
 
@@ -1973,7 +1976,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
   quota-policy-check`, `make openapi-contract-check`, and `make
   load-suite-check`.
 - remaining: none for E06 acceptance.
-- next exit step: `EPIC-F01` is now done; move to `EPIC-F04` — Agent transaction semantics.
+- next exit step: `EPIC-F04` is now done; move to `EPIC-F05` — Learned/calibrated ranking.
 
 ### EPIC-E07 — Audit log productization
 
@@ -2010,7 +2013,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
   --report target/security-hardening/e07-smoke.json`; `cargo clippy -p
   cortex-server --all-targets -- -D warnings`; `cargo clippy -p cortex-cli
   --all-targets -- -D warnings`.
-- next exit step: `EPIC-F01` is now done; move to `EPIC-F04` — Agent transaction semantics.
+- next exit step: `EPIC-F04` is now done; move to `EPIC-F05` — Learned/calibrated ranking.
 
 ### EPIC-E08 — Tenant isolation test suite
 
@@ -2122,7 +2125,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
   `cargo test -p cortex-server denied_ingestion_audit_event_does_not_leak_query_body_or_token --all-features`;
   `python3 -m py_compile scripts/secrets_hygiene_check.py scripts/llm_inference_gate_check.py`;
   `make secrets-check`.
-- next exit step: `EPIC-F01` is now done; move to `EPIC-F04` — Agent transaction semantics.
+- next exit step: `EPIC-F04` is now done; move to `EPIC-F05` — Learned/calibrated ranking.
 
 ### EPIC-E14 — Upgrade/rollback drill
 
@@ -2168,7 +2171,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
   `cargo test -p cortex-server slow_loris_body_times_out_without_blocking_follow_up_request --all-features`;
   `cargo test -p cortex-server metrics_prometheus_output_contains_contract_series --all-features`;
   `make route-timeout-check`.
-- next exit step: `EPIC-F01` is now done; move to `EPIC-F04` — Agent transaction semantics.
+- next exit step: `EPIC-F04` is now done; move to `EPIC-F05` — Learned/calibrated ranking.
 
 ## Block F — Long-term database research
 
@@ -2187,7 +2190,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
   - `PayloadCacheStats` exposes `max_bytes`, `resident_bytes`, `hits`, `misses`, `segment_loads`, and `evictions`.
   - `crates/cortex-engine/tests/tiered_storage_v2.rs` proves cold segment payload readback stays within a 64-byte hot cache and records eviction/readback behavior.
   - latest checks: `python3 -m py_compile scripts/tiered_storage_v2_check.py`; `make tiered-storage-v2-check`.
-- next exit step: `EPIC-F01` is now done; move to `EPIC-F04` — Agent transaction semantics.
+- next exit step: `EPIC-F04` is now done; move to `EPIC-F05` — Learned/calibrated ranking.
 - dependencies: A08 стабилен в проде ≥1 квартал. Риски: высокие.
 
 ### EPIC-F02 — Распределённая репликация (разморозка)
@@ -2204,11 +2207,18 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-F04 — Agent transaction semantics (мульти-агентные записи)
 
-- status: `pending`
+- status: `done`
 - meta: Категория: research · P3 · 12 months · research
 - tasks:
-  - [ ] Что исследовать: optimistic concurrency per scope; конфликт двух агентов, пишущих один факт — это data-конфликт (B09) или txn-конфликт? Спека «agent write contract»: идемпотентность, retry-семантика, read-your-writes для сессии агента.
-  - [ ] Деливерабл: research-док + прототип за флагом. Зависимости: A15, A16.
+  - [x] Что исследовать: optimistic concurrency per scope; конфликт двух агентов, пишущих один факт — это data-конфликт (B09) или txn-конфликт? Спека «agent write contract»: идемпотентность, retry-семантика, read-your-writes для сессии агента.
+  - [x] Деливерабл: research-док + прототип за флагом. Зависимости: A15, A16.
+- evidence:
+  - `docs/AGENT_TRANSACTION_SEMANTICS.md` defines deterministic optimistic same-cell isolation, retry/idempotency boundary, read-your-writes, and data-conflict vs transaction-conflict split.
+  - `DatabaseOptions::agent_transactions` and `CORTEXDB_AGENT_TRANSACTIONS` gate the prototype.
+  - `Database::commit_agent_transaction` reuses atomic `WriteBatch` WAL commit and returns structured `AgentTransactionOutcome::Conflict` reports for stale/tombstoned target cells.
+  - `crates/cortex-engine/tests/agent_transactions.rs` covers feature flag, stale same-cell conflicts, disjoint concurrent commits, read-your-writes, scope mismatch, and unwritable scope rejection.
+  - latest checks: `python3 -m py_compile scripts/agent_transaction_semantics_check.py`; `make agent-transaction-semantics-check`.
+- next exit step: `EPIC-F04` is now done; move to `EPIC-F05` — Learned/calibrated ranking.
 
 ### EPIC-F05 — Learned/calibrated ranking
 

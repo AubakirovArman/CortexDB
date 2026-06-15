@@ -24,6 +24,7 @@
 //!     Ok(())
 //! }
 //! ```
+pub mod agent_transaction;
 pub mod agent_views;
 pub mod backup;
 pub mod bundle;
@@ -67,6 +68,10 @@ pub mod typed_body;
 pub mod validation;
 pub mod vector_rebuild;
 pub mod verification;
+pub use agent_transaction::{
+    AgentTransactionConflict, AgentTransactionConflictKind, AgentTransactionOutcome,
+    AgentTransactionReport, AgentTransactionRequest,
+};
 pub use backup::{
     BackupDrillReport, BackupReport, BackupRetentionPlan, BackupRetentionReport,
     BackupVerifyReport, EncryptedBackupReport, EncryptedRestoreReport,
@@ -145,8 +150,9 @@ pub use operation::{
     WriteBatchMarker, WriteBatchOperation,
 };
 pub use options::{
-    CompactionPolicy, DatabaseOptions, EngineFeature, EngineFeatureFlags, PayloadResidency,
-    RecoveryMode, StaleLockPolicy, TieredStorageCompressionPolicy, TieredStorageOptions,
+    AgentTransactionOptions, CompactionPolicy, DatabaseOptions, EngineFeature, EngineFeatureFlags,
+    PayloadResidency, RecoveryMode, StaleLockPolicy, TieredStorageCompressionPolicy,
+    TieredStorageOptions,
 };
 pub use plan::{
     CostModelDecision, CostModelEstimate, CostModelOptions, ExecutionPath, LogicalPlan,

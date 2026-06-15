@@ -16,8 +16,8 @@ use crate::database_files::truncate_wal_tail;
 use crate::error::{EngineError, EngineResult};
 use crate::lock::DatabaseLock;
 use crate::options::{
-    DatabaseOptions, EngineFeature, EngineFeatureFlags, PayloadResidency, RecoveryMode,
-    StaleLockPolicy, TieredStorageOptions,
+    AgentTransactionOptions, DatabaseOptions, EngineFeature, EngineFeatureFlags, PayloadResidency,
+    RecoveryMode, StaleLockPolicy, TieredStorageOptions,
 };
 use crate::query::cache::AqlQueryCache;
 use crate::query::AqlDeltaIndex;
@@ -54,6 +54,10 @@ impl Database {
 
     pub fn tiered_storage_options(&self) -> TieredStorageOptions {
         self.tiered_storage
+    }
+
+    pub fn agent_transaction_options(&self) -> AgentTransactionOptions {
+        self.agent_transactions
     }
 
     pub(crate) fn require_feature(&self, feature: EngineFeature) -> EngineResult<()> {
@@ -132,6 +136,7 @@ impl Database {
             payload_residency: options.payload_residency,
             payload_cache: Mutex::new(SegmentPayloadCache::new(options.payload_cache_bytes)),
             tiered_storage: options.tiered_storage,
+            agent_transactions: options.agent_transactions,
             hnsw_build_config: options.hnsw_build_config.normalized(),
             feature_flags: options.feature_flags,
             ingestion_backpressure_policy: options.ingestion_backpressure,

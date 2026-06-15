@@ -280,6 +280,7 @@ RELEASE_EVIDENCE_BUNDLE_ARCHIVE ?= $(RELEASE_EVIDENCE_BUNDLE_ROOT)/release-evide
 GENERATED_RELEASE_NOTES ?= target/release-notes/generated.md
 EVIDENCE_ARTIFACT_RETENTION_REPORT ?= target/evidence-artifact-retention/report.json
 VERSIONING_POLICY_REPORT ?= target/versioning-policy/report.json
+AGENT_TRANSACTION_SEMANTICS_REPORT ?= target/agent-transaction-semantics/report.json
 ANN_PUBLIC_SOURCE ?=
 ANN_PUBLIC_DATASET_ID ?= public-ann
 ANN_PUBLIC_FORMAT ?= fvecs

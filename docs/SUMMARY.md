@@ -43,6 +43,7 @@
 # Agent-Native Features
 
 - [Agent Memory](AGENT_MEMORY.md)
+- [Agent Transaction Semantics](AGENT_TRANSACTION_SEMANTICS.md)
 - [Brain Semantics](BRAIN_SEMANTICS.md)
 - [Knowledge Graph](KNOWLEDGE_GRAPH.md)
 - [Tool Registry](TOOL_REGISTRY.md)
