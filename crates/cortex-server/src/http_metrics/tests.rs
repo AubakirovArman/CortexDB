@@ -18,6 +18,7 @@ fn app_state_for_metrics() -> AppState {
         audit_sink: None,
         request_count: Arc::new(AtomicU64::new(0)),
         request_rejected: Arc::new(AtomicU64::new(0)),
+        request_timeout: Arc::new(AtomicU64::new(0)),
         request_duration_ms_total: Arc::new(AtomicU64::new(0)),
         request_id_client_provided: Arc::new(AtomicU64::new(0)),
         request_id_generated: Arc::new(AtomicU64::new(0)),

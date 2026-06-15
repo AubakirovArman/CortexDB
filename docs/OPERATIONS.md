@@ -152,6 +152,20 @@ export CORTEXDB_ACTOR_QUEUE_CAPACITY=256
 Quota exhaustion returns `429 quota_exceeded`. The process-wide request-rate
 guard remains `429 rate_limited`.
 
+Per-route timeout budgets protect the server from slow clients and long-running
+route work:
+
+- `CORTEXDB_READ_ROUTE_TIMEOUT_MS` controls read/search/context routes.
+  Default: `30000`.
+- `CORTEXDB_WRITE_ROUTE_TIMEOUT_MS` controls write/ingest/mutation routes.
+  Default: `30000`.
+- `CORTEXDB_ADMIN_ROUTE_TIMEOUT_MS` controls local admin/health/metrics routes.
+  Default: `10000`.
+
+Timeouts return typed `503 service_unavailable` responses with a timeout
+message. Slow request bodies are timed out before actor admission, so a
+slow-loris client cannot hold an actor slot.
+
 Capacity sizing:
 
 ```text
@@ -170,6 +184,7 @@ Local gate:
 
 ```bash
 cargo test -p cortex-server tenant_quota_50_tenant_load_smoke --all-features
+make route-timeout-check
 make load-suite-check
 ```
 

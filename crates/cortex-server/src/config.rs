@@ -5,6 +5,9 @@ use cortex_engine::DatabaseOptions;
 use crate::auth::{AuthRole, AuthTokenPolicy};
 
 pub const DEFAULT_ACTOR_QUEUE_CAPACITY: usize = 1024;
+pub const DEFAULT_READ_ROUTE_TIMEOUT_MS: u64 = 30_000;
+pub const DEFAULT_WRITE_ROUTE_TIMEOUT_MS: u64 = 30_000;
+pub const DEFAULT_ADMIN_ROUTE_TIMEOUT_MS: u64 = 10_000;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum AuditLogFsyncPolicy {
@@ -60,6 +63,12 @@ pub struct ServerOptions {
     /// Rate limiting is disabled by default. This is a coarse Core Alpha guard,
     /// not a replacement for reverse-proxy quotas or user-aware authorization.
     pub request_rate_limit_per_minute: Option<u64>,
+    /// Timeout budget for read-only database routes.
+    pub read_route_timeout_ms: u64,
+    /// Timeout budget for write/mutation database routes.
+    pub write_route_timeout_ms: u64,
+    /// Timeout budget for local admin/metrics style database routes.
+    pub admin_route_timeout_ms: u64,
     /// Emit structured audit events through `tracing` for HTTP API responses.
     ///
     /// Disabled by default. Audit events intentionally record route/action
@@ -103,6 +112,30 @@ impl ServerOptions {
             DEFAULT_ACTOR_QUEUE_CAPACITY
         } else {
             self.actor_queue_capacity
+        }
+    }
+
+    pub fn read_route_timeout_ms(&self) -> u64 {
+        if self.read_route_timeout_ms == 0 {
+            DEFAULT_READ_ROUTE_TIMEOUT_MS
+        } else {
+            self.read_route_timeout_ms
+        }
+    }
+
+    pub fn write_route_timeout_ms(&self) -> u64 {
+        if self.write_route_timeout_ms == 0 {
+            DEFAULT_WRITE_ROUTE_TIMEOUT_MS
+        } else {
+            self.write_route_timeout_ms
+        }
+    }
+
+    pub fn admin_route_timeout_ms(&self) -> u64 {
+        if self.admin_route_timeout_ms == 0 {
+            DEFAULT_ADMIN_ROUTE_TIMEOUT_MS
+        } else {
+            self.admin_route_timeout_ms
         }
     }
 

@@ -26,6 +26,36 @@ fn main() -> ExitCode {
             return ExitCode::FAILURE;
         }
     };
+    let read_route_timeout_ms = match route_timeout_from_env(
+        "CORTEXDB_READ_ROUTE_TIMEOUT_MS",
+        cortex_server::DEFAULT_READ_ROUTE_TIMEOUT_MS,
+    ) {
+        Ok(timeout) => timeout,
+        Err(error) => {
+            eprintln!("{error}");
+            return ExitCode::FAILURE;
+        }
+    };
+    let write_route_timeout_ms = match route_timeout_from_env(
+        "CORTEXDB_WRITE_ROUTE_TIMEOUT_MS",
+        cortex_server::DEFAULT_WRITE_ROUTE_TIMEOUT_MS,
+    ) {
+        Ok(timeout) => timeout,
+        Err(error) => {
+            eprintln!("{error}");
+            return ExitCode::FAILURE;
+        }
+    };
+    let admin_route_timeout_ms = match route_timeout_from_env(
+        "CORTEXDB_ADMIN_ROUTE_TIMEOUT_MS",
+        cortex_server::DEFAULT_ADMIN_ROUTE_TIMEOUT_MS,
+    ) {
+        Ok(timeout) => timeout,
+        Err(error) => {
+            eprintln!("{error}");
+            return ExitCode::FAILURE;
+        }
+    };
     let tenant_max_cells = match tenant_max_cells_from_env() {
         Ok(limit) => limit,
         Err(error) => {
@@ -120,6 +150,9 @@ fn main() -> ExitCode {
         tenant_queue_quota,
         cors_allowed_origin: env::var("CORTEXDB_CORS_ALLOW_ORIGIN").ok(),
         request_rate_limit_per_minute,
+        read_route_timeout_ms,
+        write_route_timeout_ms,
+        admin_route_timeout_ms,
         audit_log_enabled: audit_log_enabled_from_env() || audit_log_path.is_some(),
         audit_log_path,
         audit_log_rotate_bytes,
@@ -276,6 +309,14 @@ fn request_rate_limit_from_env() -> Result<Option<u64>, String> {
 
 fn parse_request_rate_limit(raw: &str) -> Result<u64, String> {
     parse_positive_u64(raw, "CORTEXDB_RATE_LIMIT_PER_MINUTE")
+}
+
+fn route_timeout_from_env(var: &str, default_ms: u64) -> Result<u64, String> {
+    match env::var(var) {
+        Ok(raw) => parse_positive_u64(&raw, var),
+        Err(env::VarError::NotPresent) => Ok(default_ms),
+        Err(error) => Err(format!("invalid {var}: {error}")),
+    }
 }
 
 fn tenant_max_cells_from_env() -> Result<Option<u64>, String> {

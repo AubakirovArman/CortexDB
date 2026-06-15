@@ -2,6 +2,7 @@ use super::{
     parse_actor_queue_capacity, parse_audit_log_fsync_policy, parse_audit_log_path,
     parse_auth_agent_id, parse_auth_policy_store_file_path, parse_auth_tokens,
     parse_auth_tokens_file_path, parse_bool_flag, parse_positive_u64, parse_request_rate_limit,
+    route_timeout_from_env,
 };
 
 #[test]
@@ -24,6 +25,18 @@ fn parse_request_rate_limit_accepts_positive_integer() {
 fn parse_request_rate_limit_rejects_zero_and_invalid_values() {
     assert!(parse_request_rate_limit("0").is_err());
     assert!(parse_request_rate_limit("abc").is_err());
+}
+
+#[test]
+fn route_timeout_env_defaults_and_rejects_zero() {
+    const VAR: &str = "CORTEXDB_TEST_ROUTE_TIMEOUT_MS";
+    std::env::remove_var(VAR);
+    assert_eq!(route_timeout_from_env(VAR, 123).unwrap(), 123);
+    std::env::set_var(VAR, "77");
+    assert_eq!(route_timeout_from_env(VAR, 123).unwrap(), 77);
+    std::env::set_var(VAR, "0");
+    assert!(route_timeout_from_env(VAR, 123).is_err());
+    std::env::remove_var(VAR);
 }
 
 #[test]

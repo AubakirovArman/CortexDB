@@ -20,17 +20,21 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-E15` — Per-route timeouts and slow-client protection.
+`EPIC-D13` — mdBook docs site.
 
-E15 exit steps:
+D13 exit steps:
 
-1. Add per-route timeout budgets.
-2. Prove cancelled/slow clients do not leave the actor in a bad state.
-3. Add slow-client coverage and document timeout config.
+1. Build a navigable docs site from the current docs.
+2. Keep generated/site artifacts controlled.
+3. Add a local docs-site gate.
 
-E15 current state:
+D13 current state:
 
 - next.
+- E15 is closed with configured read/write/admin timeout budgets,
+  slow-loris body timeout coverage, typed `503 service_unavailable` timeout
+  responses, `cortexdb_request_timeout_total`, docs, and
+  `make route-timeout-check`.
 - E13 is closed with env/file secret inputs, rejected inline CLI secret
   arguments, audit redaction coverage, docs, provider-secret scanning, and
   `make secrets-check`.
@@ -1112,9 +1116,9 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 ## Next Exit Step
 
-Work on E15 only:
+Work on D13 only:
 
-1. inspect current server route timeout and actor cancellation boundaries;
-2. add configured per-route timeout enforcement;
-3. add slow-client/cancelled-request regression coverage;
-4. move to the next ordered epic after E15 acceptance is closed.
+1. inspect current docs layout and build tooling;
+2. add mdBook site config or equivalent local static docs gate;
+3. document how to build/serve the docs site;
+4. move to the next ordered epic after D13 acceptance is closed.

@@ -799,7 +799,7 @@ Exit steps:
 1. Define timeout/budget behavior per route.
 2. Enforce slow-client and actor protection.
 3. Add timeout tests and metrics.
-4. Mark done when slow requests cannot starve the service; then move to E05/E06.
+4. Mark done when slow requests cannot starve the service; then move to D13.
 
 ## Block F — Long-term database research
 

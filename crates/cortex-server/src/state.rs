@@ -32,6 +32,7 @@ pub struct AppState {
     pub(crate) audit_sink: Option<Arc<audit::AuditSink>>,
     pub(crate) request_count: Arc<AtomicU64>,
     pub(crate) request_rejected: Arc<AtomicU64>,
+    pub(crate) request_timeout: Arc<AtomicU64>,
     pub(crate) request_duration_ms_total: Arc<AtomicU64>,
     pub(crate) request_id_client_provided: Arc<AtomicU64>,
     pub(crate) request_id_generated: Arc<AtomicU64>,

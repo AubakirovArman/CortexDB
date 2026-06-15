@@ -23,6 +23,7 @@
 .PHONY: operations-runbook-check incident-playbooks-check load-suite-check single-node-slo-dashboard-check dashboard-operational-status-check context-pack-explorer-check verification-explorer-check retrieval-quality-explorer-check permissions-view-check audit-viewer-v2-check backup-restore-view-check incident-view-check dashboard-role-ui-check
 .PHONY: doctor-check
 .PHONY: metrics-contract-v2-check
+.PHONY: route-timeout-check
 .PHONY: service-manager-smoke-check
 .PHONY: docker-hardening-check
 .PHONY: docker-quickstart-check

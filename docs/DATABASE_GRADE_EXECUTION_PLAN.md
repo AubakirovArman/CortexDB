@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-E15` (`EPIC-E13` is now done along with the previously
+Current pointer: `EPIC-D13` (`EPIC-E15` is now done along with the previously
 closed epics listed in the Active Execution Queue). `EPIC-C01` is closed with
 the `ACI4` compact term dictionary/postings format, `ACI0..ACI3` dual-read
 compatibility, and persisted/search compatibility gates. `EPIC-C03` is closed
@@ -42,7 +42,9 @@ per-tenant cell, estimated-memory, and queue quotas with `quota_exceeded`
 responses, 50-tenant load coverage, and backpressure tuning docs. `EPIC-E07`
 closed audit log productization. `EPIC-E13` closed secrets hygiene with env/file
 secret inputs, CLI rejection tests, audit redaction coverage, and
-`make secrets-check`. `EPIC-E15` is next.
+`make secrets-check`. `EPIC-E15` closed per-route read/write/admin timeout
+budgets, slow-loris body timeout protection, timeout metrics, docs, and
+`make route-timeout-check`. `EPIC-D13` is next.
 `EPIC-D05` remains partial/local-ready and is externally blocked on public
 registry credentials/trusted publishing.
 
@@ -135,7 +137,8 @@ enough to unblock the next dependency step.
 52. `EPIC-E06` — Backpressure tuning and per-tenant limits: done.
 53. `EPIC-E07` — Audit log productization: done.
 54. `EPIC-E13` — Secrets hygiene: done.
-55. `EPIC-E15` — Per-route timeouts and slow-client protection: next.
+55. `EPIC-E15` — Per-route timeouts and slow-client protection: done.
+56. `EPIC-D13` — mdBook docs site: next.
 
 ## Summary
 
@@ -1940,7 +1943,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
   quota-policy-check`, `make openapi-contract-check`, and `make
   load-suite-check`.
 - remaining: none for E06 acceptance.
-- next exit step: `EPIC-E13` is now done; move to `EPIC-E15` — Per-route timeouts and slow-client protection.
+- next exit step: `EPIC-E15` is now done; move to `EPIC-D13` — mdBook docs site.
 
 ### EPIC-E07 — Audit log productization
 
@@ -1977,7 +1980,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
   --report target/security-hardening/e07-smoke.json`; `cargo clippy -p
   cortex-server --all-targets -- -D warnings`; `cargo clippy -p cortex-cli
   --all-targets -- -D warnings`.
-- next exit step: `EPIC-E13` is now done; move to `EPIC-E15` — Per-route timeouts and slow-client protection.
+- next exit step: `EPIC-E15` is now done; move to `EPIC-D13` — mdBook docs site.
 
 ### EPIC-E08 — Tenant isolation test suite
 
@@ -2089,7 +2092,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
   `cargo test -p cortex-server denied_ingestion_audit_event_does_not_leak_query_body_or_token --all-features`;
   `python3 -m py_compile scripts/secrets_hygiene_check.py scripts/llm_inference_gate_check.py`;
   `make secrets-check`.
-- next exit step: move to `EPIC-E15` — Per-route timeouts and slow-client protection.
+- next exit step: `EPIC-E15` is now done; move to `EPIC-D13` — mdBook docs site.
 
 ### EPIC-E14 — Upgrade/rollback drill
 
@@ -2115,15 +2118,27 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-E15 — Per-route таймауты + защита актора от медленных клиентов
 
-- status: `pending`
+- status: `done`
 - meta: Категория: ops · P2 · 60 days · improve
 - tasks:
-  - [ ] 1) tower-timeout c бюджетами per route
-  - [ ] 2) отмена запроса не оставляет актор в плохом состоянии (drop reply-канала — проверить)
-  - [ ] 3) тест slow-loris-клиента.
+  - [x] 1) tower-timeout c бюджетами per route
+  - [x] 2) отмена запроса не оставляет актор в плохом состоянии (drop reply-канала — проверить)
+  - [x] 3) тест slow-loris-клиента.
 - acceptance:
-  - [ ] зависший клиент не держит слот; таймауты в конфиге.
+  - [x] зависший клиент не держит слот; таймауты в конфиге.
 - files: server/main.rs, actor.rs.
+- evidence: Added configured read/write/admin route budgets through
+  `CORTEXDB_READ_ROUTE_TIMEOUT_MS`, `CORTEXDB_WRITE_ROUTE_TIMEOUT_MS`, and
+  `CORTEXDB_ADMIN_ROUTE_TIMEOUT_MS`, with body-read and actor-route timeout
+  enforcement returning typed `503 service_unavailable` timeout responses.
+  Slow-loris coverage proves a partial request body times out and a follow-up
+  health request is served immediately. Prometheus exposes
+  `cortexdb_request_timeout_total`; docs cover the knobs and alerting.
+- latest checks: `cargo fmt --check`; `cargo test -p cortex-server route_timeout --all-features`;
+  `cargo test -p cortex-server slow_loris_body_times_out_without_blocking_follow_up_request --all-features`;
+  `cargo test -p cortex-server metrics_prometheus_output_contains_contract_series --all-features`;
+  `make route-timeout-check`.
+- next exit step: move to `EPIC-D13` — mdBook docs site.
 
 ## Block F — Long-term database research
 

@@ -4,8 +4,10 @@ use axum::{
     Json,
 };
 use std::sync::atomic::Ordering;
+use std::time::Duration;
 
 use super::error::error_response;
+use super::request_timeout_response;
 use crate::quota::{
     acquire_principal_queue_permit, acquire_tenant_queue_permit, enforce_tenant_storage_quota,
 };
@@ -149,8 +151,13 @@ pub(super) async fn handle_database_route(
     let target_clone = target.clone();
     let body_clone = body_bytes.to_vec();
     let parent_span = tracing::Span::current();
+    let route_timeout = Duration::from_millis(crate::actor::route_timeout_ms(
+        &state.options,
+        method,
+        &target,
+    ));
 
-    let res = match tokio::task::spawn_blocking(move || {
+    let actor_task = tokio::task::spawn_blocking(move || {
         let _parent = parent_span.enter();
         let queue_wait_ms = queue_wait_started.elapsed().as_millis() as u64;
         {
@@ -172,14 +179,26 @@ pub(super) async fn handle_database_route(
             actor.route_with_auth(&method_clone, &target_clone, &body_clone, auth_context),
             queue_wait_ms,
         )
-    })
-    .await
-    {
-        Ok((result, queue_wait_ms)) => {
+    });
+    let res = match tokio::time::timeout(route_timeout, actor_task).await {
+        Ok(Ok((result, queue_wait_ms))) => {
             state.actor_queue_wait_latency_ms.observe_ms(queue_wait_ms);
             result
         }
-        Err(_) => Err(RouterError::Internal("internal server error".to_owned())),
+        Ok(Err(_)) => Err(RouterError::Internal("internal server error".to_owned())),
+        Err(_) => {
+            let duration_ms = start.elapsed().as_millis() as u64;
+            state.request_count.fetch_add(1, Ordering::Relaxed);
+            state
+                .request_duration_ms_total
+                .fetch_add(duration_ms, Ordering::Relaxed);
+            return request_timeout_response(
+                state,
+                audit_event,
+                request_id,
+                "request timed out while waiting for database route",
+            );
+        }
     };
     if matches!(
         res,

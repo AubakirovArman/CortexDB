@@ -56,6 +56,9 @@ pub(crate) fn metrics_response(
                          # HELP cortexdb_request_rejected Total HTTP requests rejected due to queue or rate pressure.\n\
                          # TYPE cortexdb_request_rejected counter\n\
                          cortexdb_request_rejected {}\n\
+                         # HELP cortexdb_request_timeout_total Total HTTP requests that hit a configured route timeout.\n\
+                         # TYPE cortexdb_request_timeout_total counter\n\
+                         cortexdb_request_timeout_total {}\n\
                          # HELP cortexdb_request_duration_ms_total Total HTTP request duration in milliseconds.\n\
                          # TYPE cortexdb_request_duration_ms_total counter\n\
                          cortexdb_request_duration_ms_total {}\n\
@@ -148,6 +151,7 @@ cortexdb_compaction_input_bytes_total {}\n\
                         db.waiting_writers(),
                         state.request_count.load(Ordering::Relaxed),
                         state.request_rejected.load(Ordering::Relaxed),
+                        state.request_timeout.load(Ordering::Relaxed),
                         state.request_duration_ms_total.load(Ordering::Relaxed),
                         request_id_client_provided,
                         request_id_generated,

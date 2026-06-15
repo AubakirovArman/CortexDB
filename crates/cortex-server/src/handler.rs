@@ -109,9 +109,24 @@ pub(crate) async fn axum_handler(State(state): State<AppState>, req: Request) ->
         );
     }
 
-    let body_bytes = match axum::body::to_bytes(req.into_body(), 2 * 1024 * 1024).await {
-        Ok(bytes) => bytes.to_vec(),
-        Err(_) => {
+    let target_for_timeout = if query.is_empty() {
+        path.clone()
+    } else {
+        format!("{path}?{query}")
+    };
+    let body_timeout = std::time::Duration::from_millis(crate::actor::route_timeout_ms(
+        &state.options,
+        &method,
+        &target_for_timeout,
+    ));
+    let body_bytes = match tokio::time::timeout(
+        body_timeout,
+        axum::body::to_bytes(req.into_body(), 2 * 1024 * 1024),
+    )
+    .await
+    {
+        Ok(Ok(bytes)) => bytes.to_vec(),
+        Ok(Err(_)) => {
             audit_http_response(
                 &state,
                 &audit_event,
@@ -128,6 +143,14 @@ pub(crate) async fn axum_handler(State(state): State<AppState>, req: Request) ->
                 )
                     .into_response(),
                 &request_id,
+            );
+        }
+        Err(_) => {
+            return request_timeout_response(
+                &state,
+                &audit_event,
+                &request_id,
+                "request timed out while reading body",
             );
         }
     };
@@ -281,6 +304,30 @@ fn quota_exceeded_response(
         (
             StatusCode::TOO_MANY_REQUESTS,
             Json(error_response(ErrorCode::QuotaExceeded, message)),
+        )
+            .into_response(),
+        request_id,
+    )
+}
+
+pub(super) fn request_timeout_response(
+    state: &AppState,
+    audit_event: &RequestAudit<'_>,
+    request_id: &str,
+    message: &'static str,
+) -> Response {
+    state.request_rejected.fetch_add(1, Ordering::Relaxed);
+    state.request_timeout.fetch_add(1, Ordering::Relaxed);
+    audit_http_response(
+        state,
+        audit_event,
+        StatusCode::SERVICE_UNAVAILABLE,
+        Some(ErrorCode::ServiceUnavailable),
+    );
+    with_request_id(
+        (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(error_response(ErrorCode::ServiceUnavailable, message)),
         )
             .into_response(),
         request_id,

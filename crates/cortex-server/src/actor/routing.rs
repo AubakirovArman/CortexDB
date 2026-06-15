@@ -1,6 +1,7 @@
 use std::sync::atomic::Ordering;
 
 use crate::auth::AuthRouteContext;
+use crate::config::ServerOptions;
 use crate::responses::RouterError;
 use crate::router::route_database_with_auth;
 
@@ -34,6 +35,36 @@ pub(crate) fn is_write_route(method: &str, target: &str) -> bool {
         || (method == "POST"
             && path.starts_with("/v1/ingest/jobs/")
             && (path.ends_with("/cancel") || path.ends_with("/retry")))
+}
+
+/// Returns `true` for local operational routes that should use the shorter
+/// admin timeout budget instead of the default read budget.
+pub(crate) fn is_admin_route(method: &str, target: &str) -> bool {
+    let (path, _query) = target.split_once('?').unwrap_or((target, ""));
+    matches!(
+        (method, path),
+        ("GET", "/v1/health")
+            | ("GET", "/v1/stats")
+            | ("GET", "/v1/metrics")
+            | ("GET", "/v1/ann/metrics")
+            | ("GET", "/v1/validate")
+            | ("GET", "/v1/cluster/status")
+            | ("POST", "/v1/backup")
+            | ("POST", "/v1/backup/verify")
+            | ("POST", "/v1/backup/drill")
+            | ("POST", "/v1/backup/offsite/stage")
+            | ("POST", "/v1/backup/prune")
+    )
+}
+
+pub(crate) fn route_timeout_ms(options: &ServerOptions, method: &str, target: &str) -> u64 {
+    if is_admin_route(method, target) {
+        options.admin_route_timeout_ms()
+    } else if is_write_route(method, target) {
+        options.write_route_timeout_ms()
+    } else {
+        options.read_route_timeout_ms()
+    }
 }
 
 impl DatabaseActor {

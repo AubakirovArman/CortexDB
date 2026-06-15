@@ -125,6 +125,7 @@ fn metrics_prometheus_output_contains_contract_series() {
         "cortexdb_actor_queue_wait_ms_bucket",
         "cortexdb_actor_queue_wait_p95_ms",
         "cortexdb_request_count",
+        "cortexdb_request_timeout_total",
         "cortexdb_request_id_client_provided",
         "cortexdb_request_id_generated",
         "cortexdb_request_id_source_total",

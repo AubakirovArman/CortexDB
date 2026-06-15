@@ -55,6 +55,11 @@ metrics-contract-v2-check:
 observability-check: metrics-contract-v2-check
 	python3 scripts/observability_check.py --report "$(OBSERVABILITY_REPORT)"
 
+route-timeout-check:
+	cargo test -p cortex-server route_timeout
+	cargo test -p cortex-server slow_loris_body_times_out_without_blocking_follow_up_request
+	cargo test -p cortex-server metrics_prometheus_output_contains_contract_series
+
 service-manager-smoke-check:
 	python3 scripts/service_manager_smoke_check.py --report "$(SERVICE_MANAGER_REPORT)"
 

@@ -3,7 +3,9 @@ use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
 
-use super::routing::is_write_route;
+use crate::ServerOptions;
+
+use super::routing::{is_admin_route, is_write_route, route_timeout_ms};
 use super::DatabaseActor;
 
 #[test]
@@ -182,4 +184,18 @@ fn write_route_classifier_covers_mutating_routes() {
             "{method} {target} should not take a write lock"
         );
     }
+}
+
+#[test]
+fn route_timeout_budget_classifies_admin_write_and_read_routes() {
+    let options = ServerOptions {
+        read_route_timeout_ms: 11,
+        write_route_timeout_ms: 22,
+        admin_route_timeout_ms: 33,
+        ..Default::default()
+    };
+    assert!(is_admin_route("GET", "/v1/metrics"));
+    assert_eq!(route_timeout_ms(&options, "GET", "/v1/metrics"), 33);
+    assert_eq!(route_timeout_ms(&options, "POST", "/v1/cell"), 22);
+    assert_eq!(route_timeout_ms(&options, "POST", "/v1/search"), 11);
 }

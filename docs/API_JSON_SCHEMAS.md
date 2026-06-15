@@ -49,7 +49,7 @@ Stable Core Alpha error codes:
 | `429` | `rate_limited` | Optional server request-rate limit is exceeded. |
 | `429` | `quota_exceeded` | Per-principal or per-tenant quota is exceeded. |
 | `503` | `database_busy` | Database actor queue or database lock is busy. |
-| `503` | `service_unavailable` | Server component is unavailable but not classified as queue/lock pressure. |
+| `503` | `service_unavailable` | Server component is unavailable or a configured route timeout elapsed. |
 | `500` | `storage_corruption` | Storage checksum, format, or invariant failure. |
 | `500` | `internal` | Unexpected internal error that is not classified above. |
 
