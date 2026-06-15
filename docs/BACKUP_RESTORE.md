@@ -10,6 +10,7 @@ cortexdb backup ./db ./db.backup
 cortexdb backup-verify ./db.backup
 cortexdb restore ./db.backup ./db.restored --dry-run
 cortexdb restore ./db.backup ./db.restored
+cortexdb restore ./db.backup ./db.restored-to-seq42 --to-seq 42
 cortexdb validate ./db.restored
 cortexdb backup-drill ./db ./db.backup ./db.drill-restored
 cortexdb backup-prune ./backups cortexdb- 7
@@ -31,6 +32,8 @@ make backup-restore-production-pack-check
 - Source storage is validated before copying.
 - Backup writes `backup_manifest.tsv` with file sizes and CRC32C checksums for
   copied files.
+- When `CORTEXDB_WAL_ARCHIVE=true`, checkpoint and compact copy closed
+  timestamped WAL files under `wal_archive/` before reclaiming the root copy.
 - `db.lock` and known temporary files are excluded.
 - Backup verify inspects an existing backup without creating a restore target
   and checks `backup_manifest.tsv` when present.
@@ -39,6 +42,8 @@ make backup-restore-production-pack-check
   creating the target path.
 - Restore only writes to a target path that does not already exist.
 - Restore validates the copied database before reporting success.
+- `restore --to-seq <N>` validates that the restored database reaches exactly
+  sequence `N` after staging archived WAL files and pruning newer WAL records.
 - Backup drills run backup, restore, and restored validation as one operation.
 - Offsite staging first restores the local backup as a preflight drill, then
   publishes an atomically renamed copy under the offsite root.
@@ -52,6 +57,7 @@ make backup-restore-production-pack-check
 The backup copies the database root recursively, including:
 
 - `db.aclog`;
+- `wal_archive/db.*.aclog` when WAL archiving is enabled;
 - `manifest.acm`;
 - `segments/*.acs`, `*.acb`, `*.aci`, `*.acv`, `*.ach`;
 - `agent_views/*.view`;
@@ -68,6 +74,10 @@ detect accidental file changes before restore.
 
 - Passphrase encrypted backups are a local MVP, not KMS-backed envelope
   encryption or a compliance custody workflow.
+- Point-in-time restore can only replay sequences still covered by retained
+  archived WAL files and checkpoint/segment files present in the backup.
+- Point-in-time restore rejects a target sequence inside an atomic write batch;
+  choose the batch end sequence instead.
 - Remote object-store upload is still delegated to external tools, but
   `backup-offsite-stage` now gives those tools a validated immutable directory
   to copy.
@@ -89,6 +99,29 @@ cortexdb restore ./db.backup ./db.restore-target --dry-run
 These commands do not create `./db.restore-target`. They verify the backup can
 be read by the current binary and report the files, bytes, manifest segments,
 cells, and WAL records that would be restored.
+
+## Point-in-Time Restore
+
+Enable WAL archiving on writers that should support restore to a sequence
+between checkpoints:
+
+```bash
+export CORTEXDB_WAL_ARCHIVE=true
+export CORTEXDB_WAL_ARCHIVE_MAX_FILES=1024
+```
+
+Closed WAL files are retained in `wal_archive/` after checkpoint or compact.
+Backups copy that directory. To restore a backup to an exact commit sequence:
+
+```bash
+cortexdb restore ./db.backup ./db.restored-seq42 --to-seq 42
+cortexdb validate ./db.restored-seq42
+```
+
+The command copies the backup, stages retained archived WAL files into the
+restore target, removes live manifest segments newer than the target sequence,
+rewrites WAL files to drop newer records, opens the target, and succeeds only
+if `current_seq == 42`.
 
 ## Operational Drill
 

@@ -1,4 +1,6 @@
 use super::helpers::*;
+use cortex_core::CellId;
+use cortex_engine::{Database, DatabaseOptions};
 
 #[test]
 fn backup_and_restore_commands_roundtrip_database() {
@@ -45,6 +47,75 @@ fn backup_and_restore_commands_roundtrip_database() {
     ])
     .unwrap();
     assert_eq!(payload, "backup payload");
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn restore_to_seq_command_replays_archived_wal_until_target() {
+    let root = unique_path("cortexdb-cli-restore-to-seq-root");
+    let source = root.join("source");
+    let backup = root.join("backup");
+    let target = root.join("target");
+    let source_arg = source.to_string_lossy().into_owned();
+    let backup_arg = backup.to_string_lossy().into_owned();
+    let target_arg = target.to_string_lossy().into_owned();
+
+    {
+        let mut db = Database::open_with_options(
+            &source,
+            DatabaseOptions {
+                wal_archive_enabled: true,
+                ..DatabaseOptions::default()
+            },
+        )
+        .unwrap();
+        db.put_cell(CellId(1), b"seq 1".to_vec()).unwrap();
+        db.checkpoint().unwrap();
+        std::thread::sleep(std::time::Duration::from_millis(1));
+        db.put_cell(CellId(2), b"seq 2".to_vec()).unwrap();
+        db.put_cell(CellId(3), b"seq 3".to_vec()).unwrap();
+        db.checkpoint().unwrap();
+        db.close().unwrap();
+    }
+
+    run(vec![
+        "cortexdb".to_owned(),
+        "backup".to_owned(),
+        source_arg,
+        backup_arg.clone(),
+    ])
+    .unwrap();
+    let restore_output = run(vec![
+        "cortexdb".to_owned(),
+        "restore".to_owned(),
+        backup_arg,
+        target_arg.clone(),
+        "--to-seq".to_owned(),
+        "2".to_owned(),
+    ])
+    .unwrap();
+    assert!(restore_output.contains("to_seq=2"));
+    assert!(restore_output.contains("restored_seq=2"));
+    assert!(restore_output.contains("wal_archive_files_staged="));
+    assert!(restore_output.contains("wal_records_pruned="));
+
+    let payload = run(vec![
+        "cortexdb".to_owned(),
+        "get".to_owned(),
+        target_arg.clone(),
+        "2".to_owned(),
+    ])
+    .unwrap();
+    assert_eq!(payload, "seq 2");
+    let missing = run(vec![
+        "cortexdb".to_owned(),
+        "get".to_owned(),
+        target_arg,
+        "3".to_owned(),
+    ])
+    .unwrap();
+    assert_eq!(missing, "null");
 
     let _ = std::fs::remove_dir_all(root);
 }

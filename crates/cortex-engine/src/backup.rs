@@ -12,6 +12,7 @@ mod dry_run;
 mod encrypted;
 mod manifest;
 mod offsite;
+pub(crate) mod pitr;
 mod retention;
 pub use dry_run::BackupVerifyReport;
 pub use dry_run::RestoreDryRunReport;
@@ -20,6 +21,7 @@ pub use offsite::{
     LocalFilesystemOffsiteAdapter, OffsiteBackupAdapter, OffsiteBackupStageReport,
     OffsiteBackupTransferReport,
 };
+pub use pitr::PitrRestoreReport;
 pub use retention::{BackupRetentionPlan, BackupRetentionReport};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -91,6 +93,34 @@ impl Database {
             bytes_copied: copied.bytes_copied,
             restored_validation,
         })
+    }
+
+    pub fn restore_from_backup_to_seq(
+        backup_path: impl AsRef<Path>,
+        target_path: impl AsRef<Path>,
+        target_seq: cortex_core::CommitSeq,
+    ) -> EngineResult<(RestoreReport, PitrRestoreReport)> {
+        let copied = copy_database_dir(backup_path.as_ref(), target_path.as_ref())?;
+        let pitr = pitr::restore_to_seq_in_place(target_path.as_ref(), target_seq)?;
+        let db = Database::open(target_path.as_ref())?;
+        if db.current_seq() != target_seq {
+            let restored = db.current_seq();
+            db.close()?;
+            return Err(EngineError::StorageInvariant(format!(
+                "restore --to-seq {} could only restore to seq {}; WAL archive is incomplete",
+                target_seq.0, restored.0
+            )));
+        }
+        let restored_validation = db.validate_storage()?;
+        db.close()?;
+        Ok((
+            RestoreReport {
+                files_copied: copied.files_copied,
+                bytes_copied: copied.bytes_copied,
+                restored_validation,
+            },
+            pitr,
+        ))
     }
 
     pub fn restore_from_backup_dry_run(

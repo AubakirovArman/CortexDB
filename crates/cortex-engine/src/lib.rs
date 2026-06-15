@@ -71,7 +71,7 @@ pub use backup::{
     BackupDrillReport, BackupReport, BackupRetentionPlan, BackupRetentionReport,
     BackupVerifyReport, EncryptedBackupReport, EncryptedRestoreReport,
     LocalFilesystemOffsiteAdapter, OffsiteBackupAdapter, OffsiteBackupStageReport,
-    OffsiteBackupTransferReport, RestoreDryRunReport, RestoreReport,
+    OffsiteBackupTransferReport, PitrRestoreReport, RestoreDryRunReport, RestoreReport,
 };
 pub use bundle::{RetiredSegmentGc, SegmentBundle};
 pub use checkpoint::compactor::{CompactionDecision, CompactionStats};

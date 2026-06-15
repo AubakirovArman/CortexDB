@@ -38,6 +38,8 @@ pub struct Database {
     pub(crate) writer: WalWriterHandle,
     pub(crate) current_seq: CommitSeq,
     pub(crate) durability_mode: DurabilityMode,
+    pub(crate) wal_archive_enabled: bool,
+    pub(crate) wal_archive_max_files: usize,
     pub(crate) payload_residency: PayloadResidency,
     pub(crate) payload_cache: Mutex<SegmentPayloadCache>,
     pub(crate) hnsw_build_config: HnswBuildConfig,

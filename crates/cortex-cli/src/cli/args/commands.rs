@@ -174,6 +174,8 @@ pub(in crate::cli) enum Command {
         path: String,
         #[arg(long)]
         dry_run: bool,
+        #[arg(long = "to-seq")]
+        to_seq: Option<u64>,
     },
     #[command(about = "Restore an encrypted backup archive")]
     RestoreEncrypted {

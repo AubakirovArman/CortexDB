@@ -142,7 +142,7 @@ The beta RC operator path is split by activity:
 | service setup | [`SYSTEMD.md`](archive/SYSTEMD.md), [`LAUNCHD.md`](archive/LAUNCHD.md) | `make service-manager-smoke-check` and `/v1/validate` health probe |
 | validate | [`CLI.md`](CLI.md), [`API.md`](API.md) | `cortexdb validate ./data` |
 | backup | [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) | `make backup-drill-check` |
-| restore | [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) | `cortexdb restore <backup> <target>` |
+| restore | [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) | `cortexdb restore <backup> <target>` or `--to-seq <N>` |
 | backup pack | [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md), [`RPO_RTO.md`](archive/RPO_RTO.md) | `make backup-restore-production-pack-check` |
 | repair | [`CLI.md`](CLI.md), [`FAILURE_SCENARIOS.md`](archive/FAILURE_SCENARIOS.md) | `cortexdb repair ./data --dry-run` |
 | metrics | [`METRICS.md`](METRICS.md), [`OBSERVABILITY_ALERTS.md`](archive/OBSERVABILITY_ALERTS.md) | `make observability-check` |
@@ -155,11 +155,24 @@ The beta RC operator path is split by activity:
 cortexdb backup ./data ./backups/data-$(date -u +%Y%m%dT%H%M%SZ)
 cortexdb backup-prune ./backups cortexdb- 5
 cortexdb restore ./backups/data-20260602T000000Z ./data-restored
+cortexdb restore ./backups/data-20260602T000000Z ./data-restored-seq42 --to-seq 42
 cortexdb validate ./data-restored
 export CORTEXDB_BACKUP_PASSPHRASE="choose-a-long-local-passphrase"
 cortexdb backup-encrypted ./data ./backups/data.cdbenc --passphrase-env CORTEXDB_BACKUP_PASSPHRASE
 cortexdb restore-encrypted ./backups/data.cdbenc ./data-encrypted-restored --passphrase-env CORTEXDB_BACKUP_PASSPHRASE
 ```
+
+Point-in-time restore requires WAL archiving before backups are created:
+
+```bash
+export CORTEXDB_WAL_ARCHIVE=true
+export CORTEXDB_WAL_ARCHIVE_MAX_FILES=1024
+```
+
+Closed WAL files are copied under `wal_archive/` after checkpoint or compact.
+`restore --to-seq N` stages retained archived WAL files, caps newer manifest
+segments, replays records through `N`, and rejects incomplete archives or a
+target sequence that would split an atomic write batch.
 
 Offsite staging:
 

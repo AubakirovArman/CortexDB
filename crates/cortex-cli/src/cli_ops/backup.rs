@@ -1,3 +1,4 @@
+use cortex_core::CommitSeq;
 use cortex_engine::Database;
 
 use super::common::fmt_engine_error;
@@ -33,13 +34,19 @@ pub fn backup_encrypted(
     ))
 }
 
-pub fn restore(backup_path: &str, path: &str, dry_run: bool) -> Result<String, String> {
+pub fn restore(
+    backup_path: &str,
+    path: &str,
+    dry_run: bool,
+    to_seq: Option<u64>,
+) -> Result<String, String> {
     if dry_run {
         let report =
             Database::restore_from_backup_dry_run(backup_path, path).map_err(fmt_engine_error)?;
         return Ok(format!(
-            "dry_run=true restore_path={} files_checked={} bytes_checked={} version_compatible={} checksum_manifest_present={} checksum_manifest_files_verified={} backup_live_segments_checked={} backup_cells_checked={} backup_wal_records_checked={}",
+            "dry_run=true restore_path={} to_seq={} files_checked={} bytes_checked={} version_compatible={} checksum_manifest_present={} checksum_manifest_files_verified={} backup_live_segments_checked={} backup_cells_checked={} backup_wal_records_checked={}",
             report.restore_path.display(),
+            to_seq.map_or_else(|| "none".to_owned(), |seq| seq.to_string()),
             report.files_checked,
             report.bytes_checked,
             report.version_compatible,
@@ -48,6 +55,23 @@ pub fn restore(backup_path: &str, path: &str, dry_run: bool) -> Result<String, S
             report.backup_validation.live_segments_checked,
             report.backup_validation.cells_checked,
             report.backup_validation.wal_records_checked
+        ));
+    }
+    if let Some(seq) = to_seq {
+        let (report, pitr) =
+            Database::restore_from_backup_to_seq(backup_path, path, CommitSeq(seq))
+                .map_err(fmt_engine_error)?;
+        return Ok(format!(
+            "files_copied={} bytes_copied={} to_seq={} restored_seq={} wal_archive_files_staged={} wal_records_pruned={} restored_live_segments_checked={} restored_cells_checked={} restored_wal_records_checked={}",
+            report.files_copied,
+            report.bytes_copied,
+            pitr.target_seq.0,
+            pitr.restored_seq.0,
+            pitr.wal_archive_files_staged,
+            pitr.wal_records_pruned,
+            report.restored_validation.live_segments_checked,
+            report.restored_validation.cells_checked,
+            report.restored_validation.wal_records_checked
         ));
     }
     let report = Database::restore_from_backup(backup_path, path).map_err(fmt_engine_error)?;

@@ -65,8 +65,14 @@ pub(super) fn restore(
     backup_path: String,
     path: String,
     dry_run: bool,
+    to_seq: Option<u64>,
 ) -> Result<String, String> {
-    ops::restore(&backup_path, ctx.resolve(&path).to_str().unwrap(), dry_run)
+    ops::restore(
+        &backup_path,
+        ctx.resolve(&path).to_str().unwrap(),
+        dry_run,
+        to_seq,
+    )
 }
 
 pub(super) fn restore_encrypted(

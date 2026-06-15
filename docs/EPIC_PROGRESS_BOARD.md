@@ -1,6 +1,6 @@
 # CortexDB Epic Progress Board
 
-Last updated: 2026-06-14
+Last updated: 2026-06-15
 
 Purpose: short operational board for active epic execution. The detailed source
 of truth remains `docs/DATABASE_GRADE_EXECUTION_PLAN.md`; this file shows what
@@ -20,17 +20,19 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-E03` — WAL archive to point-in-time recovery.
+`EPIC-E05` — Observability tracing + Prometheus metrics.
 
-E03 exit steps:
+E05 exit steps:
 
-1. Add an option to archive closed WAL files.
-2. Add restore to a target seq.
-3. Cover point-in-time recovery with crash/recovery tests and operations docs.
+1. Add tracing spans for HTTP, queue wait, and engine operations.
+2. Expose Prometheus-format `/metrics` from existing stats.
+3. Add a Grafana dashboard example and CI scrape smoke.
 
-E03 current state:
+E05 current state:
 
 - next.
+- E03 is closed with WAL archive retention, `restore --to-seq`, exact seq
+  validation, engine/CLI PITR regressions, and operations docs.
 - C20 is closed with a reproducible SQLite FTS5 + exact hashed-vector + hybrid
   RRF baseline, four-domain retrieval/latency comparison, ContextPack evidence,
   and a published feature matrix.
@@ -75,6 +77,22 @@ D05 split state:
 - do not block kernel/database epics on D05.
 
 ## Recently Closed
+
+### EPIC-E03 — WAL archive to point-in-time recovery
+
+Status: `done`
+
+What closed it:
+
+- Added `CORTEXDB_WAL_ARCHIVE` and `CORTEXDB_WAL_ARCHIVE_MAX_FILES` plus
+  database options for retaining closed WAL files under `wal_archive/`.
+- Added engine restore-to-seq flow that stages archived WAL files, caps newer
+  manifest segments, prunes WAL records after the target, and validates the
+  restored database reaches exactly that seq.
+- Added CLI `cortexdb restore <backup> <target> --to-seq <N>` reporting staged
+  archive files and pruned WAL records.
+- Added engine and CLI regressions for restoring to a seq between checkpoints.
+- Documented PITR in operations, backup/restore, CLI, and config docs.
 
 ### EPIC-C20 — Baseline comparison with naive stack
 

@@ -123,6 +123,8 @@ impl Database {
             writer,
             current_seq,
             durability_mode: options.durability_mode,
+            wal_archive_enabled: options.wal_archive_enabled,
+            wal_archive_max_files: options.wal_archive_max_files,
             payload_residency: options.payload_residency,
             payload_cache: Mutex::new(SegmentPayloadCache::new(options.payload_cache_bytes)),
             hnsw_build_config: options.hnsw_build_config.normalized(),

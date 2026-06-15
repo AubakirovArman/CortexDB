@@ -196,7 +196,8 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             backup_path,
             path,
             dry_run,
-        } => backup::restore(ctx, backup_path, path, dry_run),
+            to_seq,
+        } => backup::restore(ctx, backup_path, path, dry_run, to_seq),
         Command::RestoreEncrypted {
             archive_path,
             path,

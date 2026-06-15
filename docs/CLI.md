@@ -175,12 +175,17 @@ The target path must not already exist, which prevents accidental overwrite.
 ```bash
 cortexdb restore ./db.backup ./db.restored --dry-run
 cortexdb restore ./db.backup ./db.restored
+cortexdb restore ./db.backup ./db.restored-seq42 --to-seq 42
 cortexdb validate ./db.restored
 ```
 
 `--dry-run` inspects the backup without creating the restore target. It checks
 storage checksums, format compatibility, manifest segments, indexes, and WAL
 readability, then reports the target path that would be used.
+
+`--to-seq <N>` restores to an exact commit sequence using retained
+`wal_archive/db.*.aclog` files copied with the backup. Enable archiving on the
+writer with `CORTEXDB_WAL_ARCHIVE=true` before creating backups that need this.
 
 #### `upgrade prepare <path> <backup_path> <drill_restore_path>`
 Run the offline pre-upgrade preflight. It validates the source database, creates

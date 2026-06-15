@@ -97,7 +97,7 @@ impl Database {
             self.manifest.vector_profile = Some(profile);
         }
         self.manifest.store(&self.manifest_path)?;
-        let _ = std::fs::remove_file(&archived_wal);
+        self.finish_rotated_wal(&archived_wal)?;
         self.memtable.gc_versions_before(self.gc_horizon());
         self.aql_delta_index.clear();
         Ok(CheckpointStats {
@@ -175,7 +175,7 @@ impl Database {
         self.manifest.vector_profile = vector_profile;
         self.manifest.text_analyzer_profile = Some(text_analyzer_profile);
         self.manifest.store(&self.manifest_path)?;
-        let _ = std::fs::remove_file(&archived_wal);
+        self.finish_rotated_wal(&archived_wal)?;
         self.memtable.gc_versions_before(self.gc_horizon());
         self.aql_delta_index.clear();
         Ok(CheckpointStats {
@@ -183,6 +183,18 @@ impl Database {
             cells_flushed,
             checkpoint_seq: self.current_seq,
         })
+    }
+
+    fn finish_rotated_wal(&self, archived_wal: &std::path::Path) -> EngineResult<()> {
+        if self.wal_archive_enabled {
+            crate::backup::pitr::archive_closed_wal(
+                &self.root_path,
+                archived_wal,
+                self.wal_archive_max_files,
+            )?;
+        }
+        let _ = std::fs::remove_file(archived_wal);
+        Ok(())
     }
 
     fn persisted_candidate_map(&self) -> EngineResult<BTreeMap<CellId, u32>> {

@@ -7,6 +7,7 @@ use cortex_storage::wal::DurabilityMode;
 use crate::options::{
     CompactionPolicy, DatabaseOptions, EngineFeatureFlags, PayloadResidency, RecoveryMode,
     StaleLockPolicy, DEFAULT_AQL_QUERY_CACHE_MAX_ENTRIES, DEFAULT_PAYLOAD_CACHE_BYTES,
+    DEFAULT_WAL_ARCHIVE_MAX_FILES,
 };
 use crate::search::{HnswBuildConfig, HnswBuildProfile};
 
@@ -54,6 +55,13 @@ impl EngineConfig {
                 "CORTEXDB_AQL_QUERY_CACHE_MAX_ENTRIES",
                 DEFAULT_AQL_QUERY_CACHE_MAX_ENTRIES,
             )?,
+            wal_archive_enabled: parse_bool_var(&vars, "CORTEXDB_WAL_ARCHIVE", false)?,
+            wal_archive_max_files: parse_usize_var(
+                &vars,
+                "CORTEXDB_WAL_ARCHIVE_MAX_FILES",
+                DEFAULT_WAL_ARCHIVE_MAX_FILES,
+            )?
+            .max(1),
             rebuild_lazy_payload_indexes_on_open: true,
             hnsw_build_config: parse_hnsw_build_config(&vars)?,
             feature_flags,
@@ -246,6 +254,8 @@ mod tests {
             ("CORTEXDB_PAYLOAD_RESIDENCY", "lazy"),
             ("CORTEXDB_PAYLOAD_CACHE_BYTES", "4096"),
             ("CORTEXDB_AQL_QUERY_CACHE_MAX_ENTRIES", "64"),
+            ("CORTEXDB_WAL_ARCHIVE", "true"),
+            ("CORTEXDB_WAL_ARCHIVE_MAX_FILES", "8"),
             ("CORTEXDB_HNSW_PROFILE", "audit"),
             ("CORTEXDB_EXPERIMENTAL_HNSW", "true"),
             ("CORTEXDB_EXPERIMENTAL_REPLICATION", "1"),
@@ -270,6 +280,8 @@ mod tests {
         );
         assert_eq!(config.database_options.payload_cache_bytes, 4096);
         assert_eq!(config.database_options.aql_query_cache_max_entries, 64);
+        assert!(config.database_options.wal_archive_enabled);
+        assert_eq!(config.database_options.wal_archive_max_files, 8);
         assert_eq!(
             config.database_options.hnsw_build_config,
             HnswBuildConfig::for_profile(HnswBuildProfile::Audit)

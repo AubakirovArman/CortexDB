@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-E03` (`EPIC-C20` is now done along with the previously
+Current pointer: `EPIC-E05` (`EPIC-E03` is now done along with the previously
 closed epics listed in the Active Execution Queue). `EPIC-C01` is closed with
 the `ACI4` compact term dictionary/postings format, `ACI0..ACI3` dual-read
 compatibility, and persisted/search compatibility gates. `EPIC-C03` is closed
@@ -34,7 +34,8 @@ the concurrent read throughput curve and wired it into the C17 trend check.
 `EPIC-C19` added resumable batched embedding backfill, WriteBatch ingestion
 throughput reporting, C17 trend integration, and an explicit 100K gate target.
 `EPIC-C20` added the reproducible baseline comparison gate and published the
-four-domain quality/latency/feature matrix. `EPIC-E03` is next.
+four-domain quality/latency/feature matrix. `EPIC-E03` added retained closed
+WAL archives, restore-to-seq, and PITR operations docs. `EPIC-E05` is next.
 `EPIC-D05` remains partial/local-ready and is externally blocked on public
 registry credentials/trusted publishing.
 
@@ -122,7 +123,8 @@ enough to unblock the next dependency step.
 47. `EPIC-C18` — Concurrent read throughput benchmark: done.
 48. `EPIC-C19` — Ingestion throughput + batch embedding pipeline: done.
 49. `EPIC-C20` — Baseline comparison with naive stack: done.
-50. `EPIC-E03` — WAL archive to point-in-time recovery: next.
+50. `EPIC-E03` — WAL archive to point-in-time recovery: done.
+51. `EPIC-E05` — Observability tracing + Prometheus metrics: next.
 
 ## Summary
 
@@ -1826,17 +1828,31 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-E03 — WAL-архив → point-in-time recovery (groundwork)
 
-- status: `next`
+- status: `done`
 - meta: Категория: storage · P2 · 6 months · build
 - goal: после A17 (ротация) PITR становится дешёвым: архивируй WAL-сегменты, восстанавливай до seq.
 - tasks:
-  - [ ] 1) опция архивации закрытых WAL-файлов
-  - [ ] 2) `restore --to-seq N`
-  - [ ] 3) crash-тесты восстановления до точки.
+  - [x] 1) опция архивации закрытых WAL-файлов
+  - [x] 2) `restore --to-seq N`
+  - [x] 3) crash-тесты восстановления до точки.
 - acceptance:
-  - [ ] 1) восстановление на произвольный seq между чекпоинтами (тест)
-  - [ ] 2) док в OPERATIONS.
+  - [x] 1) восстановление на произвольный seq между чекпоинтами (тест)
+  - [x] 2) док в OPERATIONS.
 - dependencies: A17. Риски: средние — только после стабилизации ротации.
+- evidence: Added `DatabaseOptions::wal_archive_enabled`,
+  `wal_archive_max_files`, and env config `CORTEXDB_WAL_ARCHIVE` /
+  `CORTEXDB_WAL_ARCHIVE_MAX_FILES`. Checkpoint and compact now archive closed
+  timestamped WAL files under `wal_archive/` before reclaiming the root copy.
+  Added `Database::restore_from_backup_to_seq` and CLI
+  `cortexdb restore <backup> <target> --to-seq <N>`; restore stages archived
+  WAL files, caps live manifest segments newer than the target seq, prunes WAL
+  records after the target while preserving atomic write batches, opens the
+  target, validates storage, and succeeds only when `current_seq == N`.
+  Regression coverage: `restore_to_seq_between_checkpoints_uses_wal_archive`
+  and `restore_to_seq_command_replays_archived_wal_until_target`. Docs updated:
+  `docs/OPERATIONS.md`, `docs/BACKUP_RESTORE.md`, `docs/CLI.md`, and
+  `docs/ENGINE_CONFIG.md`.
+- next exit step: move to `EPIC-E05` — Observability tracing + Prometheus metrics.
 
 ### EPIC-E04 — Corruption handling: карантин и repair UX
 

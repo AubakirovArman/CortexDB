@@ -1,6 +1,6 @@
-use cortex_core::CellId;
+use cortex_core::{CellId, CommitSeq};
 use cortex_engine::{
-    Database, EngineError, LocalFilesystemOffsiteAdapter, OffsiteBackupAdapter,
+    Database, DatabaseOptions, EngineError, LocalFilesystemOffsiteAdapter, OffsiteBackupAdapter,
     OffsiteBackupTransferReport, StorageValidation,
 };
 use std::path::{Path, PathBuf};
@@ -59,6 +59,58 @@ fn backup_restore_preserves_checkpointed_segment() {
         db.get_latest_cell(CellId(10)).unwrap(),
         b"scope=project:investments\nstatus=ready\ncheckpointed"
     );
+    db.validate_storage().unwrap();
+}
+
+#[test]
+fn restore_to_seq_between_checkpoints_uses_wal_archive() {
+    let root = tempfile::tempdir().unwrap();
+    let source = root.path().join("source");
+    let backup = root.path().join("backup");
+    let target = root.path().join("target");
+
+    {
+        let mut db = Database::open_with_options(
+            &source,
+            DatabaseOptions {
+                wal_archive_enabled: true,
+                ..DatabaseOptions::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(
+            db.put_cell(CellId(1), b"seq 1".to_vec()).unwrap(),
+            CommitSeq(1)
+        );
+        db.checkpoint().unwrap();
+        std::thread::sleep(std::time::Duration::from_millis(1));
+        assert_eq!(
+            db.put_cell(CellId(2), b"seq 2".to_vec()).unwrap(),
+            CommitSeq(2)
+        );
+        assert_eq!(
+            db.put_cell(CellId(3), b"seq 3".to_vec()).unwrap(),
+            CommitSeq(3)
+        );
+        db.checkpoint().unwrap();
+        db.close().unwrap();
+    }
+    assert!(source.join("wal_archive").exists());
+
+    Database::backup_path(&source, &backup).unwrap();
+    let (restore, pitr) =
+        Database::restore_from_backup_to_seq(&backup, &target, CommitSeq(2)).unwrap();
+
+    assert!(restore.files_copied > 0);
+    assert!(pitr.wal_archive_files_staged >= 1);
+    assert!(pitr.wal_records_pruned >= 1);
+    assert_eq!(pitr.restored_seq, CommitSeq(2));
+
+    let db = Database::open(&target).unwrap();
+    assert_eq!(db.current_seq(), CommitSeq(2));
+    assert_eq!(db.get_latest_cell(CellId(1)).unwrap(), b"seq 1");
+    assert_eq!(db.get_latest_cell(CellId(2)).unwrap(), b"seq 2");
+    assert_eq!(db.get_latest_cell(CellId(3)), None);
     db.validate_storage().unwrap();
 }
 
