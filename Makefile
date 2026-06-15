@@ -2,6 +2,7 @@
 #
 # Keep this file as a small index. Add variables and targets to mk/*.mk files
 # by domain, and keep behavior-preserving moves separate from logic changes.
+# Security gates such as secrets-check live under mk/core-security-ops.mk.
 
 include mk/phony.mk
 include mk/vars-core.mk

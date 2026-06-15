@@ -126,9 +126,10 @@ cortexdb backup-verify ./db.backup
 ```
 
 #### `backup-encrypted <path> <archive_path>`
-Create a passphrase-protected single-file backup archive. Prefer
-`--passphrase-env` or `CORTEXDB_BACKUP_PASSPHRASE` instead of typing secrets
-directly into shell history.
+Create a passphrase-protected single-file backup archive. For secret inputs,
+command-line secrets are visible in process listings, so direct passphrase
+arguments are rejected.
+Set `CORTEXDB_BACKUP_PASSPHRASE` or pass `--passphrase-env <VAR>`.
 
 ```bash
 export CORTEXDB_BACKUP_PASSPHRASE="choose-a-long-local-passphrase"
@@ -229,7 +230,8 @@ cortexdb --json migrate ./db ./backups/cortexdb-pre-migration ./drills/cortexdb-
 
 #### `restore-encrypted <archive_path> <path>`
 Restore a passphrase-protected archive into a new target directory and validate
-the restored database before returning success.
+the restored database before returning success. Direct passphrase arguments are
+rejected for the same process-listing reason as `backup-encrypted`.
 
 ```bash
 export CORTEXDB_BACKUP_PASSPHRASE="choose-a-long-local-passphrase"

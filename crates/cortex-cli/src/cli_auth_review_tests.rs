@@ -97,13 +97,15 @@ fn auth_review_rejects_invalid_tenant() {
 }
 
 #[test]
-fn auth_review_json_covers_token_file_and_inline_tokens() {
+fn auth_review_json_covers_token_file_and_env_tokens() {
     let path = unique_path("cortexdb-auth-review.tokens");
     std::fs::write(
         &path,
         "# comment\nadmin:file-secret\ndata:file-agent-secret:9\n",
     )
     .unwrap();
+    let env_name = format!("CORTEXDB_AUTH_REVIEW_TEST_{}", unique_suffix());
+    std::env::set_var(&env_name, "data:env-secret:11");
 
     let output = run(vec![
         "cortexdb".to_owned(),
@@ -111,10 +113,11 @@ fn auth_review_json_covers_token_file_and_inline_tokens() {
         "auth-review".to_owned(),
         "--tokens-file".to_owned(),
         path.to_string_lossy().into_owned(),
-        "--tokens".to_owned(),
-        "data:inline-secret:11".to_owned(),
+        "--tokens-env".to_owned(),
+        env_name.clone(),
     ])
     .unwrap();
+    std::env::remove_var(&env_name);
     let value = serde_json::from_str::<serde_json::Value>(&output).unwrap();
     assert_eq!(value["schema_version"], "cortexdb.auth_review.v1");
     assert_eq!(value["total_records"], 3);
@@ -125,9 +128,22 @@ fn auth_review_json_covers_token_file_and_inline_tokens() {
     assert_eq!(value["records"][0]["token_redacted"], true);
     assert!(!output.contains("file-secret"));
     assert!(!output.contains("file-agent-secret"));
-    assert!(!output.contains("inline-secret"));
+    assert!(!output.contains("env-secret"));
 
     let _ = std::fs::remove_file(path);
+}
+
+#[test]
+fn auth_review_rejects_inline_tokens_argument_without_echoing_value() {
+    let error = run(vec![
+        "cortexdb".to_owned(),
+        "auth-review".to_owned(),
+        "--tokens".to_owned(),
+        "data:argv-secret-token:11".to_owned(),
+    ])
+    .unwrap_err();
+    assert!(error.contains("--tokens is not accepted"));
+    assert!(!error.contains("argv-secret-token"));
 }
 
 #[test]
@@ -185,11 +201,12 @@ fn auth_review_rejects_zero_context_budget() {
 }
 
 fn unique_path(prefix: &str) -> std::path::PathBuf {
-    std::env::temp_dir().join(format!(
-        "{prefix}-{}",
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_nanos()
-    ))
+    std::env::temp_dir().join(format!("{prefix}-{}", unique_suffix()))
+}
+
+fn unique_suffix() -> u128 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos()
 }

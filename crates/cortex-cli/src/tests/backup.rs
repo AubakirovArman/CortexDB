@@ -129,7 +129,8 @@ fn backup_encrypted_and_restore_encrypted_commands_roundtrip_database() {
     let source_arg = source.to_string_lossy().into_owned();
     let archive_arg = archive.to_string_lossy().into_owned();
     let target_arg = target.to_string_lossy().into_owned();
-    let passphrase = "cli encrypted backup passphrase";
+    let passphrase_env = unique_env_name("CORTEXDB_BACKUP_TEST");
+    std::env::set_var(&passphrase_env, "cli encrypted backup passphrase");
 
     run(vec![
         "cortexdb".to_owned(),
@@ -145,8 +146,8 @@ fn backup_encrypted_and_restore_encrypted_commands_roundtrip_database() {
         "backup-encrypted".to_owned(),
         source_arg,
         archive_arg.clone(),
-        "--passphrase".to_owned(),
-        passphrase.to_owned(),
+        "--passphrase-env".to_owned(),
+        passphrase_env.clone(),
     ])
     .unwrap();
     assert!(backup_output.contains("files_archived="));
@@ -157,10 +158,11 @@ fn backup_encrypted_and_restore_encrypted_commands_roundtrip_database() {
         "restore-encrypted".to_owned(),
         archive_arg,
         target_arg.clone(),
-        "--passphrase".to_owned(),
-        passphrase.to_owned(),
+        "--passphrase-env".to_owned(),
+        passphrase_env.clone(),
     ])
     .unwrap();
+    std::env::remove_var(&passphrase_env);
     assert!(restore_output.contains("files_restored="));
     assert!(restore_output.contains("restored_wal_records_checked=1"));
 
@@ -174,6 +176,21 @@ fn backup_encrypted_and_restore_encrypted_commands_roundtrip_database() {
     assert_eq!(payload, "encrypted backup payload");
 
     let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn encrypted_backup_rejects_passphrase_argument_without_echoing_value() {
+    let error = run(vec![
+        "cortexdb".to_owned(),
+        "backup-encrypted".to_owned(),
+        "/tmp/source".to_owned(),
+        "/tmp/backup.cdbenc".to_owned(),
+        "--passphrase".to_owned(),
+        "argv-passphrase-secret".to_owned(),
+    ])
+    .unwrap_err();
+    assert!(error.contains("--passphrase is not accepted"));
+    assert!(!error.contains("argv-passphrase-secret"));
 }
 
 #[test]
@@ -400,4 +417,15 @@ fn corrupt_last_byte(path: &std::path::Path) {
     let mut bytes = std::fs::read(path).unwrap();
     *bytes.last_mut().unwrap() ^= 0xff;
     std::fs::write(path, bytes).unwrap();
+}
+
+fn unique_env_name(prefix: &str) -> String {
+    format!(
+        "{}_{}",
+        prefix,
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    )
 }

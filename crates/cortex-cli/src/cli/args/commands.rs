@@ -86,7 +86,7 @@ pub(in crate::cli) enum Command {
     BackupEncrypted {
         path: String,
         archive_path: String,
-        #[arg(long)]
+        #[arg(long, hide = true)]
         passphrase: Option<String>,
         #[arg(long = "passphrase-env")]
         passphrase_env: Option<String>,
@@ -160,8 +160,10 @@ pub(in crate::cli) enum Command {
         policy_store: Option<String>,
         #[arg(long = "tokens-file")]
         tokens_file: Option<String>,
-        #[arg(long)]
+        #[arg(long, hide = true)]
         tokens: Option<String>,
+        #[arg(long = "tokens-env")]
+        tokens_env: Option<String>,
     },
     #[command(about = "Manage persisted AgentViews")]
     Agent {
@@ -181,7 +183,7 @@ pub(in crate::cli) enum Command {
     RestoreEncrypted {
         archive_path: String,
         path: String,
-        #[arg(long)]
+        #[arg(long, hide = true)]
         passphrase: Option<String>,
         #[arg(long = "passphrase-env")]
         passphrase_env: Option<String>,

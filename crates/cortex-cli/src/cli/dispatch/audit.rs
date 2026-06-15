@@ -49,11 +49,13 @@ pub(super) fn auth_review(
     policy_store: Option<String>,
     tokens_file: Option<String>,
     tokens: Option<String>,
+    tokens_env: Option<String>,
 ) -> Result<String, String> {
     cli_auth_review::review(cli_auth_review::AuthReviewOptions {
         policy_store: policy_store.as_deref(),
         tokens_file: tokens_file.as_deref(),
         tokens: tokens.as_deref(),
+        tokens_env: tokens_env.as_deref(),
         json: ctx.json,
     })
 }

@@ -18,12 +18,13 @@ from llm_inference_runtime_safety import (
 
 
 FORBIDDEN_ENDPOINTS = ("/v1/llm", "/v1/chat")
+LLM_INFERENCE_DESIGN_DOC = "docs/archive/LLM_INFERENCE_DESIGN.md"
 
 GATES: dict[str, dict[str, object]] = {
     "contract": {
         "schema": "cortexdb.llm_inference.contract_gate.v1",
         "markers": [
-            ("docs/LLM_INFERENCE_DESIGN.md", "API Contract Boundary"),
+            (LLM_INFERENCE_DESIGN_DOC, "API Contract Boundary"),
             ("docs/API_JSON_SCHEMAS.md", "LLM Inference Test-double Endpoint"),
             ("docs/FUTURE_NON_GOAL_EPICS.md", "make llm-inference-contract-check"),
             ("README.md", "No production built-in LLM runtime"),
@@ -33,11 +34,11 @@ GATES: dict[str, dict[str, object]] = {
     "safety": {
         "schema": "cortexdb.llm_inference.safety_gate.v1",
         "markers": [
-            ("docs/LLM_INFERENCE_DESIGN.md", "Prompt Visibility"),
-            ("docs/LLM_INFERENCE_DESIGN.md", "ContextPack Boundary"),
-            ("docs/LLM_INFERENCE_DESIGN.md", "Resource Limits"),
-            ("docs/LLM_INFERENCE_DESIGN.md", "Runtime Safety Config"),
-            ("docs/LLM_INFERENCE_DESIGN.md", "Safety And Audit"),
+            (LLM_INFERENCE_DESIGN_DOC, "Prompt Visibility"),
+            (LLM_INFERENCE_DESIGN_DOC, "ContextPack Boundary"),
+            (LLM_INFERENCE_DESIGN_DOC, "Resource Limits"),
+            (LLM_INFERENCE_DESIGN_DOC, "Runtime Safety Config"),
+            (LLM_INFERENCE_DESIGN_DOC, "Safety And Audit"),
             ("crates/cortex-server/src/audit.rs", "emit_llm_inference_decision"),
             ("docs/FUTURE_NON_GOAL_EPICS.md", "make llm-inference-safety-check"),
             ("Makefile", "llm-inference-safety-check"),
@@ -47,7 +48,7 @@ GATES: dict[str, dict[str, object]] = {
     "smoke": {
         "schema": "cortexdb.llm_inference.smoke_gate.v1",
         "markers": [
-            ("docs/LLM_INFERENCE_DESIGN.md", "Deterministic Test Double"),
+            (LLM_INFERENCE_DESIGN_DOC, "Deterministic Test Double"),
             ("docs/FUTURE_NON_GOAL_EPICS.md", "make llm-inference-smoke-check"),
             ("Makefile", "llm-inference-smoke-check"),
         ],
@@ -59,7 +60,7 @@ GATES: dict[str, dict[str, object]] = {
     "secrets": {
         "schema": "cortexdb.llm_inference.secrets_gate.v1",
         "markers": [
-            ("docs/LLM_INFERENCE_DESIGN.md", "Provider keys must come from runtime environment only"),
+            (LLM_INFERENCE_DESIGN_DOC, "Provider keys must come from runtime environment only"),
             ("docs/FUTURE_NON_GOAL_EPICS.md", "make secrets-check"),
             ("Makefile", "secrets-check"),
         ],
@@ -146,14 +147,14 @@ def validate_test_double_endpoint_contract() -> list[str]:
     openapi = read(Path("docs/openapi.yaml"))
     server = read(Path("crates/cortex-server/src/llm.rs"))
     main = read(Path("crates/cortex-server/src/main.rs"))
-    design = read(Path("docs/LLM_INFERENCE_DESIGN.md"))
+    design = read(Path(LLM_INFERENCE_DESIGN_DOC))
     expected = [
         (openapi, "/v1/inference", "docs/openapi.yaml"),
         (openapi, "LlmInferenceResponse", "docs/openapi.yaml"),
         (server, "handle_inference_test_double", "crates/cortex-server/src/llm.rs"),
         (main, "CORTEXDB_LLM_TEST_DOUBLE", "crates/cortex-server/src/main.rs"),
-        (design, "disabled by default", "docs/LLM_INFERENCE_DESIGN.md"),
-        (design, "test-double", "docs/LLM_INFERENCE_DESIGN.md"),
+        (design, "disabled by default", LLM_INFERENCE_DESIGN_DOC),
+        (design, "test-double", LLM_INFERENCE_DESIGN_DOC),
     ]
     for text, marker, path in expected:
         if marker not in text:
@@ -226,7 +227,7 @@ def validate(gate: str) -> dict[str, Any]:
         failures.extend(contract_failures)
         checks["contract_boundary"] = not contract_failures
     elif gate == "safety":
-        text = read(Path("docs/LLM_INFERENCE_DESIGN.md"))
+        text = read(Path(LLM_INFERENCE_DESIGN_DOC))
         required = [
             "cannot bypass AgentView",
             "must not log full prompt bodies by default",
@@ -236,7 +237,7 @@ def validate(gate: str) -> dict[str, Any]:
             "llm_inference_decision",
         ]
         missing = [item for item in required if item not in text]
-        failures.extend(f"docs/LLM_INFERENCE_DESIGN.md missing safety rule {item!r}" for item in missing)
+        failures.extend(f"{LLM_INFERENCE_DESIGN_DOC} missing safety rule {item!r}" for item in missing)
         runtime_failures = validate_runtime_safety_config(Path(spec["fixture"]))  # type: ignore[arg-type]
         runtime_failures.extend(validate_runtime_safety_marker())
         failures.extend(runtime_failures)

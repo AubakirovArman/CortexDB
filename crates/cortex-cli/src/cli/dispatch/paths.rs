@@ -10,8 +10,11 @@ pub(super) fn resolve_backup_passphrase(
     passphrase: Option<String>,
     passphrase_env: Option<String>,
 ) -> Result<String, String> {
-    if let Some(value) = passphrase {
-        return Ok(value);
+    if passphrase.is_some() {
+        return Err(
+            "--passphrase is not accepted because command-line secrets are visible in process listings; set CORTEXDB_BACKUP_PASSPHRASE or pass --passphrase-env <VAR>"
+                .to_owned(),
+        );
     }
     let env_name = passphrase_env.unwrap_or_else(|| "CORTEXDB_BACKUP_PASSPHRASE".to_owned());
     std::env::var(&env_name).map_err(|_| {

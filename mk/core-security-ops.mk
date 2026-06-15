@@ -182,7 +182,11 @@ llm-inference-smoke-check:
 	python3 scripts/llm_inference_gate_check.py --gate smoke --report "$(LLM_INFERENCE_SMOKE_REPORT)"
 
 secrets-check:
+	cargo test -p cortex-cli auth_review_rejects_inline_tokens_argument_without_echoing_value
+	cargo test -p cortex-cli encrypted_backup_rejects_passphrase_argument_without_echoing_value
+	cargo test -p cortex-server denied_ingestion_audit_event_does_not_leak_query_body_or_token
 	python3 scripts/llm_inference_gate_check.py --gate secrets --report "$(LLM_INFERENCE_SECRETS_REPORT)"
+	python3 scripts/secrets_hygiene_check.py --report "$(SECRETS_HYGIENE_REPORT)"
 
 oidc-auth-contract-check: openapi-contract-check
 	python3 scripts/external_identity_gate_check.py --gate oidc-contract --report "$(OIDC_AUTH_CONTRACT_REPORT)"

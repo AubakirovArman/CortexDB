@@ -1,6 +1,9 @@
 # Authentication
 
 CortexDB supports optional Bearer token authentication on the HTTP server.
+Do not pass bearer tokens as CLI arguments. Use environment variables for local
+development and token/policy files for operational runs so secrets do not appear
+in process listings or shell history.
 
 ## Enabling Auth
 
@@ -141,12 +144,15 @@ Review local auth policy files without exposing bearer tokens:
 ```bash
 cortexdb auth-review --policy-store ./auth-policy.json
 cortexdb auth-review --tokens-file ./auth.tokens
+cortexdb auth-review --tokens-env CORTEXDB_AUTH_TOKENS
 cortexdb --json auth-review --policy-store ./auth-policy.json --tokens-file ./auth.tokens
 ```
 
 The review output includes source, principal ID, role, active/disabled state,
 optional `agent_id`, optional quota fields, and optional `capabilities`. It
 intentionally does not print token values.
+`auth-review --tokens` is intentionally rejected because inline token arguments
+are visible in process listings.
 
 Admin tokens can mutate the local JSON policy store when
 `CORTEXDB_AUTH_POLICY_STORE_FILE` is configured. These routes are admin-only and

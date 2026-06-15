@@ -20,17 +20,20 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-E13` — Secrets hygiene.
+`EPIC-E15` — Per-route timeouts and slow-client protection.
 
-E13 exit steps:
+E15 exit steps:
 
-1. Audit repository, docs, scripts, and CI for secrets.
-2. Ensure tokens are accepted from env/file only where sensitive.
-3. Verify tracing/audit redaction with tests.
+1. Add per-route timeout budgets.
+2. Prove cancelled/slow clients do not leave the actor in a bad state.
+3. Add slow-client coverage and document timeout config.
 
-E13 current state:
+E15 current state:
 
 - next.
+- E13 is closed with env/file secret inputs, rejected inline CLI secret
+  arguments, audit redaction coverage, docs, provider-secret scanning, and
+  `make secrets-check`.
 - E07 is closed with audit JSONL rotation, fsync policy, schema-versioned
   `cortexdb.audit.v1` records, `scope_decision`, SIEM field propagation,
   denied-access audit coverage, `docs/AUDIT_LOG_FORMAT.md`, and
@@ -1109,9 +1112,9 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 ## Next Exit Step
 
-Work on C07 only:
+Work on E15 only:
 
-1. inspect current hybrid search and AQL retrieval mode boundaries;
-2. wire lexical+dense streams through a generic RRF operator;
-3. add a quality fixture proving hybrid is at least lexical;
-4. move to the next ordered epic after C07 acceptance is closed.
+1. inspect current server route timeout and actor cancellation boundaries;
+2. add configured per-route timeout enforcement;
+3. add slow-client/cancelled-request regression coverage;
+4. move to the next ordered epic after E15 acceptance is closed.

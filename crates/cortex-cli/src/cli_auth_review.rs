@@ -46,6 +46,7 @@ pub(crate) struct AuthReviewOptions<'a> {
     pub policy_store: Option<&'a str>,
     pub tokens_file: Option<&'a str>,
     pub tokens: Option<&'a str>,
+    pub tokens_env: Option<&'a str>,
     pub json: bool,
 }
 
@@ -79,6 +80,12 @@ struct AuthPolicyPrincipal {
 }
 
 pub(crate) fn review(options: AuthReviewOptions<'_>) -> Result<String, String> {
+    if options.tokens.is_some() {
+        return Err(
+            "--tokens is not accepted because command-line tokens are visible in process listings; use --tokens-file or --tokens-env <VAR>"
+                .to_owned(),
+        );
+    }
     let mut records = Vec::new();
     if let Some(path) = options.policy_store {
         records.extend(load_policy_store(path)?);
@@ -86,11 +93,11 @@ pub(crate) fn review(options: AuthReviewOptions<'_>) -> Result<String, String> {
     if let Some(path) = options.tokens_file {
         records.extend(load_tokens_file(path)?);
     }
-    if let Some(tokens) = options.tokens {
-        records.extend(parse_inline_tokens(tokens)?);
+    if let Some(env_name) = options.tokens_env {
+        records.extend(load_tokens_env(env_name)?);
     }
     if records.is_empty() {
-        return Err("auth review needs --policy-store, --tokens-file, or --tokens".to_owned());
+        return Err("auth review needs --policy-store, --tokens-file, or --tokens-env".to_owned());
     }
 
     let response = AuthReviewResponse {
@@ -195,7 +202,17 @@ fn load_tokens_file(path: &str) -> Result<Vec<AuthReviewRecord>, String> {
     Ok(records)
 }
 
-fn parse_inline_tokens(raw: &str) -> Result<Vec<AuthReviewRecord>, String> {
+fn load_tokens_env(env_name: &str) -> Result<Vec<AuthReviewRecord>, String> {
+    let env_name = env_name.trim();
+    if env_name.is_empty() {
+        return Err("auth token policy environment variable name must not be empty".to_owned());
+    }
+    let raw = std::env::var(env_name)
+        .map_err(|_| format!("auth token policy environment variable {env_name} is not set"))?;
+    parse_inline_tokens(&raw, format!("env:{env_name}"))
+}
+
+fn parse_inline_tokens(raw: &str, source: String) -> Result<Vec<AuthReviewRecord>, String> {
     let mut records = Vec::new();
     for (index, entry) in raw
         .split(',')
@@ -203,11 +220,7 @@ fn parse_inline_tokens(raw: &str) -> Result<Vec<AuthReviewRecord>, String> {
         .filter(|entry| !entry.is_empty())
         .enumerate()
     {
-        records.push(parse_token_entry(
-            entry,
-            "inline_tokens".to_owned(),
-            Some(index + 1),
-        )?);
+        records.push(parse_token_entry(entry, source.clone(), Some(index + 1))?);
     }
     if records.is_empty() {
         return Err("auth token list must contain at least one token policy".to_owned());

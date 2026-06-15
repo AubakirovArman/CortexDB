@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-E07` (`EPIC-E06` is now done along with the previously
+Current pointer: `EPIC-E15` (`EPIC-E13` is now done along with the previously
 closed epics listed in the Active Execution Queue). `EPIC-C01` is closed with
 the `ACI4` compact term dictionary/postings format, `ACI0..ACI3` dual-read
 compatibility, and persisted/search compatibility gates. `EPIC-C03` is closed
@@ -40,7 +40,9 @@ HTTP/queue/engine tracing spans, actor queue-wait latency metrics with p95,
 Prometheus scrape coverage, and Grafana/alert docs. `EPIC-E06` added
 per-tenant cell, estimated-memory, and queue quotas with `quota_exceeded`
 responses, 50-tenant load coverage, and backpressure tuning docs. `EPIC-E07`
-is next.
+closed audit log productization. `EPIC-E13` closed secrets hygiene with env/file
+secret inputs, CLI rejection tests, audit redaction coverage, and
+`make secrets-check`. `EPIC-E15` is next.
 `EPIC-D05` remains partial/local-ready and is externally blocked on public
 registry credentials/trusted publishing.
 
@@ -132,7 +134,8 @@ enough to unblock the next dependency step.
 51. `EPIC-E05` — Observability tracing + Prometheus metrics: done.
 52. `EPIC-E06` — Backpressure tuning and per-tenant limits: done.
 53. `EPIC-E07` — Audit log productization: done.
-54. `EPIC-E13` — Secrets hygiene: next.
+54. `EPIC-E13` — Secrets hygiene: done.
+55. `EPIC-E15` — Per-route timeouts and slow-client protection: next.
 
 ## Summary
 
@@ -1937,7 +1940,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
   quota-policy-check`, `make openapi-contract-check`, and `make
   load-suite-check`.
 - remaining: none for E06 acceptance.
-- next exit step: `EPIC-E07` is now done; move to `EPIC-E13` — Secrets hygiene.
+- next exit step: `EPIC-E13` is now done; move to `EPIC-E15` — Per-route timeouts and slow-client protection.
 
 ### EPIC-E07 — Audit log productization
 
@@ -1974,7 +1977,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
   --report target/security-hardening/e07-smoke.json`; `cargo clippy -p
   cortex-server --all-targets -- -D warnings`; `cargo clippy -p cortex-cli
   --all-targets -- -D warnings`.
-- next exit step: move to `EPIC-E13` — Secrets hygiene.
+- next exit step: `EPIC-E13` is now done; move to `EPIC-E15` — Per-route timeouts and slow-client protection.
 
 ### EPIC-E08 — Tenant isolation test suite
 
@@ -2064,14 +2067,29 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-E13 — Secrets-гигиена
 
-- status: `pending`
+- status: `done`
 - meta: Категория: security · P2 · 60 days · improve
 - tasks:
-  - [ ] 1) токены только env/file (не CLI-аргументы — видны в ps)
-  - [ ] 2) redaction в tracing/audit (тест: токен не встречается в логах после e2e)
-  - [ ] 3) doc.
+  - [x] 1) токены только env/file (не CLI-аргументы — видны в ps)
+  - [x] 2) redaction в tracing/audit (тест: токен не встречается в логах после e2e)
+  - [x] 3) doc.
 - acceptance:
-  - [ ] grep токена по всем логам e2e — пусто.
+  - [x] grep токена по всем логам e2e — пусто.
+- evidence: `auth-review --tokens` and encrypted backup/restore direct
+  `--passphrase` inputs are rejected without echoing the secret value; supported
+  sensitive inputs are env/file based via `--tokens-file`, `--tokens-env`,
+  `CORTEXDB_BACKUP_PASSPHRASE`, and `--passphrase-env`. Audit/redaction
+  coverage asserts denied ingestion logs do not contain the secret token/body,
+  and `make secrets-check` now runs the CLI rejection tests, server redaction
+  regression, LLM provider-secret scan, and `scripts/secrets_hygiene_check.py`.
+  Safe usage is documented in `docs/AUTH.md` and `docs/CLI.md`.
+- latest checks: `cargo test -p cortex-cli auth_review --all-features`;
+  `cargo test -p cortex-cli backup_encrypted --all-features`;
+  `cargo test -p cortex-cli encrypted_backup_rejects_passphrase_argument_without_echoing_value --all-features`;
+  `cargo test -p cortex-server denied_ingestion_audit_event_does_not_leak_query_body_or_token --all-features`;
+  `python3 -m py_compile scripts/secrets_hygiene_check.py scripts/llm_inference_gate_check.py`;
+  `make secrets-check`.
+- next exit step: move to `EPIC-E15` — Per-route timeouts and slow-client protection.
 
 ### EPIC-E14 — Upgrade/rollback drill
 

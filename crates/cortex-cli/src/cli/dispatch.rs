@@ -139,7 +139,8 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             policy_store,
             tokens_file,
             tokens,
-        } => audit::auth_review(ctx, policy_store, tokens_file, tokens),
+            tokens_env,
+        } => audit::auth_review(ctx, policy_store, tokens_file, tokens, tokens_env),
         Command::Agent { command } => match command {
             AgentCommand::Create(input) => ops::create_agent(
                 ctx.json,
