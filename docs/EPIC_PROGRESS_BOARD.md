@@ -20,17 +20,15 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-F10` — Формальная верификация инвариантов.
-
-F10 exit steps:
-
-1. Pick core invariants for TLA+/stateright modeling.
-2. Model WAL/recovery/MVCC/permission rewrite at useful abstraction.
-3. Connect model findings to tests.
+No active pending coding epic. `EPIC-F10` is done; the remaining tail is
+`EPIC-D05` partial/local-ready and frozen `EPIC-F02`, `EPIC-F03`, `EPIC-F09`.
 
 F10 current state:
 
-- next.
+- done with `docs/FORMAL_INVARIANTS.md`,
+  `scripts/formal_invariants_check.py`, bounded executable models for WAL
+  recovery, snapshot pinning/GC, and PolicyRewrite no-uncovered-Scan, plus
+  `make formal-invariants-check`.
 - F08 is closed with `docs/MULTI_AGENT_MEMORY_CONSISTENCY.md`,
   `MemoryConsistencyLevel`, `AgentHandoffRequest`,
   `Database::plan_agent_handoff`, private/shared visibility regressions,
@@ -124,6 +122,20 @@ D05 split state:
 - do not block kernel/database epics on D05.
 
 ## Recently Closed
+
+### EPIC-F10 — Формальная верификация инвариантов
+
+Status: `done`
+
+What closed it:
+
+- Added `docs/FORMAL_INVARIANTS.md` with selected WAL recovery,
+  snapshot-pinning/GC, and policy rewrite invariants.
+- Added `scripts/formal_invariants_check.py` to machine-check bounded state
+  spaces and write `target/formal-invariants/report.json`.
+- Wired `make formal-invariants-check` and docs navigation.
+- Re-routed multi-agent read authorization through `PolicyRewrite::allows_scope`
+  so the B16 production bypass gate remains closed.
 
 ### EPIC-F08 — Multi-agent memory consistency model
 
@@ -1195,9 +1207,5 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 ## Next Exit Step
 
-Work on F10 only:
-
-1. pick core invariants for TLA+/stateright modeling;
-2. model WAL/recovery/MVCC/permission rewrite at useful abstraction;
-3. connect model findings to tests;
-4. move to the next ordered epic after F10 acceptance is closed.
+No pending coding epic remains. Keep D05 as partial/local-ready and do not thaw
+F02/F03/F09 without an explicit request.

@@ -48,6 +48,9 @@ semantic-memory-compression-check:
 multi-agent-consistency-check:
 	python3 scripts/multi_agent_consistency_check.py --report "$(MULTI_AGENT_CONSISTENCY_REPORT)"
 
+formal-invariants-check:
+	python3 scripts/formal_invariants_check.py --report "$(FORMAL_INVARIANTS_REPORT)"
+
 provenance-model-inventory: ; python3 scripts/provenance_model_inventory.py
 erb-oracle-audit:
 	python3 scripts/enterprise_rag_bench/oracle_inference_guard.py

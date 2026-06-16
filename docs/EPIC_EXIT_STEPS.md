@@ -881,4 +881,4 @@ Exit steps:
 1. Pick core invariants for TLA+/stateright modeling.
 2. Model WAL/recovery/MVCC/permission rewrite at useful abstraction.
 3. Connect model findings to tests.
-4. Mark done when at least one critical invariant has machine-checked evidence; then move to deeper database research.
+4. Mark done when at least one critical invariant has machine-checked evidence; then keep the ordered coding queue empty unless a frozen epic is explicitly thawed.

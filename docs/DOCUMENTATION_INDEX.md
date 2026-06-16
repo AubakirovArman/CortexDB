@@ -28,6 +28,8 @@ evidence snapshots, benchmark experiments, and release working notes live in
 
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) - workspace and subsystem map.
 - [`CORE_INVARIANTS.md`](CORE_INVARIANTS.md) - safety invariants.
+- [`FORMAL_INVARIANTS.md`](FORMAL_INVARIANTS.md) - bounded executable model
+  for WAL recovery, snapshot pinning/GC, and policy rewrite invariants.
 - [`DATA_MODEL.md`](DATA_MODEL.md) - cell and metadata model overview.
 - [`CELL_METADATA_MODEL.md`](CELL_METADATA_MODEL.md) - metadata source of truth.
 - [`STORAGE_FORMATS.md`](STORAGE_FORMATS.md) - WAL/segment/index/manifest formats.

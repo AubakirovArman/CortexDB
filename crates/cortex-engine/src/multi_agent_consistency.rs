@@ -3,6 +3,7 @@ use cortex_core::CommitSeq;
 
 use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
+use crate::plan::PolicyRewrite;
 use crate::query::scope_id;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -58,7 +59,7 @@ pub fn classify_memory_visibility(
     visible_after_seq: CommitSeq,
 ) -> MemoryVisibilityReport {
     let scope_id = scope_id(scope);
-    let readable = view.can_read_scope(scope_id);
+    let readable = PolicyRewrite::allows_scope(view, scope_id);
     let writable = view.can_write_scope(scope_id);
     let is_private_owner_scope =
         view.agent_id == owner_agent_id && view.private_scope == Some(scope_id);
@@ -103,10 +104,10 @@ impl Database {
         }
 
         let scope_id = scope_id(&request.scope);
-        if !source_view.can_read_scope(scope_id) {
+        if !PolicyRewrite::allows_scope(source_view, scope_id) {
             return Err(policy_denied(PolicyError::ScopeNotReadable));
         }
-        if !target_view.can_read_scope(scope_id) {
+        if !PolicyRewrite::allows_scope(target_view, scope_id) {
             return Err(policy_denied(PolicyError::ScopeNotReadable));
         }
 

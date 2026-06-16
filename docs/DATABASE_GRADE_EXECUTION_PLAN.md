@@ -11,8 +11,9 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-F10` (`EPIC-F08` is now done along with the previously
-closed epics listed in the Active Execution Queue). `EPIC-C01` is closed with
+Current pointer: no active pending coding epic. `EPIC-F10` is now done; the
+remaining tail is `EPIC-D05` partial/local-ready plus frozen `EPIC-F02`,
+`EPIC-F03`, and `EPIC-F09`. `EPIC-C01` is closed with
 the `ACI4` compact term dictionary/postings format, `ACI0..ACI3` dual-read
 compatibility, and persisted/search compatibility gates. `EPIC-C03` is closed
 with canonical fixed-point BM25, field weights, and scoring docs. `EPIC-C04` is
@@ -61,8 +62,9 @@ value-per-token planning, deterministic cost model inputs, budget allocation
 regression coverage, and `docs/LLM_CONTEXT_VALUE_OPTIMIZATION.md`. `EPIC-F08`
 added explicit private/shared consistency levels, sequenced handoff packets,
 visibility/conflict regressions, and
-`docs/MULTI_AGENT_MEMORY_CONSISTENCY.md`. `EPIC-F10` is next because
-`EPIC-F09` remains frozen.
+`docs/MULTI_AGENT_MEMORY_CONSISTENCY.md`. `EPIC-F10` added bounded executable
+formal-invariant models for WAL recovery, snapshot pinning/GC, and policy
+rewrite, connected to regression gates through `make formal-invariants-check`.
 `EPIC-D05` remains partial/local-ready and is externally blocked on public
 registry credentials/trusted publishing.
 
@@ -164,7 +166,7 @@ enough to unblock the next dependency step.
 61. `EPIC-F06` — Semantic compression памяти: done.
 62. `EPIC-F07` — Query optimization для LLM-контекста: done.
 63. `EPIC-F08` — Multi-agent memory consistency model: done.
-64. `EPIC-F10` — Формальная верификация инвариантов: next.
+64. `EPIC-F10` — Формальная верификация инвариантов: done.
 
 ## Summary
 
@@ -2329,7 +2331,8 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 - latest checks: `cargo fmt --check`; `cargo test -p cortex-engine --test
   multi_agent_consistency --all-features`; `make
   multi-agent-consistency-check`.
-- next exit step: move to `EPIC-F10` because `EPIC-F09` remains frozen.
+- next exit step: `EPIC-F10` is now done; no pending coding epic remains while
+  `EPIC-F02`, `EPIC-F03`, and `EPIC-F09` stay frozen.
 
 ### EPIC-F09 — Cloud/service mode
 
@@ -2337,8 +2340,30 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-F10 — Формальная верификация инвариантов (TLA+/stateright)
 
-- status: `next`
+- status: `done`
 - meta: Категория: research · P3 · 12 months · research
 - tasks:
-  - [ ] Модели: WAL-recovery (включая ротацию A17), snapshot pinning/GC (A14), policy rewrite инвариант (B16 — «не существует плана с непокрытым Scan»). Деливерабл: модели + CI-прогон stateright. Сильный имиджевый актив для database-категории.
-- files: docs/GETTING_STARTED.md, Makefile (demo), sdk/* + workflows (publish), версии workspace, docs/archive финализация, первые E09 property-тесты прав.
+  - [x] Модели: WAL-recovery (включая ротацию A17), snapshot pinning/GC (A14), policy rewrite инвариант (B16 — «не существует плана с непокрытым Scan»). Деливерабл: модели + CI-прогон stateright-ready gate. Сильный имиджевый актив для database-категории.
+- evidence:
+  - `docs/FORMAL_INVARIANTS.md` selects the three core invariants, describes
+    the state/action abstraction, and maps each model to concrete regression
+    tests.
+  - `scripts/formal_invariants_check.py` machine-checks bounded executable
+    models for WAL committed-prefix recovery across rotation boundaries,
+    snapshot pinning/retired-segment GC, and PolicyRewrite no-uncovered-Scan
+    planning.
+  - `make formal-invariants-check` writes
+    `target/formal-invariants/report.json` and runs the linked WAL,
+    checkpoint-recovery, snapshot-pinning, policy-rewrite, and read-surface
+    regression gates.
+  - `multi_agent_consistency.rs` now routes read authorization through
+    `PolicyRewrite::allows_scope`, preserving the B16 production bypass gate.
+- latest checks: `python3 -m py_compile scripts/formal_invariants_check.py`;
+  `make formal-invariants-check`.
+- next exit step: no pending coding epic remains. Keep `EPIC-D05` tracked as
+  partial/local-ready and keep `EPIC-F02`, `EPIC-F03`, and `EPIC-F09` frozen
+  unless explicitly thawed.
+- files: docs/FORMAL_INVARIANTS.md, scripts/formal_invariants_check.py,
+  crates/cortex-engine/src/multi_agent_consistency.rs, mk/core.mk,
+  mk/vars-core.mk, mk/phony.mk, docs/SUMMARY.md,
+  docs/DOCUMENTATION_INDEX.md.

@@ -16,6 +16,7 @@
 - [Architecture](ARCHITECTURE.md)
 - [Core Engine](CORE_ENGINE.md)
 - [Core Invariants](CORE_INVARIANTS.md)
+- [Formal Invariants](FORMAL_INVARIANTS.md)
 - [Data Model](DATA_MODEL.md)
 - [Cell Metadata Model](CELL_METADATA_MODEL.md)
 - [Storage Formats](STORAGE_FORMATS.md)
