@@ -14,7 +14,7 @@ public registry publication.
 |---|---|
 | Server | `0.2.0-beta.2` |
 | OpenAPI | `0.2.0-beta.2` |
-| Rust SDK (`cortex-sdk`) | `0.2.0-beta.2` |
+| Rust SDK (`cortexdb-sdk`) | `0.2.0-beta.2` |
 | Python SDK (`cortexdb-client`) | `0.2.0b2` |
 | TypeScript SDK (`@cortexdb/client`) | `0.2.0-beta.2` |
 
@@ -22,7 +22,7 @@ public registry publication.
 
 ```toml
 [dependencies]
-cortex-sdk = "0.2.0-beta.2"
+cortexdb-sdk = "0.2.0-beta.2"
 ```
 
 ```rust

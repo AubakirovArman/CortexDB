@@ -178,7 +178,7 @@ it is not a hosted-service claim.
 - `crates/cortex-storage`: ACLOG WAL, manifest, segment, bitmap, lexical, vector, and experimental HNSW graph files.
 - `crates/cortex-core`: In-memory MVCC MemTable, read transactions, cell versions, and manifest primitives.
 - `crates/cortex-engine`: Single-node database loop, compaction, AQL-backed retrieve, memory TTL/decay, tool registry cells, knowledge graph projection, source trust, `VERIFY FACT` reports, ContextPack, exact vector search, and experimental HNSW foundations.
-- `crates/cortex-sdk`: Blocking Rust HTTP client for the versioned server API, with `cargo package` preflight coverage.
+- `crates/cortex-sdk`: Blocking Rust HTTP client for the versioned server API, published as `cortexdb-sdk` with `cargo package` preflight coverage.
 - `crates/cortex-cli`: Command `cortexdb` for local operations and loading fixtures.
 - `crates/cortex-server`: Async JSON HTTP API built on Axum and Tokio with per-tenant `DatabaseActor` workers over the local blocking database core.
 

@@ -8,6 +8,6 @@ repository = "https://github.com/AubakirovArman/CortexDB"
 authors = ["CortexDB Contributors"]
 
 [dependencies]
-cortex-sdk = { path = "../cortex-sdk" }
+cortex-sdk = { package = "cortexdb-sdk", path = "../cortex-sdk" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

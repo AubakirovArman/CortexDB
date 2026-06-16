@@ -13,8 +13,8 @@ REQUIRED_PACKAGES = {
     "rust_api_types": {"registry": "crates.io", "publish": "cargo publish -p cortex-api-types", "dry_run": "cargo publish -p cortex-api-types --dry-run"},
     "rust": {
         "registry": "crates.io",
-        "publish": "cargo publish -p cortex-sdk",
-        "dry_run": "cargo publish -p cortex-sdk --dry-run",
+        "publish": "cargo publish -p cortexdb-sdk",
+        "dry_run": "cargo publish -p cortexdb-sdk --dry-run",
     },
     "python": {
         "registry": "pypi",
@@ -36,7 +36,8 @@ REQUIRED_WORKFLOW_MARKERS = (
     "id-token: write",
     "pypa/gh-action-pypi-publish",
     "npm publish --access public --provenance",
-    "cargo publish -p cortex-sdk",
+    "cargo publish -p cortexdb-sdk",
+    "secrets.PYPI_API_TOKEN",
     "secrets.NPM_TOKEN",
     "secrets.CARGO_REGISTRY_TOKEN",
 )
@@ -46,12 +47,12 @@ REQUIRED_DOC_MARKERS = {
         "manual-only",
         "publish=true",
         "protected `sdk-release` environment",
-        "Registry credentials/trusted publishing",
+        "Registry credentials are configured",
     ),
     "docs/archive/SDK_PUBLICATION_STATUS.md": (
         "public registry publication is not claimed",
         "manual `sdk-release` GitHub environment approves publication",
-        "Registry credentials or trusted publishing",
+        "Registry credentials are configured",
     ),
 }
 
@@ -95,7 +96,7 @@ def check_manifest(repo: Path, failures: list[str]) -> dict[str, Any]:
     if registry_gate.get("does_not_claim_publication_without_release_job") is not True:
         failures.append("registry_gate must forbid publication claims without release job")
     credentials = registry_gate.get("requires_registry_credentials", [])
-    for credential in ("PyPI trusted publishing", "NPM_TOKEN", "CARGO_REGISTRY_TOKEN"):
+    for credential in ("PYPI_API_TOKEN", "NPM_TOKEN", "CARGO_REGISTRY_TOKEN"):
         if credential not in credentials:
             failures.append(f"registry_gate missing credential requirement {credential!r}")
 

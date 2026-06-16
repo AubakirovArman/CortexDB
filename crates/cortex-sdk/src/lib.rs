@@ -1,7 +1,7 @@
 //! Blocking Rust HTTP client for CortexDB.
 //!
-//! `cortex-sdk` provides a synchronous, ergonomic client for the CortexDB
-//! Core Alpha HTTP API. All methods return strongly-typed responses or
+//! `cortexdb-sdk` provides a synchronous, ergonomic client for the CortexDB
+//! beta HTTP API. All methods return strongly-typed responses or
 //! `serde_json::Value` for raw access.
 //!
 //! # Quickstart

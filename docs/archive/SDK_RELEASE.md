@@ -10,7 +10,7 @@ Rust support crate that must be published before the Rust SDK:
 - Rust support crate: `crates/cortex-api-types` as `cortex-api-types`
 - Python package: `sdk/python` as `cortexdb-client`
 - TypeScript package: `sdk/typescript` as `@cortexdb/client`
-- Rust crate: `crates/cortex-sdk` as `cortex-sdk`
+- Rust crate: `crates/cortex-sdk` as `cortexdb-sdk`
 
 Rust and TypeScript package versions use the canonical workspace version in the
 root `Cargo.toml`. Python prerelease packages use the PEP 440 spelling of the
@@ -98,7 +98,7 @@ smoke tests for all three SDKs:
 
 - Python: `scripts/sdk_smoke_test.py`
 - TypeScript: `scripts/sdk_ts_smoke_test.mjs`
-- Rust: `cargo run -p cortex-sdk --example live_contract`
+- Rust: `cargo run -p cortexdb-sdk --example live_contract`
 
 The scripts set `CORTEXDB_SERVER_BIN` so each SDK talks to the freshly built
 server, not a stale release binary left in `target/release`.
@@ -130,9 +130,9 @@ The publish job is skipped unless all of these are true:
   release, for example `0.2.0b2`.
 - `publish=true` was explicitly set.
 - The protected `sdk-release` environment approves the deployment.
-- Registry credentials/trusted publishing are configured.
+- Registry credentials are configured.
 - Rust packages publish in order: `cortex-api-types` first, then
-  `cortex-sdk`.
+  `cortexdb-sdk`.
 
 The local release train gate is:
 
@@ -145,12 +145,12 @@ contract checks, deprecation policy checks, and live local server e2e evidence.
 
 ## Required Registry Configuration
 
-- PyPI: trusted publishing for the repository, used by
+- PyPI: `PYPI_API_TOKEN` in the protected `sdk-release` environment, used by
   `pypa/gh-action-pypi-publish`.
 - npm: `NPM_TOKEN` repository secret with publish permission for
   `@cortexdb/client`.
 - crates.io: `CARGO_REGISTRY_TOKEN` repository secret with publish permission
-  for `cortex-api-types` and `cortex-sdk`.
+  for `cortex-api-types` and `cortexdb-sdk`.
 
 ## Release Discipline
 

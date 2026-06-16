@@ -66,7 +66,7 @@ def run_typescript_smoke(repo: Path, server_binary: Path) -> bool:
 
 def run_rust_smoke(repo: Path, server_binary: Path) -> bool:
     result = subprocess.run(
-        ["cargo", "run", "--quiet", "-p", "cortex-sdk", "--example", "live_contract"],
+        ["cargo", "run", "--quiet", "-p", "cortexdb-sdk", "--example", "live_contract"],
         capture_output=True,
         text=True,
         cwd=repo,

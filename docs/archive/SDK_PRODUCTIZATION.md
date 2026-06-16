@@ -65,11 +65,11 @@ Covered local evidence:
 ## Non-Claims
 
 Public registry publication is not claimed until a tag-gated release workflow
-runs with registry credentials or trusted publishing:
+runs with registry credentials:
 
 - PyPI for `cortexdb-client`
 - npm for `@cortexdb/client`
-- crates.io for `cortex-sdk`
+- crates.io for `cortexdb-sdk`
 
 The local productization gate proves packaging readiness, examples, typed
 contracts, registry-gate wiring, and local live-server compatibility.

@@ -426,22 +426,9 @@ dependencies = [
 name = "cortex-mcp"
 version = "0.2.0-beta.2"
 dependencies = [
- "cortex-sdk",
+ "cortexdb-sdk",
  "serde",
  "serde_json",
-]
-
-[[package]]
-name = "cortex-sdk"
-version = "0.2.0-beta.2"
-dependencies = [
- "cortex-api-types",
- "reqwest",
- "serde",
- "serde_json",
- "thiserror 1.0.69",
- "tokio",
- "ureq",
 ]
 
 [[package]]
@@ -474,6 +461,19 @@ dependencies = [
  "roaring",
  "tempfile",
  "thiserror 1.0.69",
+]
+
+[[package]]
+name = "cortexdb-sdk"
+version = "0.2.0-beta.2"
+dependencies = [
+ "cortex-api-types",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+ "tokio",
+ "ureq",
 ]
 
 [[package]]

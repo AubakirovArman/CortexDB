@@ -223,16 +223,17 @@ def validate_workflow(repo: Path, errors: list[str]) -> None:
         "inputs.publish",
         "startsWith(github.ref, 'refs/tags/v')",
         "cargo publish -p cortex-api-types --dry-run",
-        "cargo publish -p cortex-sdk --dry-run",
+        "cargo publish -p cortexdb-sdk --dry-run",
         "python3 scripts/check_sdk_release_contract.py --enforce-github-ref",
         "python3 scripts/check_sdk_deprecation_policy.py",
         "python -m build sdk/python --wheel",
         "npm pack --dry-run",
         "environment: sdk-release",
         "pypa/gh-action-pypi-publish",
+        "secrets.PYPI_API_TOKEN",
         "npm publish --access public --provenance",
         "cargo publish -p cortex-api-types",
-        "cargo publish -p cortex-sdk",
+        "cargo publish -p cortexdb-sdk",
     ):
         try:
             workflow_contains(workflow, needle)

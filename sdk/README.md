@@ -9,7 +9,7 @@ surface and intentionally keep runtime dependencies small.
 - `typescript/cortexdb-client.d.ts`: TypeScript declarations.
 - `typescript/cortexdb-client.ts`: TypeScript source reference.
 - `crates/cortex-api-types`: shared serde wire types used by server and Rust SDK.
-- `crates/cortex-sdk`: Rust HTTP client with crates.io metadata. It exports the
+- `crates/cortex-sdk`: Rust HTTP client published as `cortexdb-sdk`. It exports the
   blocking `CortexDbClient` by default and `AsyncCortexDbClient` when the
   `async` feature is enabled.
 
@@ -43,7 +43,7 @@ hand-written ergonomic client models. Rust keeps using the shared
 response validation, error taxonomy checks, generated SDK type freshness, and
 SDK surface drift checks.
 Publish order matters for Rust: publish `cortex-api-types` first, then rerun
-with `CORTEX_API_TYPES_PUBLISHED=1` so `cortex-sdk` package verification can
+with `CORTEX_API_TYPES_PUBLISHED=1` so `cortexdb-sdk` package verification can
 resolve the new dependency from crates.io.
 `make sdk-contract-check` validates live API compatibility by building the
 current `cortex-server` binary and running Python, TypeScript, and Rust SDK
