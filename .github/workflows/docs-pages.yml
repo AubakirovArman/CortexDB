@@ -6,6 +6,8 @@ on:
     paths:
       - "book.toml"
       - "docs/**"
+      - "scripts/check_doc_links.py"
+      - "scripts/docs_link_check.py"
       - "scripts/docs_site_check.py"
       - ".github/workflows/docs-pages.yml"
       - "mk/**"
@@ -14,6 +16,8 @@ on:
     paths:
       - "book.toml"
       - "docs/**"
+      - "scripts/check_doc_links.py"
+      - "scripts/docs_link_check.py"
       - "scripts/docs_site_check.py"
       - ".github/workflows/docs-pages.yml"
       - "mk/**"

@@ -73,7 +73,7 @@ comparison-docs-check:
 	python3 scripts/comparison_docs_check.py --report "$(COMPARISON_DOCS_REPORT)"
 
 docs-link-check:
-	python3 scripts/docs_link_check.py
+	python3 scripts/check_doc_links.py
 
 docs-site-check: docs-link-check
 	python3 scripts/docs_site_check.py --report "$(DOCS_SITE_REPORT)"
