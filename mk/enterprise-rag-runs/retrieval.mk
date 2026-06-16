@@ -20,7 +20,7 @@ enterprise-rag-bench-official-retrieval-only-metrics-existing-50: enterprise-rag
 
 enterprise-rag-bench-cortexdb-retrieval-existing-50-candidates: enterprise-rag-bench-balanced-50
 	test -d "$(ENTERPRISE_RAG_BENCH_DB_50)"
-	cargo build --release -p cortex-engine --bin enterprise_rag_bench_retrieval
+	cargo build --release -p cortex-bench --bin enterprise_rag_bench_retrieval
 	./target/release/enterprise_rag_bench_retrieval \
 	  --questions "$(ENTERPRISE_RAG_BENCH_SUBSET_QUESTIONS)" \
 	  --uuid-index "$(ENTERPRISE_RAG_BENCH_UUID_INDEX)" \
@@ -48,7 +48,7 @@ enterprise-rag-bench-embedding-rerank-existing-50: enterprise-rag-bench-cortexdb
 
 enterprise-rag-bench-cortexdb-retrieval-existing-50-candidates-wide: enterprise-rag-bench-balanced-50
 	test -d "$(ENTERPRISE_RAG_BENCH_DB_50)"
-	cargo build --release -p cortex-engine --bin enterprise_rag_bench_retrieval
+	cargo build --release -p cortex-bench --bin enterprise_rag_bench_retrieval
 	./target/release/enterprise_rag_bench_retrieval \
 	  --questions "$(ENTERPRISE_RAG_BENCH_SUBSET_QUESTIONS)" \
 	  --uuid-index "$(ENTERPRISE_RAG_BENCH_UUID_INDEX)" \
@@ -130,4 +130,3 @@ enterprise-rag-bench-official-retrieval-only-metrics-embedding-rerank-existing-5
 	  --uuid-index-cache-file "generated_data/uuid_index.json" \
 	  --no-correction \
 	  --skip-citation-stripping
-

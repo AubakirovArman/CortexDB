@@ -27,7 +27,7 @@ multihop-rag-local-50-check: multihop-rag-balanced-50
 	@echo "MultiHop-RAG local 50-query subset ready under $(MULTIHOP_RAG_SUBSET_ROOT)/$(MULTIHOP_RAG_SUBSET_PREFIX)"
 
 multihop-rag-cortexdb-retrieval-50: multihop-rag-local-50-check
-	cargo build --release -p cortex-engine --bin multihop_rag_retrieval
+	cargo build --release -p cortex-bench --bin multihop_rag_retrieval
 	./target/release/multihop_rag_retrieval \
 	  --queries "$(MULTIHOP_RAG_SUBSET_ROOT)/$(MULTIHOP_RAG_SUBSET_PREFIX)/$(MULTIHOP_RAG_SUBSET_PREFIX)_multihop.json" \
 	  --corpus "$(MULTIHOP_RAG_CORPUS_FILE)" \
@@ -41,7 +41,7 @@ multihop-rag-official-retrieval-metrics-50: multihop-rag-official-repo multihop-
 	python3 "$(MULTIHOP_RAG_OFFICIAL_REPO)/retrieval_evaluate.py" --file "$(MULTIHOP_RAG_RETRIEVAL_50)" | tee "$(MULTIHOP_RAG_RETRIEVAL_50_METRICS)"
 
 multihop-rag-cortexdb-retrieval-full: multihop-rag-preflight
-	cargo build --release -p cortex-engine --bin multihop_rag_retrieval
+	cargo build --release -p cortex-bench --bin multihop_rag_retrieval
 	./target/release/multihop_rag_retrieval \
 	  --queries "$(MULTIHOP_RAG_QUERY_FILE)" \
 	  --corpus "$(MULTIHOP_RAG_CORPUS_FILE)" \
@@ -65,4 +65,3 @@ multihop-rag-qa-hybrid-full-retry-existing-check:
 
 multihop-rag-qa-hybrid-full-retry-v4-existing-check:
 	@test -f "$(MULTIHOP_RAG_QA_HYBRID_FULL_RETRY_V4_ROOT)/deepseek_qa.json" || (echo "missing $(MULTIHOP_RAG_QA_HYBRID_FULL_RETRY_V4_ROOT)/deepseek_qa.json; run make multihop-rag-official-qa-metrics-hybrid-full-retry-v4 first" && exit 1)
-

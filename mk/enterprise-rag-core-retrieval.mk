@@ -1,5 +1,5 @@
 enterprise-rag-bench-cortexdb-retrieval-smoke: enterprise-rag-bench-balanced-50
-	cargo build -p cortex-engine --bin enterprise_rag_bench_retrieval
+	cargo build -p cortex-bench --bin enterprise_rag_bench_retrieval
 	./target/debug/enterprise_rag_bench_retrieval \
 	  --questions "$(ENTERPRISE_RAG_BENCH_SUBSET_QUESTIONS)" \
 	  --uuid-index "$(ENTERPRISE_RAG_BENCH_UUID_INDEX)" \
@@ -24,7 +24,7 @@ enterprise-rag-bench-official-retrieval-only-metrics-smoke: enterprise-rag-bench
 	  --skip-citation-stripping
 
 enterprise-rag-bench-cortexdb-retrieval-50: enterprise-rag-bench-balanced-50
-	cargo build --release -p cortex-engine --bin enterprise_rag_bench_retrieval
+	cargo build --release -p cortex-bench --bin enterprise_rag_bench_retrieval
 	./target/release/enterprise_rag_bench_retrieval \
 	  --questions "$(ENTERPRISE_RAG_BENCH_SUBSET_QUESTIONS)" \
 	  --uuid-index "$(ENTERPRISE_RAG_BENCH_UUID_INDEX)" \
@@ -37,7 +37,7 @@ enterprise-rag-bench-cortexdb-retrieval-50: enterprise-rag-bench-balanced-50
 	  --reset-db
 
 enterprise-rag-bench-cortexdb-retrieval-full: enterprise-rag-bench-preflight
-	cargo build --release -p cortex-engine --bin enterprise_rag_bench_retrieval
+	cargo build --release -p cortex-bench --bin enterprise_rag_bench_retrieval
 	./target/release/enterprise_rag_bench_retrieval \
 	  --questions "$(ENTERPRISE_RAG_BENCH_QUESTIONS)" \
 	  --uuid-index "$(ENTERPRISE_RAG_BENCH_UUID_INDEX)" \

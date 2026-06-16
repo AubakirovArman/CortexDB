@@ -4,7 +4,7 @@ locomo-official-data:
 	  --manifest "$(LOCOMO_DATA_MANIFEST)"
 
 locomo-cortexdb-retrieval: locomo-official-data
-	cargo build --release -p cortex-engine --bin locomo_retrieval
+	cargo build --release -p cortex-bench --bin locomo_retrieval
 	@limit_args=""; \
 	if [ -n "$(LOCOMO_MAX_QUESTIONS)" ]; then limit_args="--max-questions $(LOCOMO_MAX_QUESTIONS)"; fi; \
 	./target/release/locomo_retrieval \

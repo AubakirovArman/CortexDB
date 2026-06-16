@@ -82,7 +82,7 @@ enterprise-rag-bench-query-understanding-lift-check:
 	  --min-engine-average-recall-pct 100
 
 enterprise-rag-bench-intent-check:
-	cargo run -p cortex-engine --bin enterprise_rag_intent_check -- \
+	cargo run -p cortex-bench --bin enterprise_rag_intent_check -- \
 	  --questions "$(ENTERPRISE_RAG_BENCH_INTENT_CHECK_QUESTIONS)" \
 	  --output "$(ENTERPRISE_RAG_BENCH_INTENT_CHECK_REPORT)" \
 	  --offset "$(ENTERPRISE_RAG_BENCH_INTENT_CHECK_OFFSET)" \
@@ -90,7 +90,7 @@ enterprise-rag-bench-intent-check:
 	  $(if $(ENTERPRISE_RAG_BENCH_INTENT_CHECK_LIMIT),--limit "$(ENTERPRISE_RAG_BENCH_INTENT_CHECK_LIMIT)",)
 
 enterprise-rag-bench-decomposition-check:
-	cargo run -p cortex-engine --bin enterprise_rag_decomposition_check -- \
+	cargo run -p cortex-bench --bin enterprise_rag_decomposition_check -- \
 	  --questions "$(ENTERPRISE_RAG_BENCH_DECOMPOSITION_CHECK_QUESTIONS)" \
 	  --output "$(ENTERPRISE_RAG_BENCH_DECOMPOSITION_CHECK_REPORT)" \
 	  --offset "$(ENTERPRISE_RAG_BENCH_DECOMPOSITION_CHECK_OFFSET)" \
@@ -98,7 +98,7 @@ enterprise-rag-bench-decomposition-check:
 	  $(if $(ENTERPRISE_RAG_BENCH_DECOMPOSITION_CHECK_LIMIT),--limit "$(ENTERPRISE_RAG_BENCH_DECOMPOSITION_CHECK_LIMIT)",)
 
 enterprise-rag-bench-scope-mapping-check:
-	cargo run -p cortex-engine --bin enterprise_rag_scope_mapping_check -- \
+	cargo run -p cortex-bench --bin enterprise_rag_scope_mapping_check -- \
 	  --questions "$(ENTERPRISE_RAG_BENCH_SCOPE_MAPPING_CHECK_QUESTIONS)" \
 	  --output "$(ENTERPRISE_RAG_BENCH_SCOPE_MAPPING_CHECK_REPORT)" \
 	  --offset "$(ENTERPRISE_RAG_BENCH_SCOPE_MAPPING_CHECK_OFFSET)" \
@@ -106,7 +106,7 @@ enterprise-rag-bench-scope-mapping-check:
 	  $(if $(ENTERPRISE_RAG_BENCH_SCOPE_MAPPING_CHECK_LIMIT),--limit "$(ENTERPRISE_RAG_BENCH_SCOPE_MAPPING_CHECK_LIMIT)",)
 
 enterprise-rag-bench-synonym-dictionary-check:
-	cargo run -p cortex-engine --bin enterprise_rag_synonym_dictionary_check -- \
+	cargo run -p cortex-bench --bin enterprise_rag_synonym_dictionary_check -- \
 	  --uuid-index "$(ENTERPRISE_RAG_BENCH_UUID_INDEX)" \
 	  --sources-dir "$(ENTERPRISE_RAG_BENCH_SOURCES_DIR)" \
 	  --output "$(ENTERPRISE_RAG_BENCH_SYNONYM_DICTIONARY_OUTPUT)" \
@@ -121,7 +121,7 @@ enterprise-rag-bench-synonym-dictionary-check:
 	  $(if $(ENTERPRISE_RAG_BENCH_SYNONYM_DICTIONARY_LIMIT),--limit "$(ENTERPRISE_RAG_BENCH_SYNONYM_DICTIONARY_LIMIT)",)
 
 enterprise-rag-bench-condition-check:
-	cargo run -p cortex-engine --bin enterprise_rag_condition_check -- \
+	cargo run -p cortex-bench --bin enterprise_rag_condition_check -- \
 	  --questions "$(ENTERPRISE_RAG_BENCH_CONDITION_CHECK_QUESTIONS)" \
 	  --output "$(ENTERPRISE_RAG_BENCH_CONDITION_CHECK_REPORT)" \
 	  --offset "$(ENTERPRISE_RAG_BENCH_CONDITION_CHECK_OFFSET)" \
@@ -129,7 +129,7 @@ enterprise-rag-bench-condition-check:
 	  $(if $(ENTERPRISE_RAG_BENCH_CONDITION_CHECK_LIMIT),--limit "$(ENTERPRISE_RAG_BENCH_CONDITION_CHECK_LIMIT)",)
 
 enterprise-rag-bench-calibration-profile-check:
-	cargo run -p cortex-engine --bin enterprise_rag_calibration_check -- \
+	cargo run -p cortex-bench --bin enterprise_rag_calibration_check -- \
 	  --questions "$(ENTERPRISE_RAG_BENCH_CALIBRATION_CHECK_QUESTIONS)" \
 	  --output "$(ENTERPRISE_RAG_BENCH_CALIBRATION_CHECK_REPORT)" \
 	  --offset "$(ENTERPRISE_RAG_BENCH_CALIBRATION_CHECK_OFFSET)" \
@@ -152,4 +152,3 @@ enterprise-rag-bench-candidate-depth-check:
 	  --min-recall-500 85 \
 	  --min-recall-1000 90 \
 	  --min-full-recall-1000 400
-

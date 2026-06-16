@@ -2,6 +2,7 @@
 members = [
     "crates/cortex-api-types",
     "crates/cortex-aql",
+    "crates/cortex-bench",
     "crates/cortex-cli",
     "crates/cortex-core",
     "crates/cortex-engine",
