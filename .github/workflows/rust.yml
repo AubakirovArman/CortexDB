@@ -2,130 +2,45 @@ name: Rust
 
 on:
   push:
+    branches: [main]
   pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rust-pr-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  RUSTFLAGS: -D warnings
 
 jobs:
-  check:
+  pr:
+    name: PR lane
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        toolchain: [stable, beta]
-    env:
-      RUSTFLAGS: -D warnings
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
+
       - run: make file-size-check
-        if: matrix.toolchain == 'stable'
       - run: make docs-link-check
-        if: matrix.toolchain == 'stable'
+
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: ${{ matrix.toolchain }}
+          toolchain: stable
           components: rustfmt, clippy
+
       - run: cargo check --workspace
       - run: cargo test --workspace --all-features
       - run: cargo fmt --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
+
       - run: make live-integration-examples-check
-        if: matrix.toolchain == 'stable'
       - run: make migration-policy-check
-        if: matrix.toolchain == 'stable'
       - run: make storage-format-change-note-check
-        if: matrix.toolchain == 'stable'
-      - run: make load-smoke-check
-        if: matrix.toolchain == 'stable'
+
       - run: make enterprise-rag-bench-retrieval-quality-fixture-check
-        if: matrix.toolchain == 'stable'
       - run: make enterprise-rag-bench-hybrid-parity-fixture-check
-        if: matrix.toolchain == 'stable'
       - run: make enterprise-rag-bench-query-understanding-lift-check
-        if: matrix.toolchain == 'stable'
-      - run: make crash-fault-check
-        if: matrix.toolchain == 'stable'
-      - name: Upload crash/fault evidence
-        if: matrix.toolchain == 'stable' && always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: crash-fault-evidence
-          if-no-files-found: warn
-          path: |
-            target/crash-fault/report.json
-            target/crash-fault/*.log
-      - run: make backup-offsite-check
-        if: matrix.toolchain == 'stable'
-      - name: Upload backup offsite evidence
-        if: matrix.toolchain == 'stable' && always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: backup-offsite-evidence
-          if-no-files-found: warn
-          path: target/backup-offsite/report.json
-      - run: make chaos-restart-check
-        if: matrix.toolchain == 'stable'
-      - name: Upload chaos restart evidence
-        if: matrix.toolchain == 'stable' && always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: chaos-restart-evidence
-          if-no-files-found: warn
-          path: |
-            target/chaos-restart/report.json
-            target/chaos-restart/server.log
-      - run: make replication-partition-check
-        if: matrix.toolchain == 'stable'
-      - name: Upload replication partition evidence
-        if: matrix.toolchain == 'stable' && always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: replication-partition-evidence
-          if-no-files-found: warn
-          path: |
-            target/replication-partition/report.json
-            target/replication-partition/*.log
-      - run: make replication-lifecycle-check
-        if: matrix.toolchain == 'stable'
-      - name: Upload replication lifecycle evidence
-        if: matrix.toolchain == 'stable' && always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: replication-lifecycle-evidence
-          if-no-files-found: warn
-          path: |
-            target/replication-lifecycle/report.json
-            target/replication-lifecycle/*.log
-      - run: make dashboard-check
-        if: matrix.toolchain == 'stable'
-      - run: make dashboard-standalone-check
-        if: matrix.toolchain == 'stable'
-      - run: make dashboard-standalone-smoke
-        if: matrix.toolchain == 'stable'
-      - run: make dashboard-release-check
-        if: matrix.toolchain == 'stable'
-      - name: Upload dashboard release package
-        if: matrix.toolchain == 'stable' && always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: dashboard-release-package
-          if-no-files-found: warn
-          path: target/dashboard/*.tar.gz
-      - uses: actions/setup-node@v6
-        if: matrix.toolchain == 'stable'
-        with:
-          node-version: 24
-          cache: npm
-      - run: make dashboard-smoke
-        if: matrix.toolchain == 'stable'
-      - run: make dashboard-screenshots
-        if: matrix.toolchain == 'stable'
-      - name: Upload dashboard screenshots
-        if: matrix.toolchain == 'stable' && always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: dashboard-screenshots
-          if-no-files-found: warn
-          path: |
-            target/dashboard/*.png
-            target/dashboard/*.json

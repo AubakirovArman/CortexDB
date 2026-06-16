@@ -69,6 +69,7 @@
 # Operations
 
 - [Operations](OPERATIONS.md)
+- [CI Lanes](CI_LANES.md)
 - [Metrics](METRICS.md)
 - [Security Model](SECURITY_MODEL.md)
 - [Audit Log Format](AUDIT_LOG_FORMAT.md)

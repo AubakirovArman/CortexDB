@@ -1,0 +1,195 @@
+name: Nightly
+
+on:
+  schedule:
+    - cron: "23 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  RUSTFLAGS: -D warnings
+
+jobs:
+  beta-toolchain:
+    name: Beta toolchain
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: beta
+          components: rustfmt, clippy
+
+      - run: cargo check --workspace
+      - run: cargo test --workspace --all-features
+      - run: cargo fmt --check
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+
+  heavy-gates:
+    name: Heavy reliability and dashboard gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+
+      - run: make load-smoke-check
+
+      - run: make crash-fault-check
+      - name: Upload crash/fault evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: crash-fault-evidence
+          if-no-files-found: warn
+          retention-days: 30
+          path: |
+            target/crash-fault/report.json
+            target/crash-fault/*.log
+
+      - run: make backup-offsite-check
+      - name: Upload backup offsite evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: backup-offsite-evidence
+          if-no-files-found: warn
+          retention-days: 30
+          path: target/backup-offsite/report.json
+
+      - run: make chaos-restart-check
+      - name: Upload chaos restart evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: chaos-restart-evidence
+          if-no-files-found: warn
+          retention-days: 30
+          path: |
+            target/chaos-restart/report.json
+            target/chaos-restart/server.log
+
+      - run: make replication-partition-check
+      - name: Upload replication partition evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: replication-partition-evidence
+          if-no-files-found: warn
+          retention-days: 30
+          path: |
+            target/replication-partition/report.json
+            target/replication-partition/*.log
+
+      - run: make replication-lifecycle-check
+      - name: Upload replication lifecycle evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: replication-lifecycle-evidence
+          if-no-files-found: warn
+          retention-days: 30
+          path: |
+            target/replication-lifecycle/report.json
+            target/replication-lifecycle/*.log
+
+      - run: make dashboard-check
+      - run: make dashboard-standalone-check
+      - run: make dashboard-standalone-smoke
+      - run: make dashboard-release-check
+      - name: Upload dashboard release package
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: dashboard-release-package
+          if-no-files-found: warn
+          retention-days: 30
+          path: target/dashboard/*.tar.gz
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: make dashboard-smoke
+      - run: make dashboard-screenshots
+      - name: Upload dashboard screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: dashboard-screenshots
+          if-no-files-found: warn
+          retention-days: 30
+          path: |
+            target/dashboard/*.png
+            target/dashboard/*.json
+
+  ann-and-scale:
+    name: ANN and scale benchmark gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+
+      - name: Run ANN nightly regression
+        run: make ann-nightly-regression-report
+
+      - name: Run BGE-M3 cached recall gate when cache is available
+        run: |
+          set -euo pipefail
+          corpus_vectors="${ANN_BGE_M3_CORPUS_VECTORS:-target/enterprise-rag-bench/embeddings/corpus_bge_m3.jsonl}"
+          query_cache="${ANN_BGE_M3_QUERY_CACHE:-target/enterprise-rag-bench/retrieval/embedding_cache.jsonl}"
+          if [ -f "$corpus_vectors" ] && [ -f "$query_cache" ]; then
+            make ann-bge-m3-cache-recall-report
+          else
+            echo "::warning::BGE-M3 cache not present; writing readiness report instead"
+            make ann-real-embedding-readiness \
+              ANN_REAL_EMBEDDING_PROVIDER=file \
+              ANN_REAL_EMBEDDING_SOURCE_ROOT=examples/real_domains/investment_projects/corpus \
+              ANN_REAL_EMBEDDING_QUERIES=examples/real_domains/investment_projects/queries/queries.jsonl \
+              ANN_REAL_EMBEDDING_FILE="$corpus_vectors" \
+              ANN_REAL_EMBEDDING_MODEL=BAAI/bge-m3
+          fi
+
+      - name: Build ANN release evidence bundle
+        run: make ann-release-evidence-check
+
+      - name: Run continuous scale benchmark gate
+        run: make continuous-benchmark-hosted-gate
+
+      - name: Upload ANN and scale reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: nightly-ann-scale-reports
+          if-no-files-found: warn
+          retention-days: 30
+          path: |
+            target/ann/**/*.json
+            target/ann/**/*.jsonl
+            target/ann/**/*.tar.gz
+            target/load-smoke/report.json
+            target/single-node-performance/report.json
+            target/concurrent-read-benchmark/report.json
+            target/concurrent-read-benchmark/report.md
+            target/ingestion-throughput/report.json
+            target/ingestion-throughput/report.md
+            target/performance-trends/report.json
+            target/scale-bench/**/report.json
+            target/scale-bench/trends.json
+            target/scale-bench/trends.md
+            target/memory-profile/estimate-audit.json
+            target/memory-profile/estimate-audit.md
+            target/continuous-benchmark-gate/report.json
+            target/continuous-benchmark-gate/report.md
