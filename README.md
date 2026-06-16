@@ -13,6 +13,8 @@
 > `make beta-release-check` and the evidence bundle described in
 > [`docs/BETA_RELEASE.md`](docs/archive/BETA_RELEASE.md).
 
+For the current maturity table, start with
+[`docs/STATUS.md`](docs/STATUS.md).
 For the short external beta overview, start with
 [`docs/BETA_LANDING.md`](docs/BETA_LANDING.md).
 For a copy-paste local path to the first ContextPack, start with

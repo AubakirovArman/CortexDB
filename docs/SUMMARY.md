@@ -8,6 +8,7 @@
 - [Install](INSTALL.md)
 - [Core Alpha](CORE_ALPHA.md)
 - [Project Status](PROJECT_STATUS.md)
+- [Current Status](STATUS.md)
 - [Beta Landing](BETA_LANDING.md)
 - [Contributor Onboarding](CONTRIBUTOR_ONBOARDING.md)
 
