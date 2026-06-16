@@ -27,10 +27,10 @@ fn v1_remember_ttl_expiry_disappears_from_context() {
     let remember = concat!(
         "POST /v1/remember?scope=project:investments HTTP/1.1\r\n\r\n",
         "REMEMBER \"Temporary budget preference\" IN SCOPE project:investments AS TYPE decision ",
-        "TTL 1 SECONDS;"
+        "TTL 60 SECONDS;"
     );
     let remember_response = handle_http(dir.path(), remember);
-    assert!(remember_response.contains(r#""ttl_seconds":1"#));
+    assert!(remember_response.contains(r#""ttl_seconds":60"#));
 
     let context = concat!(
         "POST /v1/context?scope=project:investments HTTP/1.1\r\n\r\n",
