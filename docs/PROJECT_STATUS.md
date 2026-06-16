@@ -1,31 +1,69 @@
-# CortexDB Project Status & Honesty Manifest (v0.1.0-core-alpha)
+# CortexDB Project Status & Honesty Manifest (v0.2.0-beta.2)
 
-CortexDB has successfully transitioned from an early database loop prototype into a **published Core Alpha (v0.1.0-core-alpha)**. This document honestly defines the completed boundaries of the database core and separates them from our long-term distributed research goals.
+CortexDB is a **single-node agent-native database beta**. The workspace version
+is `0.2.0-beta.2`, and the roadmap snapshot has 96 closed epics. This document
+states what is real today, what remains non-production, and which long-term
+research slices are prototypes.
 
----
+This is not a production HA database, managed cloud service, enterprise IAM
+platform, or legal-grade verification product.
 
-## 1. What is Stable Within Core Alpha (v0.1.0-core-alpha)
+## Stable Beta Surface
 
-- **Durable Single-Node Storage:** Strict Write-Ahead Log (WAL) with group commits, MVCC MemTable, and incremental compaction.
-- **Asynchronous Network Surface:** Async HTTP server built on Axum and Tokio. Blocking DB transactions run through per-tenant `DatabaseActor` workers behind `tokio::task::spawn_blocking`; the database core itself remains local and blocking.
-- **Core Alpha HTTP Safety Controls:** Optional Bearer auth, static and file-backed `admin`/`data` token policies, token rotation without server restart, optional per-token `AgentView` binding for scope-aware data routes, bounded actor queues with explicit `database_busy` backpressure, optional fixed-window rate limiting, exact-origin CORS allowlisting, and opt-in route-level audit logging with an optional synced JSONL file sink.
-- **Developer Web Console:** Built-in `/dashboard` UI for health, stats, validation, cell operations, keyword/vector search, ANN evaluation, ingestion, ingestion job lookup, AQL, ContextPack, and VERIFY FACT smoke paths. The console can target per-tenant database realms, keeps a short local request history, has frontend sources under `web/dashboard/src`, and is served from versioned static assets under `/dashboard/assets/v1/` so it can evolve into a standalone frontend product without growing Rust string modules.
-- **Heuristic Fact Verification (`VERIFY FACT`):** Deterministic numeric and citation mismatch parser that runs without LLM calls. API display formatting may scale large integer values for readability.
-- **Context Pack Compiler:** Budgeted, scored, and deduplicated Context Packs generated directly from AQL queries.
-- **Ecosystem:** Python, TypeScript, and Rust SDK clients with tenant-aware routing, package dry-runs, local dataset fixture loaders, and complete automated verification gates (`make alpha-check`).
+- **Durable single-node storage:** WAL, commit sequences, MVCC MemTable,
+  checkpoint, compaction, restore/recovery, validation, and repair gates.
+- **AQL and ContextPack:** permission-rewritten AQL retrieval, budgeted
+  ContextPack v1, citations, answerability signals, deterministic prompt and
+  Markdown exports.
+- **Deterministic verification:** `VERIFY FACT` with indexed evidence,
+  numeric-conflict handling, temporal/freshness guards, and no LLM dependency
+  in the engine.
+- **Retrieval indexes:** compact lexical postings, fixed-point BM25, field
+  weights, Unicode analyzer profiles, disk-resident vector rows, hybrid RRF,
+  guarded ANN/HNSW with exact fallback, and performance gates.
+- **Local API and tooling:** HTTP API, CLI, OpenAPI, Rust/Python/TypeScript SDK
+  contracts, mdBook docs, Docker quickstart, and MCP adapter.
+- **Operational local controls:** token auth, AgentView scope gates, tenant
+  filesystem realms, quotas, audit log, metrics, route timeouts, backup/restore,
+  and point-in-time restore to sequence.
 
----
+## Research Prototypes
 
-## 2. What is Experimental & Under Active Development (Non-goals for v1.0.0)
+The F-block work is useful product research, but it is not a production claim:
 
-- **Consensus-Driven Replication (Raft-like):** Multi-node log syncing and election states (current status: experimental model with vote freshness checks, AppendEntries log matching, conflict truncation, snapshot transfer smoke paths, local split-brain/rejoin hardening, membership rotation resume, and documented SLO gates).
-- **Consistent Hashing Sharding:** Distributed namespace layout and routing (current status: early layout primitives).
-- **Guarded HNSW Approximate Search:** High-dimensional vector indexing with deterministic multi-layer graph links and exact-fallback guardrails. `DistanceMetric` supports fixed-point DotProduct, Cosine, and L2. Repeatable in-repo recall/latency reports plus release-mode synthetic, drift, external JSONL, metric-matrix, and repeated recall-probe fixture gates exist. `ann_corpus_check` can evaluate larger external vectors/queries/ground-truth files; real production traffic history remains future tuning work.
+- tiered storage v2 hot/cold payload cache is an opt-in prototype;
+- agent transaction semantics are guarded research semantics;
+- learned ranking and semantic compression are opt-in/external-worker paths;
+- value-per-token ContextPack planning is opt-in;
+- multi-agent memory consistency defines private/shared handoff semantics;
+- formal invariants are bounded executable models, not a full external formal
+  verification program.
 
----
+## Frozen Or Not Production
 
-## 3. General Limitations
+These are intentionally not claimed as production-ready:
 
-- **Production Readiness:** CortexDB is suitable for local experiments, research, agent memory demos, and early contributors. It is not ready for critical high-availability production databases.
-- **Memory Consumption:** The MVCC MemTable keeps active transactions in memory; compact often to maintain a lightweight footprint.
-- **Security Model:** Core Alpha has local safety controls, route roles, and file-backed token rotation, but not a dynamic multi-user RBAC policy store, per-user quotas, tamper-evident audit trails, at-rest encryption, or distributed security hardening.
+- **Distributed replication and consensus:** `F02` and `F03` remain frozen until
+  single-node production evidence, stable formats, and real HA demand exist.
+- **Managed cloud:** `F09` remains frozen until Level 3 maturity and explicit
+  demand.
+- **IAM / external identity:** no production IAM federation, SAML/OIDC
+  lifecycle, or distributed policy service.
+- **TLS / mTLS:** use a reverse proxy for HTTPS/TLS offload; CortexDB does not
+  manage TLS lifecycle in-process.
+- **Encrypted-at-rest:** local backups and storage are not a production
+  encrypted-at-rest system.
+- **Compliance security:** no certification claim, zero-trust multi-process
+  isolation, or legal-grade verification guarantee.
+
+## Evidence And Release Boundary
+
+- Current workspace version: `0.2.0-beta.2` in `Cargo.toml`.
+- Release notes: `docs/RELEASE_NOTES_v0.2.0-beta.2.md`.
+- Ordered epic tracker: `docs/DATABASE_GRADE_EXECUTION_PLAN.md`.
+- Security boundary: `docs/SECURITY_MODEL.md`.
+- Public claim boundary: `docs/PUBLIC_CLAIMS_POLICY.md`.
+
+Before a public release tag, run the release gates and record the evidence
+bundle. Until that freeze exists, treat `v0.2.0-beta.2` as the current workspace
+beta boundary, not a production release.

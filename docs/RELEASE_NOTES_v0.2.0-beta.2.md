@@ -1,10 +1,17 @@
 # CortexDB v0.2.0-beta.2 Release Notes
 
-Status: planned beta release target.
+Status: current workspace beta boundary; release freeze and tag are pending the
+evidence bundle.
 
-This release is a local single-node developer/API beta for CortexDB. It is not a
-production distributed database, managed cloud service, enterprise compliance
-release, or legal-grade verification product.
+`0.2.0-beta.2` is the current workspace version and local single-node
+developer/API beta for CortexDB. It is not a production distributed database,
+managed cloud service, enterprise compliance release, or legal-grade
+verification product.
+
+The F-block items in this release are research/prototype slices unless noted
+otherwise: tiered storage v2, agent transaction semantics, learned ranking,
+semantic compression, value-per-token planning, multi-agent consistency, and
+formal-invariant modeling.
 
 ## What Is In Scope
 

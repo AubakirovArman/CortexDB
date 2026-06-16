@@ -2,13 +2,16 @@
 
 [![Rust](https://github.com/AubakirovArman/CortexDB/actions/workflows/rust.yml/badge.svg)](https://github.com/AubakirovArman/CortexDB/actions/workflows/rust.yml)
 
-**CortexDB is an experimental Core Alpha with Beta Foundation evidence for an agent-native context database.**
+**CortexDB is a single-node agent-native database beta (`v0.2.0-beta.2`).**
 
-> ⚠️ **Warning:** CortexDB is currently in **Core Alpha status** and is suitable for local experiments, research, architecture validation, and early contributors. It is **not recommended for production workloads yet.**
+> ⚠️ **Warning:** CortexDB is suitable for local experiments, research,
+> architecture validation, early contributors, and beta API evaluation. It is
+> **not recommended for production workloads yet.**
 >
-> The current beta target is `v0.2.0-beta.2`: a local single-node developer/API
-> beta. Promotion requires `make beta-release-check` and the evidence bundle
-> described in [`docs/BETA_RELEASE.md`](docs/archive/BETA_RELEASE.md).
+> The current workspace version is `v0.2.0-beta.2`: a local single-node
+> developer/API beta. Public release freeze still requires
+> `make beta-release-check` and the evidence bundle described in
+> [`docs/BETA_RELEASE.md`](docs/archive/BETA_RELEASE.md).
 
 For the short external beta overview, start with
 [`docs/BETA_LANDING.md`](docs/BETA_LANDING.md).
@@ -30,6 +33,24 @@ For the knowledge cell, MVCC, scope, lifecycle, and metadata contract, see
 [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md).
 
 CortexDB is specifically engineered for autonomous AI agents. Unlike traditional databases that return raw rows or tables, or vector databases that return fragmented, unverified text chunks, CortexDB compiles permission-safe, evidence-aware **Context Packs** with strict token-budget limits and deterministic fact verification.
+
+---
+
+## Honesty Snapshot
+
+What works now: durable single-node WAL/MVCC storage, AQL retrieval,
+ContextPack v1, deterministic `VERIFY FACT`, lexical/vector/hybrid retrieval,
+guarded ANN exact fallback, HTTP/CLI/SDK contracts, local auth, tenant realms,
+audit, quotas, backup/restore, metrics, and docs gates.
+
+What is not production: distributed replication, consensus, managed cloud,
+production IAM/external identity, in-process TLS/mTLS lifecycle,
+encrypted-at-rest storage/backups, compliance certification, and production
+SLAs. F-block features are research/prototype slices unless explicitly marked
+stable in the status docs.
+
+See [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md) for the full current
+status boundary.
 
 ---
 
@@ -110,7 +131,7 @@ make flagship-demo-check
 
 ---
 
-## Current Core Alpha / Beta Foundation Features
+## Current v0.2.0-beta.2 Features
 
 - **Single-Node Durable Storage:** Strict Write-Ahead Log (WAL) with group commit, MVCC MemTable, and incremental check-pointing/compaction.
 - **Durable Local Agent Memory:** Scope-isolated agent-facing memory retrieval with dynamic decay/TTL scoring.
@@ -120,7 +141,7 @@ make flagship-demo-check
 - **HTTP Server:** Async HTTP surface over actor-isolated local single-node core built on **Tokio**, **Axum**, and **Tower-HTTP** with strict 2MB body limit boundaries.
 - **Crate Ecosystem:** Fully modular workspace crates: `cortex-core`, `cortex-aql`, `cortex-storage`, `cortex-engine`, `cortex-server`, and `cortex-cli`.
 
-## Long-Term Vision (Experimental/Under Active Development)
+## Research / Frozen Long-Term Work
 
 - **Consensus-Driven Replication (Raft-like):** Multi-node replication log syncing and leader election (current status: experimental model with local partition/rejoin hardening and documented beta SLO gates).
 - **Consistent Hashing Sharding:** Distributed namespace layout and dynamic query routing (current status: experimental layout primitives).
@@ -207,7 +228,7 @@ The planned beta release notes are documented in
 [`docs/RELEASE_NOTES_v0.2.0-beta.2.md`](docs/RELEASE_NOTES_v0.2.0-beta.2.md).
 The beta operations runbook is documented in
 [`docs/BETA_OPERATIONS.md`](docs/archive/BETA_OPERATIONS.md).
-The current Core Alpha vs beta-readiness delta is documented in
+The historical Core Alpha to beta-readiness delta is documented in
 [`docs/BETA_DELTA.md`](docs/archive/BETA_DELTA.md).
 Public product-claim boundaries are documented in
 [`docs/PUBLIC_CLAIMS_POLICY.md`](docs/PUBLIC_CLAIMS_POLICY.md) and
