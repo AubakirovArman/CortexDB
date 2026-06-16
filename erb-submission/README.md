@@ -1,34 +1,40 @@
-# CortexDB — EnterpriseRAG-Bench submission package
+# CortexDB EnterpriseRAG-Bench Package
 
-**Headline (leaderboard metric = Overall = combined correctness×completeness),
-full 500 questions, no-oracle, scored with the benchmark's own
-`metrics_based_eval.py`:**
+Status: single official interim result for the current package. This is not a
+leaderboard claim because the official `gpt-5.4` judge has not been run yet.
 
-| judge | Overall | Correctness | Completeness | Doc recall |
-| --- | ---: | ---: | ---: | ---: |
-| **gpt-5.2** (leaderboard-comparable; proxy for official gpt-5.4) | **43.27** | 49.2 | 54.2 | 85.8 |
-| gemini-3.5-flash (lenient self-judge — upper bound) | 48.75 | 53.6 | 59.2 | 85.7 |
+Full 500 questions, no-oracle inference, Gemma answerer, Gemini judge:
 
-System: CortexDB (from-scratch Rust agent-native context DB), `engine-aql`
-retrieval + `weighted` rerank fused with bge-m3 dense (doc recall 85.8%);
-answerer `gemini-3.5-flash`. No oracle metadata at inference.
+| Metric | Value |
+| --- | ---: |
+| Overall combined correctness/completeness | **47.74** |
+| Correctness | 50.0% |
+| Completeness | 53.7% |
+| Document recall | 55.71% |
+| Invalid extra docs | 9.23 |
 
-**Judge note:** the official evaluator defaults to `gpt-5.4`; our key has only
-`gpt-5.2`, so the comparable number is the gpt-5.2 column (43.27). Re-run §6 of
-`REPRODUCE.md` with `gpt-5.4` for the fully-official score.
+System: CortexDB `engine-aql` retrieval with `weighted` rerank, answerer
+`google/gemma-4-31B-it`, prompt `official-clean-v1`, context mode
+`question-window-digest-ranked`, active document budget up to 8 docs and 8000
+chars per document. No oracle metadata is available to retrieval or answer
+generation.
+
+Honesty note: `gemini-3.5-flash` is the single current judge for this package.
+The final leaderboard-comparable number must be produced by re-judging these
+same `answers.jsonl` rows with the official `gpt-5.4` evaluator when access is
+available. Older mixed-judge numbers are intentionally excluded from this
+package headline.
 
 ## Files
 
 | File | What |
 | --- | --- |
-| `answers.jsonl` | 500 submission answers (`question_id`, `answer`, `document_ids`). |
-| `official_results_gpt5.2_judge.json` | Official evaluator output, gpt-5.2 judge (Overall 43.27). |
-| `official_results_gemini35_judge.json` | Official evaluator output, gemini-3.5 judge (Overall 48.75). |
-| `questions_updated_gpt5.2.jsonl` | Evaluator's consensus document-correction output (3 corrected). |
-| `oracle_usage_audit.json` | Audit: 0 oracle/gold fields in clean inference artifacts. |
-| `official_clean_gate_report.json` | No-oracle clean-gate report. |
-| `config_answer_report.json` | Answer-generation config provenance. |
-| `REPRODUCE.md` | Full from-scratch reproduction guide. |
+| `answers.jsonl` | 500 Gemma answers (`question_id`, `answer`, `document_ids`). |
+| `official_results.json` | Current single official interim result, Gemini judge, Overall 47.74. |
+| `oracle_usage_audit.json` | Audit of clean questions, retrieval, answers, and scripts. |
+| `official_clean_gate_report.json` | Clean input/retrieval gate report. |
+| `config_answer_report.json` | Gemma answer-generation provenance. |
+| `REPRODUCE.md` | Reproduction and re-judge guide. |
 
 Repo: https://github.com/AubakirovArman/CortexDB
 Contact for submission: joachim@onyx.app

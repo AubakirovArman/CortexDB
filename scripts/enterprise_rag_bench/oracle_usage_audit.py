@@ -25,6 +25,8 @@ STRICT_CLEAN_FILES = {
 
 GUARD_FILES = {
     "official_clean.py",
+    "oracle_free_abstain.py",
+    "oracle_inference_guard.py",
     "run_deepseek_answers.py",
 }
 
@@ -44,6 +46,7 @@ LEGACY_OR_ANALYSIS_HINTS = (
     "dashboard",
     "diagnostics",
     "evaluate",
+    "fixture",
     "gold",
     "hybrid_rerank",
     "missing",

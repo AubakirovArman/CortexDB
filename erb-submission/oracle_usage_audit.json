@@ -1,19 +1,19 @@
 {
   "artifacts": [
     {
-      "path": "target/enterprise-rag-bench/official-clean/500/gemini35-fresh3-official/questions.clean.jsonl",
+      "path": "target/enterprise-rag-bench/official-clean/500/real-cortexdb-gemma500-20260615T194239Z/questions.clean.jsonl",
       "rows": 500,
       "violation_count": 0,
       "violations": []
     },
     {
-      "path": "target/enterprise-rag-bench/official-clean/500/gemini35-fresh3-official/retrieval.clean.jsonl",
+      "path": "target/enterprise-rag-bench/official-clean/500/real-cortexdb-gemma500-20260615T194239Z/retrieval.clean.jsonl",
       "rows": 500,
       "violation_count": 0,
       "violations": []
     },
     {
-      "path": "target/enterprise-rag-bench/official-clean/500/gemini35-fresh3-official/answer-gemini/answers.jsonl",
+      "path": "target/enterprise-rag-bench/official-clean/500/real-cortexdb-gemma500-20260615T194239Z/answer-gemma/answers.jsonl",
       "rows": 500,
       "violation_count": 0,
       "violations": []
@@ -29,10 +29,10 @@
   ],
   "schema_version": "cortexdb.enterprise_rag_bench.oracle_usage_audit.v1",
   "script_category_counts": {
-    "analysis_or_legacy": 49,
-    "guard": 2,
+    "analysis_or_legacy": 54,
+    "guard": 4,
     "judge_only": 2,
-    "no_oracle_reference": 38,
+    "no_oracle_reference": 56,
     "official_clean": 5
   },
   "scripts": [
@@ -65,6 +65,14 @@
       ]
     },
     {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/anchor_overlap_diagnostics.py",
+      "oracle_fields": [
+        "expected_doc_ids",
+        "question_type"
+      ]
+    },
+    {
       "category": "no_oracle_reference",
       "file": "scripts/enterprise_rag_bench/answer_artifacts.py",
       "oracle_fields": []
@@ -77,6 +85,16 @@
     {
       "category": "no_oracle_reference",
       "file": "scripts/enterprise_rag_bench/answer_context.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/answer_guard.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/answer_intent.py",
       "oracle_fields": []
     },
     {
@@ -104,6 +122,11 @@
       "oracle_fields": []
     },
     {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/answer_repair.py",
+      "oracle_fields": []
+    },
+    {
       "category": "analysis_or_legacy",
       "file": "scripts/enterprise_rag_bench/build_balanced_subset.py",
       "oracle_fields": [
@@ -119,6 +142,15 @@
       "category": "no_oracle_reference",
       "file": "scripts/enterprise_rag_bench/build_doc_views.py",
       "oracle_fields": []
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/build_error_fixtures.py",
+      "oracle_fields": [
+        "expected_doc_ids",
+        "gold_answer",
+        "question_type"
+      ]
     },
     {
       "category": "official_clean",
@@ -149,6 +181,21 @@
       ]
     },
     {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/category_regression_gate.py",
+      "oracle_fields": [
+        "question_type"
+      ]
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/category_retrieval_dashboard.py",
+      "oracle_fields": [
+        "expected_doc_ids",
+        "question_type"
+      ]
+    },
+    {
       "category": "no_oracle_reference",
       "file": "scripts/enterprise_rag_bench/chunk_embed.py",
       "oracle_fields": []
@@ -175,11 +222,35 @@
     },
     {
       "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/company_scope_route.py",
+      "oracle_fields": [
+        "expected_doc_ids",
+        "question_type",
+        "source_types"
+      ]
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/compare_answer_budget_runs.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "analysis_or_legacy",
       "file": "scripts/enterprise_rag_bench/compare_retrieval_runs.py",
       "oracle_fields": [
         "expected_doc_ids",
         "question_type"
       ]
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/completeness_planner.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/conflict_resolution_synthesizer.py",
+      "oracle_fields": []
     },
     {
       "category": "analysis_or_legacy",
@@ -281,13 +352,9 @@
       "oracle_fields": []
     },
     {
-      "category": "analysis_or_legacy",
+      "category": "no_oracle_reference",
       "file": "scripts/enterprise_rag_bench/doc_view_rerank.py",
-      "oracle_fields": [
-        "expected_doc_ids",
-        "question_type",
-        "source_types"
-      ]
+      "oracle_fields": []
     },
     {
       "category": "no_oracle_reference",
@@ -412,6 +479,13 @@
       ]
     },
     {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/heldout_no_overfit_check.py",
+      "oracle_fields": [
+        "expected_doc_ids"
+      ]
+    },
+    {
       "category": "no_oracle_reference",
       "file": "scripts/enterprise_rag_bench/hubspot_drive_anchor_modes.py",
       "oracle_fields": []
@@ -496,13 +570,9 @@
       ]
     },
     {
-      "category": "analysis_or_legacy",
+      "category": "no_oracle_reference",
       "file": "scripts/enterprise_rag_bench/multi_index_candidate_generation.py",
-      "oracle_fields": [
-        "expected_doc_ids",
-        "question_type",
-        "source_types"
-      ]
+      "oracle_fields": []
     },
     {
       "category": "guard",
@@ -519,6 +589,28 @@
       "category": "official_clean",
       "file": "scripts/enterprise_rag_bench/official_clean_gate.py",
       "oracle_fields": []
+    },
+    {
+      "category": "guard",
+      "file": "scripts/enterprise_rag_bench/oracle_free_abstain.py",
+      "oracle_fields": [
+        "answer_facts",
+        "expected_doc_ids",
+        "gold_answer",
+        "question_type",
+        "source_types"
+      ]
+    },
+    {
+      "category": "guard",
+      "file": "scripts/enterprise_rag_bench/oracle_inference_guard.py",
+      "oracle_fields": [
+        "answer_facts",
+        "expected_doc_ids",
+        "gold_answer",
+        "question_type",
+        "source_types"
+      ]
     },
     {
       "category": "no_oracle_reference",
@@ -553,6 +645,11 @@
       "oracle_fields": []
     },
     {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/project_answer_synthesizer.py",
+      "oracle_fields": []
+    },
+    {
       "category": "analysis_or_legacy",
       "file": "scripts/enterprise_rag_bench/project_chain_rerank.py",
       "oracle_fields": [
@@ -583,18 +680,13 @@
       "category": "judge_only",
       "file": "scripts/enterprise_rag_bench/run_deepseek_answer_metrics.py",
       "oracle_fields": [
-        "answer_facts",
-        "expected_doc_ids",
-        "gold_answer",
         "question_type"
       ]
     },
     {
       "category": "guard",
       "file": "scripts/enterprise_rag_bench/run_deepseek_answers.py",
-      "oracle_fields": [
-        "question_type"
-      ]
+      "oracle_fields": []
     },
     {
       "category": "official_clean",
@@ -604,13 +696,7 @@
     {
       "category": "official_clean",
       "file": "scripts/enterprise_rag_bench/run_official_clean_benchmark.py",
-      "oracle_fields": [
-        "answer_facts",
-        "expected_doc_ids",
-        "gold_answer",
-        "question_type",
-        "source_types"
-      ]
+      "oracle_fields": []
     },
     {
       "category": "judge_only",
@@ -677,6 +763,58 @@
     {
       "category": "analysis_or_legacy",
       "file": "scripts/enterprise_rag_bench/summarize_score.py",
+      "oracle_fields": [
+        "question_type"
+      ]
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/test_anchor_overlap_diagnostics.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/test_answer_context.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/test_answer_guard.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/test_answer_intent.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/test_answer_repair.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/test_compare_answer_budget_runs.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/test_conflict_resolution_synthesizer.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/test_evidence_table_extractor.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "no_oracle_reference",
+      "file": "scripts/enterprise_rag_bench/test_oracle_free_abstain.py",
+      "oracle_fields": []
+    },
+    {
+      "category": "analysis_or_legacy",
+      "file": "scripts/enterprise_rag_bench/test_postprocess_retrieval_modes.py",
       "oracle_fields": [
         "question_type"
       ]

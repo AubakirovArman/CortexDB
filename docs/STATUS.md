@@ -45,6 +45,13 @@ lives in [`PROJECT_STATUS.md`](PROJECT_STATUS.md).
 | Consensus / multi-node transactions | frozen | `EPIC-F03`; no production consensus claim. | [`DATABASE_GRADE_EXECUTION_PLAN.md`](DATABASE_GRADE_EXECUTION_PLAN.md), [`FUTURE_NON_GOAL_EPICS.md`](FUTURE_NON_GOAL_EPICS.md) |
 | Managed cloud | frozen | `EPIC-F09`; local prerequisite gates only, no hosted service. | [`DATABASE_GRADE_EXECUTION_PLAN.md`](DATABASE_GRADE_EXECUTION_PLAN.md), [`COMMUNITY_ROADMAP.md`](COMMUNITY_ROADMAP.md) |
 
+## Benchmark Status
+
+| Benchmark | Status | Current number | Boundary | Evidence |
+| --- | --- | ---: | --- | --- |
+| EnterpriseRAG-Bench 500 | interim | `47.74` | Gemma answerer + Gemini judge; not leaderboard-comparable until `gpt-5.4` re-judge. | [`erb-submission`](../erb-submission/README.md) |
+| LongMemEval v1 | beta evidence | `0.7660` | Official local run; not a production or SOTA claim. | [`LONGMEMEVAL_OFFICIAL.md`](archive/LONGMEMEVAL_OFFICIAL.md) |
+
 ## Not Production
 
 CortexDB does not currently claim production IAM, TLS/mTLS lifecycle,

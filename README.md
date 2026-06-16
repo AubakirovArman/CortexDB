@@ -60,6 +60,20 @@ status boundary.
 
 Status: beta evidence, not a production or leaderboard claim.
 
+CortexDB has one current EnterpriseRAG-Bench interim package with Gemma answers
+and a single Gemini judge. This is not a leaderboard number until the same
+answers are re-scored with the official `gpt-5.4` judge.
+
+| Benchmark | Result |
+| --- | ---: |
+| EnterpriseRAG-Bench 500, Gemma answerer + Gemini judge | `47.74` |
+| Correctness | `50.0%` |
+| Completeness | `53.7%` |
+| Document recall | `55.71%` |
+
+Artifacts and the re-judge command are documented in
+[`erb-submission/README.md`](erb-submission/README.md).
+
 CortexDB has a full local LongMemEval v1 run on the official cleaned
 `longmemeval_s_cleaned.json` split:
 
