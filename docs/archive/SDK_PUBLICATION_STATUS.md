@@ -1,22 +1,31 @@
 # SDK Publication Status
 
 Status: beta-ready release lifecycle, local dry-run and e2e evidence complete;
-public registry publication is not claimed until a tag-gated release job or
-equivalent registry publish run completes with credentials.
+public registry publication is blocked on registry account settings.
 
-Latest audit: `v0.2.0-beta.2` is tagged and released, and local SDK gates pass.
-The `sdk-release` GitHub environment expects `PYPI_API_TOKEN`, `NPM_TOKEN`, and
-`CARGO_REGISTRY_TOKEN`. Public SDK publication remains blocked until those
-credentials are configured and the publish run succeeds.
+Latest audit: `v0.2.0-beta.2` is tagged and released, local SDK gates pass, and
+the `sdk-release` GitHub environment has `PYPI_API_TOKEN`, `NPM_TOKEN`, and
+`CARGO_REGISTRY_TOKEN` configured. A real publication attempt on 2026-06-16
+reached the registries but was blocked externally:
+
+- crates.io rejected `cortex-api-types` because the token owner has no verified
+  email address.
+- PyPI rejected `cortexdb-client==0.2.0b2` with `403 Forbidden` for the token.
+- npm rejected `@cortexdb/client@0.2.0-beta.2` because publishing requires 2FA
+  or a granular access token with 2FA bypass enabled.
+
+No public SDK publication is claimed until those account settings are fixed and
+the publish run succeeds.
+The public registry publication is not claimed for `v0.2.0-beta.2`.
 
 ## Packages
 
 | SDK | Package | Registry | Current status |
 | --- | --- | --- | --- |
-| Rust API types | `cortex-api-types` | crates.io | dry-run/package gate only |
-| Rust | `cortexdb-sdk` | crates.io | dry-run/package gate only |
-| Python | `cortexdb-client` | PyPI | wheel/build gate only |
-| TypeScript | `@cortexdb/client` | npm | pack dry-run gate only |
+| Rust API types | `cortex-api-types` | crates.io | blocked: verified email required |
+| Rust | `cortexdb-sdk` | crates.io | blocked until `cortex-api-types` publishes |
+| Python | `cortexdb-client` | PyPI | blocked: token lacks publish permission |
+| TypeScript | `@cortexdb/client` | npm | blocked: 2FA/granular token required |
 
 ## Beta Publication Rule
 
