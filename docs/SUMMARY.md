@@ -47,6 +47,7 @@
 
 - [Agent Memory](AGENT_MEMORY.md)
 - [Agent Transaction Semantics](AGENT_TRANSACTION_SEMANTICS.md)
+- [Multi-Agent Memory Consistency](MULTI_AGENT_MEMORY_CONSISTENCY.md)
 - [Brain Semantics](BRAIN_SEMANTICS.md)
 - [Knowledge Graph](KNOWLEDGE_GRAPH.md)
 - [Tool Registry](TOOL_REGISTRY.md)

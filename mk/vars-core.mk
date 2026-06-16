@@ -137,6 +137,7 @@ LEARNED_RANKING_CALIBRATION_REPORT ?= target/learned-ranking/calibration/report.
 LEARNED_RANKING_MIN_HELDOUT_MRR_LIFT_BPS ?= 2500
 LEARNED_RANKING_MIN_HELDOUT_WIN_RATE_PCT ?= 75
 SEMANTIC_MEMORY_COMPRESSION_REPORT ?= target/semantic-memory-compression/report.json
+MULTI_AGENT_CONSISTENCY_REPORT ?= target/multi-agent-consistency/report.json
 BASELINE_COMPARISON_FEATURES ?= fixtures/baseline_comparison/feature_matrix.json
 BASELINE_COMPARISON_REPORT ?= target/baseline-comparison/report.json
 BASELINE_COMPARISON_MARKDOWN ?= docs/BASELINE_COMPARISON.md

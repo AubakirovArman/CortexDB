@@ -865,7 +865,7 @@ Exit steps:
 1. Define consistency levels for shared/private memory.
 2. Add conflict and visibility tests.
 3. Document operational tradeoffs.
-4. Mark done when multi-agent reads/writes have clear consistency guarantees; then move to F04.
+4. Mark done when multi-agent reads/writes have clear consistency guarantees; then move to F10 because F04 is already closed and F09 remains frozen.
 
 ### EPIC-F09 — Cloud/service mode
 

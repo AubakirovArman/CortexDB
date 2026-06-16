@@ -1,6 +1,6 @@
 # CortexDB Epic Progress Board
 
-Last updated: 2026-06-15
+Last updated: 2026-06-16
 
 Purpose: short operational board for active epic execution. The detailed source
 of truth remains `docs/DATABASE_GRADE_EXECUTION_PLAN.md`; this file shows what
@@ -20,17 +20,22 @@ work by accident.
 
 ## Current Pointer
 
-`EPIC-F08` — Multi-agent memory consistency model.
+`EPIC-F10` — Формальная верификация инвариантов.
 
-F08 exit steps:
+F10 exit steps:
 
-1. Define consistency levels for shared/private memory.
-2. Add conflict and visibility tests.
-3. Document operational tradeoffs.
+1. Pick core invariants for TLA+/stateright modeling.
+2. Model WAL/recovery/MVCC/permission rewrite at useful abstraction.
+3. Connect model findings to tests.
 
-F08 current state:
+F10 current state:
 
 - next.
+- F08 is closed with `docs/MULTI_AGENT_MEMORY_CONSISTENCY.md`,
+  `MemoryConsistencyLevel`, `AgentHandoffRequest`,
+  `Database::plan_agent_handoff`, private/shared visibility regressions,
+  stale same-cell conflict coverage, sequenced handoff validation, and
+  `make multi-agent-consistency-check`.
 - F07 is closed with `docs/LLM_CONTEXT_VALUE_OPTIMIZATION.md`,
   `ContextPackOptions.optimize_value_per_token`, deterministic value-per-token
   candidate planning, better tight-budget answerability coverage, and
@@ -119,6 +124,20 @@ D05 split state:
 - do not block kernel/database epics on D05.
 
 ## Recently Closed
+
+### EPIC-F08 — Multi-agent memory consistency model
+
+Status: `done`
+
+What closed it:
+
+- Added `docs/MULTI_AGENT_MEMORY_CONSISTENCY.md` with private/shared
+  consistency levels and operational tradeoffs.
+- Added `MemoryConsistencyLevel`, `classify_memory_visibility`,
+  `AgentHandoffRequest`, and `Database::plan_agent_handoff`.
+- Added focused regressions for private visibility, shared immediate
+  visibility, stale same-cell write conflicts, and sequenced handoff packets.
+- Added `make multi-agent-consistency-check`.
 
 ### EPIC-F07 — Query optimization для LLM-контекста
 
@@ -1176,9 +1195,9 @@ Frozen means do not implement unless the plan explicitly thaws the epic.
 
 ## Next Exit Step
 
-Work on F08 only:
+Work on F10 only:
 
-1. define consistency levels for shared/private memory;
-2. add conflict and visibility tests;
-3. document operational tradeoffs;
-4. move to the next ordered epic after F08 acceptance is closed.
+1. pick core invariants for TLA+/stateright modeling;
+2. model WAL/recovery/MVCC/permission rewrite at useful abstraction;
+3. connect model findings to tests;
+4. move to the next ordered epic after F10 acceptance is closed.

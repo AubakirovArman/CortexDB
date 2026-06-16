@@ -11,7 +11,7 @@ Exit steps: use `docs/EPIC_EXIT_STEPS.md` as the short per-epic checklist for
 what must be done before moving to the next epic. The detailed tasks and
 evidence remain in this tracker.
 
-Current pointer: `EPIC-F08` (`EPIC-F07` is now done along with the previously
+Current pointer: `EPIC-F10` (`EPIC-F08` is now done along with the previously
 closed epics listed in the Active Execution Queue). `EPIC-C01` is closed with
 the `ACI4` compact term dictionary/postings format, `ACI0..ACI3` dual-read
 compatibility, and persisted/search compatibility gates. `EPIC-C03` is closed
@@ -59,7 +59,10 @@ permission-checked source provenance, answerability gating, and
 `docs/SEMANTIC_MEMORY_COMPRESSION.md`. `EPIC-F07` added opt-in ContextPack
 value-per-token planning, deterministic cost model inputs, budget allocation
 regression coverage, and `docs/LLM_CONTEXT_VALUE_OPTIMIZATION.md`. `EPIC-F08`
-is next.
+added explicit private/shared consistency levels, sequenced handoff packets,
+visibility/conflict regressions, and
+`docs/MULTI_AGENT_MEMORY_CONSISTENCY.md`. `EPIC-F10` is next because
+`EPIC-F09` remains frozen.
 `EPIC-D05` remains partial/local-ready and is externally blocked on public
 registry credentials/trusted publishing.
 
@@ -160,7 +163,8 @@ enough to unblock the next dependency step.
 60. `EPIC-F05` — Learned/calibrated ranking: done.
 61. `EPIC-F06` — Semantic compression памяти: done.
 62. `EPIC-F07` — Query optimization для LLM-контекста: done.
-63. `EPIC-F08` — Multi-agent memory consistency model: next.
+63. `EPIC-F08` — Multi-agent memory consistency model: done.
+64. `EPIC-F10` — Формальная верификация инвариантов: next.
 
 ## Summary
 
@@ -2307,10 +2311,25 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-F08 — Multi-agent memory consistency model
 
-- status: `next`
+- status: `done`
 - meta: Категория: research · P3 · long-term · research
 - tasks:
-  - [ ] Семантика shared scopes: видимость записей агента A для агента B (immediate/sequenced), handoff-пакеты (пак как сообщение между агентами с pack hash + seq). Дизайн-док.
+  - [x] Семантика shared scopes: видимость записей агента A для агента B (immediate/sequenced), handoff-пакеты (пак как сообщение между агентами с pack hash + seq). Дизайн-док.
+- evidence:
+  - `docs/MULTI_AGENT_MEMORY_CONSISTENCY.md` defines
+    `PrivateReadYourWrites`, `SharedImmediate`, and `SharedSequenced`.
+  - `multi_agent_consistency.rs` exposes `classify_memory_visibility`,
+    `AgentHandoffRequest`, and `Database::plan_agent_handoff`.
+  - Handoff packets carry `pack_hash`, `pack_seq`, and `required_after_seq`
+    and validate source/target AgentViews without granting permissions.
+  - `crates/cortex-engine/tests/multi_agent_consistency.rs` covers private
+    visibility, shared immediate visibility, stale same-cell conflicts, and
+    sequenced handoff validation.
+  - `make multi-agent-consistency-check` runs the F08 contract gate.
+- latest checks: `cargo fmt --check`; `cargo test -p cortex-engine --test
+  multi_agent_consistency --all-features`; `make
+  multi-agent-consistency-check`.
+- next exit step: move to `EPIC-F10` because `EPIC-F09` remains frozen.
 
 ### EPIC-F09 — Cloud/service mode
 
@@ -2318,7 +2337,7 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 
 ### EPIC-F10 — Формальная верификация инвариантов (TLA+/stateright)
 
-- status: `pending`
+- status: `next`
 - meta: Категория: research · P3 · 12 months · research
 - tasks:
   - [ ] Модели: WAL-recovery (включая ротацию A17), snapshot pinning/GC (A14), policy rewrite инвариант (B16 — «не существует плана с непокрытым Scan»). Деливерабл: модели + CI-прогон stateright. Сильный имиджевый актив для database-категории.

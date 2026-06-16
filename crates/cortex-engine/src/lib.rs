@@ -49,6 +49,7 @@ pub mod legal;
 mod lock;
 pub mod memory;
 mod memory_accounting;
+pub mod multi_agent_consistency;
 pub use memory::{ExpiredMemoryCell, MemoryDecayScore};
 pub mod operation;
 mod operation_descriptor;
@@ -139,6 +140,10 @@ pub use legal::{
     evaluate_legal_report_contract, evaluate_legal_verification_boundary, LegalOutputBoundary,
     LegalRefusalReason, LegalReportContract, LegalReportContractIssue, LegalReportRetention,
     LegalVerificationPolicy, LegalVerificationRequest, LegalVerificationReview,
+};
+pub use multi_agent_consistency::{
+    classify_memory_visibility, AgentHandoffReport, AgentHandoffRequest, MemoryConsistencyLevel,
+    MemoryVisibilityReport,
 };
 pub use operation::{
     decode_cell_core, decode_cell_id, decoded_operation_from_wal_record,

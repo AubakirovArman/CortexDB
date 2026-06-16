@@ -1,4 +1,4 @@
-.PHONY: memtable-clone-gate-check descriptor-hot-path-gate-check indexed-retrieve-gate-check query-scan-inventory-check policy-rewrite-gate-check multi-brain-contract-check lexical-index-contract-check context-pack-schema-contract-check provenance-model-inventory decode-fuzz-check erb-oracle-audit semantic-memory-compression-check
+.PHONY: memtable-clone-gate-check descriptor-hot-path-gate-check indexed-retrieve-gate-check query-scan-inventory-check policy-rewrite-gate-check multi-brain-contract-check lexical-index-contract-check context-pack-schema-contract-check provenance-model-inventory decode-fuzz-check erb-oracle-audit semantic-memory-compression-check multi-agent-consistency-check
 
 check: memtable-clone-gate-check descriptor-hot-path-gate-check indexed-retrieve-gate-check query-scan-inventory-check policy-rewrite-gate-check multi-brain-contract-check lexical-index-contract-check tool-registry-check knowledge-graph-check context-pack-schema-contract-check decode-fuzz-check erb-oracle-audit erb-category-regression-check
 	cargo check --workspace
@@ -44,6 +44,9 @@ learned-ranking-calibration-check:
 
 semantic-memory-compression-check:
 	python3 scripts/semantic_memory_compression_check.py --report "$(SEMANTIC_MEMORY_COMPRESSION_REPORT)"
+
+multi-agent-consistency-check:
+	python3 scripts/multi_agent_consistency_check.py --report "$(MULTI_AGENT_CONSISTENCY_REPORT)"
 
 provenance-model-inventory: ; python3 scripts/provenance_model_inventory.py
 erb-oracle-audit:
