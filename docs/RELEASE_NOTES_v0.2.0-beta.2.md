@@ -1,7 +1,9 @@
 # CortexDB v0.2.0-beta.2 Release Notes
 
-Status: current workspace beta boundary; release freeze and tag are pending the
-evidence bundle.
+Status: current workspace beta boundary; R04 release-readiness evidence is
+recorded in [`RELEASE_EVIDENCE_v0.2.0-beta.2.md`](RELEASE_EVIDENCE_v0.2.0-beta.2.md).
+The historical `v0.2.0-beta.2` tag already existed before R04 and was not
+force-moved.
 
 `0.2.0-beta.2` is the current workspace version and local single-node
 developer/API beta for CortexDB. It is not a production distributed database,
@@ -30,13 +32,13 @@ formal-invariant modeling.
 
 ## Evidence Gates
 
-The release must be cut only after:
+The R04 evidence run used:
 
 ```bash
 make beta-release-check
 ```
 
-The evidence bundle is written to:
+The evidence bundle was written to:
 
 ```text
 target/beta-release/report.json

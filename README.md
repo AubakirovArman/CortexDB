@@ -9,9 +9,9 @@
 > **not recommended for production workloads yet.**
 >
 > The current workspace version is `v0.2.0-beta.2`: a local single-node
-> developer/API beta. Public release freeze still requires
-> `make beta-release-check` and the evidence bundle described in
-> [`docs/BETA_RELEASE.md`](docs/archive/BETA_RELEASE.md).
+> developer/API beta. Release-readiness evidence is recorded in
+> [`docs/RELEASE_EVIDENCE_v0.2.0-beta.2.md`](docs/RELEASE_EVIDENCE_v0.2.0-beta.2.md);
+> the historical `v0.2.0-beta.2` tag state is documented there.
 
 For the current maturity table, start with
 [`docs/STATUS.md`](docs/STATUS.md).
@@ -242,6 +242,8 @@ The beta release boundary and target version are documented in
 [`docs/BETA_RELEASE.md`](docs/archive/BETA_RELEASE.md).
 The planned beta release notes are documented in
 [`docs/RELEASE_NOTES_v0.2.0-beta.2.md`](docs/RELEASE_NOTES_v0.2.0-beta.2.md).
+The R04 release-readiness evidence is documented in
+[`docs/RELEASE_EVIDENCE_v0.2.0-beta.2.md`](docs/RELEASE_EVIDENCE_v0.2.0-beta.2.md).
 The beta operations runbook is documented in
 [`docs/BETA_OPERATIONS.md`](docs/archive/BETA_OPERATIONS.md).
 The historical Core Alpha to beta-readiness delta is documented in

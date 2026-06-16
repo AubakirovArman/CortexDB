@@ -60,10 +60,11 @@ These are intentionally not claimed as production-ready:
 
 - Current workspace version: `0.2.0-beta.2` in `Cargo.toml`.
 - Release notes: `docs/RELEASE_NOTES_v0.2.0-beta.2.md`.
+- Release evidence: `docs/RELEASE_EVIDENCE_v0.2.0-beta.2.md`.
 - Ordered epic tracker: `docs/DATABASE_GRADE_EXECUTION_PLAN.md`.
 - Security boundary: `docs/SECURITY_MODEL.md`.
 - Public claim boundary: `docs/PUBLIC_CLAIMS_POLICY.md`.
 
-Before a public release tag, run the release gates and record the evidence
-bundle. Until that freeze exists, treat `v0.2.0-beta.2` as the current workspace
-beta boundary, not a production release.
+R04 release-readiness evidence records green local beta gates for this boundary.
+The historical public tag `v0.2.0-beta.2` already existed before R04 and still
+points to its original release-target commit; it was not force-moved.

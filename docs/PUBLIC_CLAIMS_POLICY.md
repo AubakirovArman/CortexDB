@@ -1,18 +1,16 @@
 # Public Claims Policy
 
 This policy keeps CortexDB public-facing documentation aligned with the actual
-Core Alpha with Beta Foundation evidence state.
+single-node agent-native database beta state.
 
 ## Allowed Claims
 
-- CortexDB is an experimental Core Alpha agent-native context database with
-  Beta Foundation evidence.
-- CortexDB may describe `v0.2.0-beta.2` as a future local single-node
-  developer/API beta target when that statement references `BETA_RELEASE.md`
-  or `make beta-release-check`.
+- CortexDB is a single-node agent-native database beta (`v0.2.0-beta.2`).
+- CortexDB may describe `v0.2.0-beta.2` as a local single-node developer/API
+  beta when that statement keeps the non-production boundary explicit.
 - The single-node durable core has repeatable test and release evidence.
 - HTTP, CLI, SDK, AQL, ContextPack, backup/restore, and ANN gates exist for the
-  documented alpha contract.
+  documented beta contract.
 - ANN/HNSW, consensus, dashboard, and SDK publication can be described as
   guarded, experimental, blocked, or future product layers when that status is
   explicit.
@@ -32,9 +30,8 @@ Do not describe CortexDB as:
 
 Public docs that describe product status must include the relevant qualifier:
 
-- `Core Alpha` for the current release status;
-- `Beta Foundation evidence` for beta-preparation status before the beta gate
-  passes;
+- `single-node agent-native database beta` for the current release status;
+- `v0.2.0-beta.2` for the current workspace version;
 - `not recommended for production workloads` or equivalent for README-level
   positioning;
 - `not a production SLA` for API performance or server behavior;

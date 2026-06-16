@@ -93,3 +93,4 @@
 - [Future Non-Goal Epics](FUTURE_NON_GOAL_EPICS.md)
 - [Release Notes v0.2.0-beta.1](RELEASE_NOTES_v0.2.0-beta.1.md)
 - [Release Notes v0.2.0-beta.2](RELEASE_NOTES_v0.2.0-beta.2.md)
+- [Release Evidence v0.2.0-beta.2](RELEASE_EVIDENCE_v0.2.0-beta.2.md)

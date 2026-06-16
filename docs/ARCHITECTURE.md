@@ -1,10 +1,9 @@
 # CortexDB Architecture
 
-CortexDB is an experimental Core Alpha agent-native context database. The
-current implementation is a single-node durable database core with AQL,
-MemTable MVCC, ACLOG WAL, checkpoint/compact, search foundations,
-ContextPack, deterministic VERIFY FACT, CLI, SDKs, dashboard assets, and an
-Axum HTTP API.
+CortexDB is a single-node agent-native database beta (`v0.2.0-beta.2`). The
+current implementation is a durable local database core with AQL, MemTable
+MVCC, ACLOG WAL, checkpoint/compact, search foundations, ContextPack,
+deterministic VERIFY FACT, CLI, SDKs, dashboard assets, and an Axum HTTP API.
 
 It is not a production distributed database yet. Distributed consensus,
 enterprise RBAC, managed cloud, and production-grade ANN without exact fallback

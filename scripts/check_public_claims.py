@@ -13,25 +13,26 @@ from pathlib import Path
 
 PUBLIC_DOC_REQUIREMENTS: dict[str, tuple[str, ...]] = {
     "README.md": (
-        "experimental Core Alpha",
-        "Beta Foundation evidence",
+        "single-node agent-native database beta",
+        "v0.2.0-beta.2",
         "not recommended for production workloads",
-        "Long-Term Vision",
+        "Honesty Snapshot",
     ),
     "docs/API.md": (
-        "Core Alpha",
+        "v0.2.0-beta.2",
         "not a production SLA",
         "OpenAPI contract",
     ),
     "docs/ARCHITECTURE.md": (
-        "experimental Core Alpha",
+        "single-node agent-native database beta",
         "not a production distributed database",
         "future product layers",
     ),
     "docs/PROJECT_STATUS.md": (
-        "Core Alpha",
-        "not ready for critical high-availability production databases",
-        "Experimental",
+        "single-node agent-native database beta",
+        "not a production HA database",
+        "Research Prototypes",
+        "Frozen Or Not Production",
     ),
     "docs/archive/BETA_DELTA.md": (
         "v0.2.0-beta.2",
@@ -47,7 +48,7 @@ PUBLIC_DOC_REQUIREMENTS: dict[str, tuple[str, ...]] = {
         "make beta-release-check",
     ),
     "docs/PUBLIC_CLAIMS_POLICY.md": (
-        "Beta Foundation evidence",
+        "single-node agent-native database beta",
         "make public-claims-check",
         "Disallowed Claims",
         "Required Qualifiers",
@@ -115,6 +116,7 @@ SAFE_CONTEXT_MARKERS = (
     "non-goals",
     "not included",
     "not ready",
+    "not recommended",
     "next",
     "out of core",
     "p2",

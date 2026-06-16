@@ -162,6 +162,7 @@ ann-real-embedding-history-report:
 	python3 scripts/ann/summarize_history.py --run-root $(ANN_REAL_EMBEDDING_RUN_ROOT) --output $(ANN_REAL_EMBEDDING_HISTORY_REPORT) --max-p95-regression-nanos $(ANN_REAL_EMBEDDING_MAX_P95_REGRESSION_NANOS) --max-p99-regression-nanos $(ANN_REAL_EMBEDDING_MAX_P99_REGRESSION_NANOS) --max-max-regression-nanos $(ANN_REAL_EMBEDDING_MAX_MAX_REGRESSION_NANOS)
 
 ann-real-embedding-history-regression-check:
+	python3 scripts/ann/bootstrap_history_fixture.py --source $(ANN_HISTORY_CLEAN_FIXTURE) --run-root $(ANN_REAL_EMBEDDING_RUN_ROOT) --min-runs $(ANN_REAL_EMBEDDING_MIN_HISTORY_RUNS)
 	python3 scripts/ann/history_gate.py --run-root $(ANN_REAL_EMBEDDING_RUN_ROOT) --output $(ANN_REAL_EMBEDDING_HISTORY_REPORT) --fail-on-regression --min-runs $(ANN_REAL_EMBEDDING_MIN_HISTORY_RUNS) --min-corpora 1 --max-p95-regression-nanos $(ANN_REAL_EMBEDDING_MAX_P95_REGRESSION_NANOS) --max-p99-regression-nanos $(ANN_REAL_EMBEDDING_MAX_P99_REGRESSION_NANOS) --max-max-regression-nanos $(ANN_REAL_EMBEDDING_MAX_MAX_REGRESSION_NANOS)
 
 ann-real-embedding-publish-baseline:
@@ -201,6 +202,7 @@ ann-scripts-check:
 	python3 scripts/ann/embed_text_command.py --self-test
 	python3 scripts/ann/preflight_real_embedding_benchmark.py --self-test
 	python3 scripts/ann/attach_real_embedding_metadata.py --self-test
+	python3 scripts/ann/bootstrap_history_fixture.py --self-test
 	python3 scripts/ann/real_embedding_readiness.py --self-test
 	python3 scripts/ann/slo_profile.py --self-test
 	python3 scripts/ann/convert_public_corpus.py --self-test
