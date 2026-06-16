@@ -1,5 +1,5 @@
 [project]
-name = "cortexdb-client"
+name = "cortexdb-sdk"
 version = "0.2.0b2"
 description = "Beta CortexDB HTTP client"
 readme = "README.md"

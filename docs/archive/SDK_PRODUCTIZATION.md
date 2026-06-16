@@ -67,7 +67,7 @@ Covered local evidence:
 Public registry publication is not claimed until a tag-gated release workflow
 runs with registry credentials:
 
-- PyPI for `cortexdb-client`
+- PyPI for `cortexdb-sdk`
 - npm for `@cortexdb/client`
 - crates.io for `cortexdb-sdk`
 

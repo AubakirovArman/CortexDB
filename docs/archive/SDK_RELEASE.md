@@ -8,7 +8,7 @@ CortexDB publishes three client surfaces from one versioned source tree plus one
 Rust support crate that must be published before the Rust SDK:
 
 - Rust support crate: `crates/cortex-api-types` as `cortex-api-types`
-- Python package: `sdk/python` as `cortexdb-client`
+- Python package: `sdk/python` as `cortexdb-sdk`
 - TypeScript package: `sdk/typescript` as `@cortexdb/client`
 - Rust crate: `crates/cortex-sdk` as `cortexdb-sdk`
 

@@ -15,7 +15,7 @@ public registry publication.
 | Server | `0.2.0-beta.2` |
 | OpenAPI | `0.2.0-beta.2` |
 | Rust SDK (`cortexdb-sdk`) | `0.2.0-beta.2` |
-| Python SDK (`cortexdb-client`) | `0.2.0b2` |
+| Python SDK (`cortexdb-sdk`) | `0.2.0b2` |
 | TypeScript SDK (`@cortexdb/client`) | `0.2.0-beta.2` |
 
 ## Rust
@@ -45,7 +45,7 @@ See `crates/cortex-sdk/examples/basic.rs` for a runnable example and
 ## Python
 
 ```bash
-pip install cortexdb-client==0.2.0b2
+pip install cortexdb-sdk==0.2.0b2
 ```
 
 ```python

@@ -34,7 +34,7 @@
     },
     {
       "language": "python",
-      "name": "cortexdb-client",
+      "name": "cortexdb-sdk",
       "manifest": "sdk/python/pyproject.toml",
       "registry": "pypi",
       "publish_command": "pypa/gh-action-pypi-publish",

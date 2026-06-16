@@ -1,4 +1,4 @@
-# cortexdb-client
+# cortexdb-sdk
 
 Stdlib Python client for the Core Alpha CortexDB HTTP API.
 
@@ -33,7 +33,7 @@ grounded = client.answer_with_grounded_context(
 print(grounded.citations, grounded.grounding.answer_supported)
 ```
 
-The package metadata is prepared for PyPI as `cortexdb-client`. Publication is
+The package metadata is prepared for PyPI as `cortexdb-sdk`. Publication is
 not automatic; run `../publish/check.sh` before cutting a package release.
 Run `make sdk-contract-check` from the repository root to validate this client
 against a freshly built local `cortex-server` together with the TypeScript and
