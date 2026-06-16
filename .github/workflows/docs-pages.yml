@@ -46,18 +46,16 @@ jobs:
       - name: Check and build docs site
         run: make docs-site-check
       - name: Configure Pages
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && vars.CORTEXDB_DEPLOY_DOCS_PAGES == 'true'
         uses: actions/configure-pages@v5
-        with:
-          enablement: true
       - name: Upload Pages artifact
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && vars.CORTEXDB_DEPLOY_DOCS_PAGES == 'true'
         uses: actions/upload-pages-artifact@v4
         with:
           path: target/mdbook
 
   deploy:
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && vars.CORTEXDB_DEPLOY_DOCS_PAGES == 'true'
     needs: build
     runs-on: ubuntu-latest
     environment:
