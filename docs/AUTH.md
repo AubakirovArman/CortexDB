@@ -269,7 +269,7 @@ client = CortexDBClient(
 ### TypeScript
 
 ```typescript
-import { CortexDBClient } from "@cortexdb/client";
+import { CortexDBClient } from "cortexdb-sdk";
 
 const client = new CortexDBClient("http://127.0.0.1:8181", "my-secret-token");
 ```

@@ -60,7 +60,7 @@ def main() -> int:
         if report.get("status") != "passed":
             errors.append(f"{report_name} status is {report.get('status')!r}")
 
-    require_marker(ROOT / "docs" / "archive" / "SDK_PRODUCTIZATION.md", "public registry publication is not claimed", errors)
+    require_marker(ROOT / "docs" / "archive" / "SDK_PRODUCTIZATION.md", "published public registry evidence", errors)
     require_marker(ROOT / "docs" / "archive" / "NEXT_60_EPICS.md", "| 7 | Python SDK Productization | closed |", errors)
     require_marker(ROOT / "docs" / "archive" / "NEXT_60_EPICS.md", "| 8 | TypeScript SDK Productization | closed |", errors)
     require_marker(ROOT / "docs" / "archive" / "NEXT_60_EPICS.md", "| 9 | Rust SDK Productization | closed |", errors)
@@ -68,7 +68,7 @@ def main() -> int:
     summary = {
         "schema_version": "cortexdb.sdk.productization.v1",
         "status": "passed" if not errors else "failed",
-        "public_registry_publication_claimed": False,
+        "public_registry_publication_claimed": True,
         "languages": sorted(LANGUAGE_FILES),
         "release_gates": [
             "sdk-release-contract-check",

@@ -1,6 +1,6 @@
 # SDK Productization
 
-Status: local SDK productization gate, public registry publication is not claimed.
+Status: local SDK productization gate plus published public registry evidence.
 
 CortexDB maintains three SDK surfaces:
 
@@ -62,14 +62,15 @@ Covered local evidence:
 - `crates/cortex-sdk/examples/live_contract.rs`
 - `cargo package` evidence through `make sdk-e2e-release-check`
 
-## Non-Claims
+## Publication Evidence
 
-Public registry publication is not claimed until a tag-gated release workflow
-runs with registry credentials:
+Published public registry evidence is tracked in
+[`SDK_PUBLICATION_STATUS.md`](SDK_PUBLICATION_STATUS.md):
 
 - PyPI for `cortexdb-sdk`
-- npm for `@cortexdb/client`
+- npm for `cortexdb-sdk`
 - crates.io for `cortexdb-sdk`
 
 The local productization gate proves packaging readiness, examples, typed
-contracts, registry-gate wiring, and local live-server compatibility.
+contracts, registry-gate wiring, and local live-server compatibility. Future
+release publication is still manual-only and tag-gated.

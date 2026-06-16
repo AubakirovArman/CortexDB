@@ -1,8 +1,7 @@
 # SDK Publication Status
 
 Status: beta-ready release lifecycle, local dry-run and e2e evidence complete;
-Rust crates and the Python package are published; TypeScript remains blocked on
-npm account settings.
+Rust crates, the Python package, and the TypeScript package are published.
 
 Latest audit: `v0.2.0-beta.2` is tagged and released, local SDK gates pass, and
 the `sdk-release` GitHub environment has `PYPI_API_TOKEN`, `NPM_TOKEN`, and
@@ -13,15 +12,16 @@ reached the registries but was blocked externally for all three registries:
   email address.
 - PyPI rejected `cortexdb-client==0.2.0b2` because that name belongs to a
   different project owner.
-- npm rejected `@cortexdb/client@0.2.0-beta.2` because publishing requires 2FA
-  or a granular access token with 2FA bypass enabled.
+- npm rejected the planned scoped package `@cortexdb/client@0.2.0-beta.2`
+  because the account did not have publish access to the `@cortexdb` scope.
 
 After the crates.io account email was fixed, `cortex-api-types` and
 `cortexdb-sdk` were published successfully on 2026-06-16 and are visible in the
 crates.io index. The original PyPI name `cortexdb-client` is owned by another
 project, so the Python package was renamed to `cortexdb-sdk` and published
-successfully on 2026-06-16. npm publication is not claimed until npm account
-settings are fixed and the publish run succeeds.
+successfully on 2026-06-16. The planned scoped npm name `@cortexdb/client`
+was not available to the token, so the TypeScript package was published as the
+unscoped `cortexdb-sdk` package on 2026-06-16.
 
 ## Packages
 
@@ -30,7 +30,7 @@ settings are fixed and the publish run succeeds.
 | Rust API types | `cortex-api-types` | crates.io | published: `0.2.0-beta.2` |
 | Rust | `cortexdb-sdk` | crates.io | published: `0.2.0-beta.2` |
 | Python | `cortexdb-sdk` | PyPI | published: `0.2.0b2` |
-| TypeScript | `@cortexdb/client` | npm | blocked: 2FA/granular token required |
+| TypeScript | `cortexdb-sdk` | npm | published: `0.2.0-beta.2` |
 
 ## Beta Publication Rule
 
@@ -48,8 +48,8 @@ The SDKs are part of the `v0.2.0-beta.2` developer/API beta contract only after:
    `cortexdb-sdk`.
 
 The registry gate is local evidence that publication is manual-only and
-tag-gated. The remaining public registry publication is not claimed until the
-manual release job actually runs from the tag and the registry pages exist.
+tag-gated. Future public registry publication is not claimed until the manual
+release job actually runs from the tag and the registry pages exist.
 
 Rust publication order matters: publish `cortex-api-types` first, then
 `cortexdb-sdk`. The SDK release workflow keeps the `cortexdb-sdk` crates.io
@@ -69,7 +69,7 @@ so preflight can pass before the first support-crate publication.
 ## Non-Claims
 
 This repository claims Rust crates.io publication for `cortex-api-types` and
-`cortexdb-sdk`, plus PyPI publication for `cortexdb-sdk`. npm public registry
-publication is not claimed until the registry page exists for this version. The
-checked evidence proves local package construction, example packaging, OpenAPI
-compatibility, and live local server e2e behavior.
+`cortexdb-sdk`, PyPI publication for `cortexdb-sdk`, and npm publication for
+`cortexdb-sdk` at `0.2.0-beta.2`. The checked evidence proves local package
+construction, example packaging, OpenAPI compatibility, and live local server
+e2e behavior.

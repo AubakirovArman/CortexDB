@@ -115,7 +115,7 @@ def sdk_versions(repo: Path) -> dict[str, Any]:
         "workspace": workspace_version,
         "rust": {"name": "cortexdb-sdk", "version": toml_version(repo / "crates/cortex-sdk/Cargo.toml", workspace_version), "manifest": "crates/cortex-sdk/Cargo.toml"},
         "python": {"name": "cortexdb-sdk", "version": toml_version(repo / "sdk/python/pyproject.toml"), "manifest": "sdk/python/pyproject.toml"},
-        "typescript": {"name": "@cortexdb/client", "version": package_json_version(repo / "sdk/typescript/package.json"), "manifest": "sdk/typescript/package.json"},
+        "typescript": {"name": "cortexdb-sdk", "version": package_json_version(repo / "sdk/typescript/package.json"), "manifest": "sdk/typescript/package.json"},
         "python_pep440_expected": python_expected,
         "source": "sdk/release-manifest.json",
     }

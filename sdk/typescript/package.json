@@ -1,5 +1,5 @@
 {
-  "name": "@cortexdb/client",
+  "name": "cortexdb-sdk",
   "version": "0.2.0-beta.2",
   "description": "Beta CortexDB HTTP client",
   "type": "module",

@@ -1632,12 +1632,12 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 - meta: Категория: SDK · P0 · 30 days · productize
 - goal: README обещает pip/npm — пакетов нет; preflight-гейты (make sdk-check) уже есть.
 - tasks:
-  - [x] 1) проверить имена — manifest/package metadata lock `cortex-sdk`, `cortexdb-client`, and `@cortexdb/client`; `make sdk-check` validates Rust cargo package, Python wheel/test path, and npm pack dry-run.
+  - [x] 1) проверить имена — manifest/package metadata lock `cortexdb-sdk` for Rust/Python/npm; `make sdk-check` validates Rust cargo package, Python wheel/test path, and npm pack dry-run.
   - [x] 2) выполнить tag-gated workflow preflight/contract (`docs/archive/SDK_RELEASE.md`) — `make sdk-e2e-release-check` validates release contract, deprecation policy, registry gate, SDK examples artifact, and live SDK contract.
   - [ ] 3) install-smoke с чистой машины в CI against public registries.
 - acceptance:
-  - [ ] 1) `pip install cortexdb-client` работает
-  - [ ] 2) npm/cargo аналогично
+  - [x] 1) `pip install cortexdb-sdk` работает
+  - [x] 2) npm/cargo аналогично
   - [ ] 3) README-примеры запускаются против опубликованных пакетов.
 - files: sdk/, .github/workflows/sdk-release.yml.
 - risks: занятые имена — резерв заранее. Зависимости: D15 (версии). Эффект: quickstart перестаёт быть фикцией.

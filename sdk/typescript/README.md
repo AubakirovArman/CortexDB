@@ -1,9 +1,9 @@
-# @cortexdb/client
+# cortexdb-sdk
 
 Fetch-based JavaScript/TypeScript client for the Core Alpha CortexDB HTTP API.
 
 ```ts
-import { CortexDBClient } from "@cortexdb/client";
+import { CortexDBClient } from "cortexdb-sdk";
 
 const client = new CortexDBClient("http://127.0.0.1:8181").withRetries(2).withTimeout(10000);
 const tenantClient = client.withTenant("tenant:alpha");

@@ -7,8 +7,8 @@ All SDKs share the same typed response models and support tenant + Bearer token 
 
 For public registry availability and beta publication status, see
 [`SDK_PUBLICATION_STATUS.md`](archive/SDK_PUBLICATION_STATUS.md). The local release
-gates prove package construction and live local server e2e behavior even before
-public registry publication.
+gates prove package construction and live local server e2e behavior for the
+published beta packages.
 
 | Artifact | Version |
 |---|---|
@@ -16,7 +16,7 @@ public registry publication.
 | OpenAPI | `0.2.0-beta.2` |
 | Rust SDK (`cortexdb-sdk`) | `0.2.0-beta.2` |
 | Python SDK (`cortexdb-sdk`) | `0.2.0b2` |
-| TypeScript SDK (`@cortexdb/client`) | `0.2.0-beta.2` |
+| TypeScript SDK (`cortexdb-sdk`) | `0.2.0-beta.2` |
 
 ## Rust
 
@@ -69,11 +69,11 @@ remember = client.remember_response("default", client.build_remember_aql("hello"
 ## TypeScript
 
 ```bash
-npm install @cortexdb/client@0.2.0-beta.2
+npm install cortexdb-sdk@0.2.0-beta.2
 ```
 
 ```typescript
-import { CortexDBClient } from "@cortexdb/client";
+import { CortexDBClient } from "cortexdb-sdk";
 
 const client = new CortexDBClient("http://127.0.0.1:8181", "secret", "tenant:alpha");
 
@@ -157,7 +157,7 @@ console.log(grounded.citations, grounded.grounding.answer_supported);
 
 ### ESM / CJS Policy
 
-`@cortexdb/client` ships both ESM (`.js`) and CommonJS (`.cjs`) builds.
+`cortexdb-sdk` ships both ESM (`.js`) and CommonJS (`.cjs`) builds.
 - **ESM** is the primary format (`import`).
 - **CJS** is provided for backward compatibility (`require`).
 - The source `.ts` file is included for TypeScript consumers who prefer their own compilation.

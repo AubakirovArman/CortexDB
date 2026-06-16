@@ -42,7 +42,7 @@
     },
     {
       "language": "typescript",
-      "name": "@cortexdb/client",
+      "name": "cortexdb-sdk",
       "manifest": "sdk/typescript/package.json",
       "registry": "npm",
       "publish_command": "npm publish --access public --provenance",

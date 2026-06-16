@@ -9,7 +9,7 @@ Rust support crate that must be published before the Rust SDK:
 
 - Rust support crate: `crates/cortex-api-types` as `cortex-api-types`
 - Python package: `sdk/python` as `cortexdb-sdk`
-- TypeScript package: `sdk/typescript` as `@cortexdb/client`
+- TypeScript package: `sdk/typescript` as `cortexdb-sdk`
 - Rust crate: `crates/cortex-sdk` as `cortexdb-sdk`
 
 Rust and TypeScript package versions use the canonical workspace version in the
@@ -148,7 +148,7 @@ contract checks, deprecation policy checks, and live local server e2e evidence.
 - PyPI: `PYPI_API_TOKEN` in the protected `sdk-release` environment, used by
   `pypa/gh-action-pypi-publish`.
 - npm: `NPM_TOKEN` repository secret with publish permission for
-  `@cortexdb/client`.
+  `cortexdb-sdk`.
 - crates.io: `CARGO_REGISTRY_TOKEN` repository secret with publish permission
   for `cortex-api-types` and `cortexdb-sdk`.
 
