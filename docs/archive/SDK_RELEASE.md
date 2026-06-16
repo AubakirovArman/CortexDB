@@ -143,6 +143,16 @@ make sdk-e2e-release-check
 It includes the registry gate, SDK examples artifact packaging, OpenAPI/SDK
 contract checks, deprecation policy checks, and live local server e2e evidence.
 
+For published registry install-smoke evidence, run:
+
+```bash
+make sdk-public-registry-smoke
+```
+
+This creates clean temporary Rust, Python, and TypeScript projects and verifies
+`cargo add cortexdb-sdk`, `pip install cortexdb-sdk`, and
+`npm install cortexdb-sdk` against public registries.
+
 ## Required Registry Configuration
 
 - PyPI: `PYPI_API_TOKEN` in the protected `sdk-release` environment, used by

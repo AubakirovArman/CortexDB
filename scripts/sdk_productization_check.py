@@ -51,6 +51,7 @@ def main() -> int:
         "target/sdk-release-artifacts/report.json",
         "target/sdk-registry-gate/report.json",
         "target/sdk-e2e-release/report.json",
+        "target/sdk-public-registry-smoke/report.json",
     ]:
         path = ROOT / report_name
         if not path.exists():
@@ -76,6 +77,7 @@ def main() -> int:
             "sdk-release-artifacts-check",
             "sdk-registry-gate-check",
             "sdk-contract-check",
+            "sdk-public-registry-smoke",
         ],
         "errors": errors,
     }

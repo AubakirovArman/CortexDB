@@ -1634,11 +1634,11 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
 - tasks:
   - [x] 1) проверить имена — manifest/package metadata lock `cortexdb-sdk` for Rust/Python/npm; `make sdk-check` validates Rust cargo package, Python wheel/test path, and npm pack dry-run.
   - [x] 2) выполнить tag-gated workflow preflight/contract (`docs/archive/SDK_RELEASE.md`) — `make sdk-e2e-release-check` validates release contract, deprecation policy, registry gate, SDK examples artifact, and live SDK contract.
-  - [ ] 3) install-smoke с чистой машины в CI against public registries.
+  - [x] 3) install-smoke с чистой машины в CI against public registries.
 - acceptance:
   - [x] 1) `pip install cortexdb-sdk` работает
   - [x] 2) npm/cargo аналогично
-  - [ ] 3) README-примеры запускаются против опубликованных пакетов.
+  - [x] 3) README-примеры запускаются против опубликованных пакетов.
 - files: sdk/, .github/workflows/sdk-release.yml.
 - risks: занятые имена — резерв заранее. Зависимости: D15 (версии). Эффект: quickstart перестаёт быть фикцией.
 - evidence: `make sdk-e2e-release-check` passed after SDK release/deprecation/publication gates were aligned to archived docs; `make sdk-check` passed and produced Rust `cargo package`, Python SDK tests, and npm pack dry-run evidence. D05 follow-up audit found that the `SDK Release` workflow preflight failed on the beta.2 tag because it tried `cargo publish -p cortex-sdk --dry-run` before the unpublished `cortex-api-types` dependency existed on crates.io. The workflow, manifest, registry gate, and docs now model the required order: `cortex-api-types` first, then `cortex-sdk`; local gates passed again (`make sdk-release-contract-check`, `make sdk-registry-gate-check`, `make sdk-e2e-release-check`, `make sdk-check`).

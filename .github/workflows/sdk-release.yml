@@ -7,6 +7,11 @@ on:
       - "Cargo.toml"
       - "Cargo.lock"
       - "crates/cortex-sdk/**"
+      - "mk/core-contracts.mk"
+      - "mk/phony.mk"
+      - "mk/vars-core.mk"
+      - "scripts/sdk_public_registry_smoke.py"
+      - "scripts/sdk_productization_check.py"
       - "sdk/**"
   push:
     branches: [main]
@@ -16,6 +21,11 @@ on:
       - "Cargo.toml"
       - "Cargo.lock"
       - "crates/cortex-sdk/**"
+      - "mk/core-contracts.mk"
+      - "mk/phony.mk"
+      - "mk/vars-core.mk"
+      - "scripts/sdk_public_registry_smoke.py"
+      - "scripts/sdk_productization_check.py"
       - "sdk/**"
   workflow_dispatch:
     inputs:
@@ -70,6 +80,9 @@ jobs:
 
       # Existing publish check script
       - run: ./sdk/publish/check.sh
+      - name: Public registry install smoke
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: make sdk-public-registry-smoke
 
       - name: Upload SDK examples artifact
         uses: actions/upload-artifact@v7

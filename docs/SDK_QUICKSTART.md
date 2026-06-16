@@ -249,6 +249,12 @@ Before publishing or changing SDK contracts, run:
 make sdk-contract-check
 ```
 
+Published package install smoke:
+
+```bash
+make sdk-public-registry-smoke
+```
+
 This builds the current `cortex-server` binary and runs Python, TypeScript, and
 Rust SDK smoke tests against real `/v1/*` responses. The gate covers health,
 put/get, search, stats, validate, AQL, Context Pack, Verify Fact, Remember,

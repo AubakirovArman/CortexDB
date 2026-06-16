@@ -184,6 +184,7 @@ SDK_E2E_RELEASE_REPORT ?= target/sdk-e2e-release/report.json
 SDK_RELEASE_ARTIFACT_ROOT ?= target/sdk-release-artifacts
 SDK_RELEASE_ARTIFACT_REPORT ?= $(SDK_RELEASE_ARTIFACT_ROOT)/report.json
 SDK_REGISTRY_GATE_REPORT ?= target/sdk-registry-gate/report.json
+SDK_PUBLIC_REGISTRY_SMOKE_REPORT ?= target/sdk-public-registry-smoke/report.json
 SDK_PRODUCTIZATION_REPORT ?= target/sdk-productization/report.json
 SECURITY_REPORT ?= target/security/report.json
 SECURITY_HARDENING_REPORT ?= target/security-hardening/report.json

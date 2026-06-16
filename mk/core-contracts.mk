@@ -13,6 +13,9 @@ sdk-release-artifacts-check:
 sdk-registry-gate-check:
 	python3 scripts/sdk_registry_gate_check.py --report "$(SDK_REGISTRY_GATE_REPORT)"
 
+sdk-public-registry-smoke:
+	python3 scripts/sdk_public_registry_smoke.py --report "$(SDK_PUBLIC_REGISTRY_SMOKE_REPORT)"
+
 openapi-check:
 	python3 scripts/check_openapi_coverage.py
 
@@ -40,7 +43,7 @@ sdk-e2e-release-check:
 	$(MAKE) sdk-contract-check
 	python3 scripts/sdk_e2e_release_check.py --report "$(SDK_E2E_RELEASE_REPORT)"
 
-sdk-productization-check: sdk-e2e-release-check
+sdk-productization-check: sdk-e2e-release-check sdk-public-registry-smoke
 	python3 scripts/sdk_productization_check.py --report "$(SDK_PRODUCTIZATION_REPORT)"
 
 migration-policy-check:

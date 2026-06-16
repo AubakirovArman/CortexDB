@@ -72,4 +72,6 @@ This repository claims Rust crates.io publication for `cortex-api-types` and
 `cortexdb-sdk`, PyPI publication for `cortexdb-sdk`, and npm publication for
 `cortexdb-sdk` at `0.2.0-beta.2`. The checked evidence proves local package
 construction, example packaging, OpenAPI compatibility, and live local server
-e2e behavior.
+e2e behavior. `make sdk-public-registry-smoke` additionally installs the
+published Rust, Python, and TypeScript SDKs from public registries in clean
+temporary projects.
