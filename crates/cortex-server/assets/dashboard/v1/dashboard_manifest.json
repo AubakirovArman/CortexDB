@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "app_id": "cortexdb-dashboard-v1",
-  "release_channel": "core-alpha",
+  "release_channel": "beta",
   "stack": "dependency-free-static-html-css-js",
   "asset_root": "/dashboard/assets/v1",
   "session_policy": {

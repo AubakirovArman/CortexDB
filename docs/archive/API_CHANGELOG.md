@@ -65,7 +65,7 @@ See [`API_VERSIONING.md`](API_VERSIONING.md) for stability guarantees and breaki
 
 ---
 
-## v0.1.0-core-alpha.4 (current)
+## v0.1.0-core-alpha.4 (historical)
 
 ### Added
 - **ANN/HNSW construction profile field** — `AnnSearchReport` now includes
