@@ -322,6 +322,62 @@ mod tests {
         VerificationStatus,
     };
 
+    // C3-5: the set of fields that enter each canonical (receipt-signed)
+    // serialization is bound to its schema version by an external fixture. This
+    // red-test fails if a canonical field is added/removed/renamed without going
+    // through the additive-minor procedure (bump the schema version, add a new
+    // fixture entry, re-baseline goldens) — so an un-versioned change can never
+    // silently alter what the accountability receipt signs. See
+    // docs/RECEIPT_SCHEMA_VERSIONING.md.
+    #[test]
+    fn canonical_field_sets_are_bound_to_schema_versions() {
+        let binding: Value = serde_json::from_str(include_str!(
+            "../../../fixtures/canonical/schema_field_binding_v1.json"
+        ))
+        .expect("field-binding fixture parses");
+        let schemas = binding
+            .get("schemas")
+            .and_then(Value::as_object)
+            .expect("fixture has a schemas map");
+
+        let expect = |schema: &str, code_fields: &[&str]| {
+            let recorded: Vec<String> = schemas
+                .get(schema)
+                .and_then(Value::as_array)
+                .unwrap_or_else(|| panic!("fixture missing schema {schema}"))
+                .iter()
+                .map(|value| value.as_str().unwrap().to_owned())
+                .collect();
+            let mut sorted = code_fields
+                .iter()
+                .map(|s| s.to_string())
+                .collect::<Vec<_>>();
+            sorted.sort();
+            assert_eq!(
+                recorded, sorted,
+                "canonical field set for {schema} changed without a schema-version bump; \
+                 follow docs/RECEIPT_SCHEMA_VERSIONING.md"
+            );
+        };
+
+        expect("context_pack.canonical.v1", CONTEXT_PACK_HASHED_FIELDS);
+        expect(
+            "verification_report.canonical.v1",
+            VERIFICATION_REPORT_HASHED_FIELDS,
+        );
+        // Exactly the known canonical schemas — a new receipt-signed schema must
+        // arrive with its own fixture entry, not silently.
+        let mut keys: Vec<&str> = schemas.keys().map(String::as_str).collect();
+        keys.sort_unstable();
+        assert_eq!(
+            keys,
+            [
+                "context_pack.canonical.v1",
+                "verification_report.canonical.v1"
+            ]
+        );
+    }
+
     #[test]
     fn canonical_json_bytes_sort_object_keys_recursively() {
         let left = nested_object([

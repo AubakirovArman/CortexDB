@@ -131,8 +131,12 @@ accountability-receipt-verify-check:
 accountability-receipt-tamper-check:
 	python3 scripts/accountability_receipt_tamper_check.py --root "." --fixture "$(ACCOUNTABILITY_RECEIPT_VERIFY_FIXTURE)" --report "$(ACCOUNTABILITY_RECEIPT_TAMPER_REPORT)"
 
+canonical-schema-field-binding-check:
+	cargo test -p cortex-engine --lib canonical_field_sets_are_bound_to_schema_versions
+
 accountability-receipt-check:
 	$(MAKE) accountability-receipt-schema-check
+	$(MAKE) canonical-schema-field-binding-check
 	$(MAKE) accountability-receipt-determinism-check
 	$(MAKE) accountability-receipt-sign-check
 	$(MAKE) accountability-receipt-verify-check

@@ -96,6 +96,7 @@
 - [Future Product Layers Plan](FUTURE_PRODUCT_LAYERS_PLAN.md)
 - [Future Non-Goal Epics](FUTURE_NON_GOAL_EPICS.md)
 - [Accountability Roadmap](ACCOUNTABILITY_ROADMAP.md)
+- [Receipt Schema Versioning](RECEIPT_SCHEMA_VERSIONING.md)
 - [Accountability Implementation Status](ACCOUNTABILITY_IMPLEMENTATION_STATUS.md)
 - [Next-Gen Master Plan](NEXT_GEN_MASTER_PLAN.md)
 - [Next-Gen Progress Ledger](NEXT_GEN_PROGRESS.md)
