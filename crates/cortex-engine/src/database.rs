@@ -34,7 +34,7 @@ mod tests;
 mod types;
 mod write;
 pub(crate) use crate::retrieval_rank::{
-    diversify_retrieved_cells, expand_parent_context, rank_retrieved_cells,
+    diversify_retrieved_cells, expand_parent_context, rank_retrieved_cells_with_window,
     suppress_duplicate_content,
 };
 pub use types::{

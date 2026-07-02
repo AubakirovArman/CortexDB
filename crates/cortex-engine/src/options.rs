@@ -206,6 +206,11 @@ pub struct DatabaseOptions {
     /// values trade relevance for diversity. Off by default, so existing
     /// retrieval output and its goldens are unchanged.
     pub retrieval_diversify_lambda_q16: Option<u64>,
+    /// Optional temporal recency window in seconds: cells created within this
+    /// many seconds of the newest candidate rank as fully fresh. The reference
+    /// time is data-derived (newest created timestamp), so it is deterministic
+    /// and wall-clock-free. Off by default.
+    pub retrieval_recency_window_seconds: Option<u64>,
 }
 
 impl Default for DatabaseOptions {
@@ -231,6 +236,7 @@ impl Default for DatabaseOptions {
             text_analyzer: TextAnalyzerConfig::default(),
             embedding_profile: None,
             retrieval_diversify_lambda_q16: None,
+            retrieval_recency_window_seconds: None,
         }
     }
 }

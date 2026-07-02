@@ -21,7 +21,7 @@ use super::scans::{BitmapIndexScan, PermissionFilter, QualityFilter};
 use super::trace::{drain, elapsed_nanos, MaterializedOp, PhysicalOp, PhysicalOperatorTrace};
 use crate::access_capture::MAX_CAPTURED_ACCESS_DENIALS;
 use crate::database::{
-    diversify_retrieved_cells, expand_parent_context, rank_retrieved_cells,
+    diversify_retrieved_cells, expand_parent_context, rank_retrieved_cells_with_window,
     suppress_duplicate_content, CandidateResolver, CapturedAccessDenialSet, Database,
     RetrievedCell,
 };
@@ -84,7 +84,12 @@ pub fn execute_retrieve<P: CandidateResolver>(
 
     let started = Instant::now();
     let rank_input_count = cells.len();
-    let ranked = rank_retrieved_cells(cells, &plan.task, &plan.weights);
+    let ranked = rank_retrieved_cells_with_window(
+        cells,
+        &plan.task,
+        &plan.weights,
+        database.retrieval_recency_window_seconds,
+    );
     let mut rank_op =
         MaterializedOp::new("RankOp", rank_input_count, ranked, elapsed_nanos(started));
     let ranked = drain(&mut rank_op);

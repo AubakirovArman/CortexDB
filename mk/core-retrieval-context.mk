@@ -17,6 +17,10 @@ embedding-model-selection-check:
 retrieval-diversify-check:
 	cargo test -p cortex-engine --lib retrieval_rank::diversify
 
+.PHONY: retrieval-temporal-window-check
+retrieval-temporal-window-check:
+	cargo test -p cortex-engine --lib retrieval_rank::temporal_tests
+
 retrieval-quality-history-check:
 	python3 scripts/retrieval_quality_history_self_test.py
 	python3 scripts/retrieval_quality_history.py --domain-root examples/real_domains --output "$(RETRIEVAL_QUALITY_HISTORY_REPORT)" --min-domains 4 --history-runs $(RETRIEVAL_QUALITY_HISTORY_RUNS) --fail-on-regression --max-p95-regression-nanos $(RETRIEVAL_QUALITY_MAX_P95_REGRESSION_NANOS) --max-p99-regression-nanos $(RETRIEVAL_QUALITY_MAX_P99_REGRESSION_NANOS) --max-max-regression-nanos $(RETRIEVAL_QUALITY_MAX_MAX_REGRESSION_NANOS)

@@ -19,9 +19,18 @@ use memory_decay::memory_decay_q16;
 pub(crate) use semantic::{query_vector_from_task, semantic_dot_score};
 
 pub(crate) fn rank_retrieved_cells(
+    cells: Vec<RetrievedCell>,
+    task: &str,
+    weights: &RetrievalWeights,
+) -> Vec<RetrievedCell> {
+    rank_retrieved_cells_with_window(cells, task, weights, None)
+}
+
+pub(crate) fn rank_retrieved_cells_with_window(
     mut cells: Vec<RetrievedCell>,
     task: &str,
     weights: &RetrievalWeights,
+    recency_window_seconds: Option<u64>,
 ) -> Vec<RetrievedCell> {
     if cells.len() <= 1 {
         return cells;
@@ -42,7 +51,7 @@ pub(crate) fn rank_retrieved_cells(
                 .unwrap_or(0)
         })
         .collect::<Vec<_>>();
-    let recency_scores = recency_scores_q16_from_metadata(&metadata);
+    let recency_scores = recency_scores_q16_from_metadata(&metadata, recency_window_seconds);
     let trust_scores = metadata
         .iter()
         .map(|metadata| {
@@ -218,7 +227,10 @@ fn average_len_q16(doc_lengths: &[u32]) -> u64 {
     total * 65_536 / doc_lengths.len() as u64
 }
 
-fn recency_scores_q16_from_metadata(metadata: &[CellMetadata]) -> Vec<u64> {
+fn recency_scores_q16_from_metadata(
+    metadata: &[CellMetadata],
+    recency_window_seconds: Option<u64>,
+) -> Vec<u64> {
     let created = metadata
         .iter()
         .map(|metadata| metadata.created_unix_seconds)
@@ -230,19 +242,53 @@ fn recency_scores_q16_from_metadata(metadata: &[CellMetadata]) -> Vec<u64> {
     let (min, max) = timestamps.fold((first, first), |(min, max), value| {
         (min.min(value), max.max(value))
     });
-    if max <= min {
-        return created
-            .into_iter()
+    let relative: Vec<u64> = if max <= min {
+        created
+            .iter()
             .map(|value| value.map(|_| u64::from(u16::MAX)).unwrap_or(0))
-            .collect();
+            .collect()
+    } else {
+        let span = max - min;
+        created
+            .iter()
+            .map(|value| {
+                value
+                    .map(|created| {
+                        (created.saturating_sub(min).min(span) * u64::from(u16::MAX)) / span
+                    })
+                    .unwrap_or(0)
+            })
+            .collect()
+    };
+    // Temporal window (A4.1): cells created within `window` seconds of the
+    // newest candidate are treated as fully fresh. The reference time is the
+    // data-derived max created timestamp, so this stays deterministic and
+    // wall-clock-free (INV-3). Off by default.
+    match recency_window_seconds {
+        Some(window) => apply_recency_window(&created, relative, max, window),
+        None => relative,
     }
-    let span = max - min;
+}
+
+/// Overrides `relative` recency scores so any cell created within `window`
+/// seconds of `newest` scores as fully fresh (`u16::MAX`). Pure and
+/// deterministic; extracted for testing without building a full `CellMetadata`.
+fn apply_recency_window(
+    created: &[Option<u64>],
+    relative: Vec<u64>,
+    newest: u64,
+    window: u64,
+) -> Vec<u64> {
+    let threshold = newest.saturating_sub(window);
     created
-        .into_iter()
-        .map(|value| {
-            value
-                .map(|created| (created.saturating_sub(min).min(span) * u64::from(u16::MAX)) / span)
-                .unwrap_or(0)
+        .iter()
+        .zip(relative)
+        .map(|(value, base)| {
+            if value.is_some_and(|created| created >= threshold) {
+                u64::from(u16::MAX)
+            } else {
+                base
+            }
         })
         .collect()
 }
@@ -284,4 +330,29 @@ fn min_max_normalize_q16(values: &[u64]) -> Vec<u64> {
         .iter()
         .map(|&value| (u128::from(value - min) * u128::from(u16::MAX) / span) as u64)
         .collect()
+}
+
+#[cfg(test)]
+mod temporal_tests {
+    use super::apply_recency_window;
+
+    #[test]
+    fn recency_window_marks_recent_cells_fully_fresh() {
+        // Newest is 1000; window 100 -> cells created >= 900 are fully fresh.
+        let created = vec![Some(1_000), Some(950), Some(800), None];
+        let relative = vec![65_535, 40_000, 10_000, 0];
+        let out = apply_recency_window(&created, relative, 1_000, 100);
+        assert_eq!(out[0], 65_535, "newest stays fresh");
+        assert_eq!(out[1], 65_535, "within window -> boosted to fresh");
+        assert_eq!(out[2], 10_000, "outside window -> keeps relative recency");
+        assert_eq!(out[3], 0, "missing timestamp stays 0");
+    }
+
+    #[test]
+    fn zero_window_only_boosts_the_newest() {
+        let created = vec![Some(500), Some(500), Some(499)];
+        let relative = vec![20_000, 20_000, 10_000];
+        let out = apply_recency_window(&created, relative, 500, 0);
+        assert_eq!(out, vec![65_535, 65_535, 10_000]);
+    }
 }
