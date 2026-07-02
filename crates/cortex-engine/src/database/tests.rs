@@ -489,3 +489,134 @@ fn pinned_snapshot_preserves_old_version_across_compact() {
     db.compact().unwrap();
     assert_eq!(db.get_latest_cell(CellId(1)).unwrap(), b"v2");
 }
+
+// --- A7.2 two-stage retrieve (exact dense rerank) end-to-end -----------------
+
+fn seed_two_stage_cells(db: &mut Database) {
+    // Both cells match "alpha beta" lexically; cell 1 additionally has a title
+    // match (so it wins by default), but cell 2's vector is the exact semantic
+    // match for the query vector 0,10.
+    db.put_cell(
+        CellId(1),
+        b"scope=default\nstatus=ready\ntitle=alpha beta\nvector=10,0\n\nalpha beta".to_vec(),
+    )
+    .unwrap();
+    db.put_cell(
+        CellId(2),
+        b"scope=default\nstatus=ready\nvector=0,10\n\nalpha beta".to_vec(),
+    )
+    .unwrap();
+}
+
+#[test]
+fn two_stage_rerank_default_off_keeps_lexical_order_through_retrieve_aql() {
+    // The query carries a vector, but with the rerank knob off the lexical title
+    // match (cell 1) wins in Fast mode (lexical 55%, semantic only 10%).
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    seed_two_stage_cells(&mut db);
+    let view = test_view([RetrievalMode::Fast]);
+    let results = db
+        .retrieve_aql(
+            r#"RETRIEVE CONTEXT FOR TASK "query_vector=0,10\nalpha beta" IN BRAIN default USING MODE fast LIMIT 10 CANDIDATES;"#,
+            &view,
+        )
+        .unwrap();
+    assert_eq!(
+        results[0].cell_id,
+        CellId(1),
+        "with rerank off the lexical title match ranks first"
+    );
+}
+
+#[test]
+fn two_stage_rerank_promotes_semantic_match_through_retrieve_aql() {
+    // Same corpus and query, but the two-stage rerank knob is on at full weight:
+    // the exact dense match against the query vector (cell 2) is promoted to the
+    // top even though cell 1 has the stronger lexical signal.
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open_with_options(
+        dir.path(),
+        crate::options::DatabaseOptions {
+            retrieval_two_stage_rerank_weight_q16: Some(65_535),
+            ..crate::options::DatabaseOptions::default()
+        },
+    )
+    .unwrap();
+    seed_two_stage_cells(&mut db);
+    let view = test_view([RetrievalMode::Fast]);
+    let results = db
+        .retrieve_aql(
+            r#"RETRIEVE CONTEXT FOR TASK "query_vector=0,10\nalpha beta" IN BRAIN default USING MODE fast LIMIT 10 CANDIDATES;"#,
+            &view,
+        )
+        .unwrap();
+    assert_eq!(
+        results[0].cell_id,
+        CellId(2),
+        "dense rerank promotes the exact semantic match to the top"
+    );
+}
+
+// --- A4.2 temporal supersession end-to-end -----------------------------------
+
+fn seed_superseded_facts(db: &mut Database) {
+    // Two versions of the same temporal fact (subject=Apollo, metric=budget);
+    // cell 2 is newer (as_of 2025-06-01 vs 2025-01-01).
+    db.put_cell(
+        CellId(1),
+        b"scope=default\nstatus=ready\ntype=fact\nas_of=2025-01-01\n\nproject=Apollo\nmetric=budget\nvalue=12000".to_vec(),
+    )
+    .unwrap();
+    db.put_cell(
+        CellId(2),
+        b"scope=default\nstatus=ready\ntype=fact\nas_of=2025-06-01\n\nproject=Apollo\nmetric=budget\nvalue=14000".to_vec(),
+    )
+    .unwrap();
+}
+
+#[test]
+fn temporal_supersession_off_by_default_returns_all_versions() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    seed_superseded_facts(&mut db);
+    let view = test_view([RetrievalMode::Balanced]);
+    let results = db
+        .retrieve_aql(
+            r#"RETRIEVE CONTEXT FOR TASK "Apollo budget" IN BRAIN default LIMIT 10 CANDIDATES;"#,
+            &view,
+        )
+        .unwrap();
+    let ids = results.iter().map(|c| c.cell_id.0).collect::<BTreeSet<_>>();
+    assert!(
+        ids.contains(&1) && ids.contains(&2),
+        "default keeps both fact versions: {ids:?}"
+    );
+}
+
+#[test]
+fn temporal_supersession_returns_only_the_newest_fact_when_enabled() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open_with_options(
+        dir.path(),
+        crate::options::DatabaseOptions {
+            retrieval_suppress_superseded: true,
+            ..crate::options::DatabaseOptions::default()
+        },
+    )
+    .unwrap();
+    seed_superseded_facts(&mut db);
+    let view = test_view([RetrievalMode::Balanced]);
+    let results = db
+        .retrieve_aql(
+            r#"RETRIEVE CONTEXT FOR TASK "Apollo budget" IN BRAIN default LIMIT 10 CANDIDATES;"#,
+            &view,
+        )
+        .unwrap();
+    let ids = results.iter().map(|c| c.cell_id.0).collect::<Vec<_>>();
+    assert_eq!(
+        ids,
+        vec![2],
+        "only the newest fact (cell 2, as_of 2025-06-01) survives: {ids:?}"
+    );
+}
