@@ -271,11 +271,9 @@ fn weighted_component(value: u64, weight_q16: u16) -> u64 {
 /// does not change relative ordering, while keeping the base score non-zero so a
 /// downstream multiplier (e.g. memory decay) still differentiates candidates.
 fn min_max_normalize_q16(values: &[u64]) -> Vec<u64> {
-    let (min, max) = values
-        .iter()
-        .fold((u64::MAX, 0u64), |(lo, hi), &value| {
-            (lo.min(value), hi.max(value))
-        });
+    let (min, max) = values.iter().fold((u64::MAX, 0u64), |(lo, hi), &value| {
+        (lo.min(value), hi.max(value))
+    });
     if max <= min {
         return vec![u64::from(u16::MAX); values.len()];
     }

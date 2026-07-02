@@ -196,7 +196,10 @@ fn audit_mode_prioritizes_higher_source_trust() {
     let dir = tempfile::tempdir().unwrap();
     let mut db = Database::open(dir.path()).unwrap();
     let body = "quarterly budget report figures and totals";
-    for (cell_id, source, trust) in [(401u64, "doc-low-trust", 20_000), (402, "doc-high-trust", 65_000)] {
+    for (cell_id, source, trust) in [
+        (401u64, "doc-low-trust", 20_000),
+        (402, "doc-high-trust", 65_000),
+    ] {
         db.put_cell(
             CellId(cell_id),
             format!(
@@ -231,9 +234,10 @@ fn recency_breaks_ties_between_equally_relevant_cells() {
     let dir = tempfile::tempdir().unwrap();
     let mut db = Database::open(dir.path()).unwrap();
     let body = "annual maintenance summary report";
-    for (cell_id, source, created) in
-        [(501u64, "doc-older", 1_000_000_000u64), (502, "doc-newer", 1_900_000_000)]
-    {
+    for (cell_id, source, created) in [
+        (501u64, "doc-older", 1_000_000_000u64),
+        (502, "doc-newer", 1_900_000_000),
+    ] {
         db.put_cell(
             CellId(cell_id),
             format!(
