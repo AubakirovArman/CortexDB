@@ -1,0 +1,36 @@
+{
+  "schema_version": "cortexdb.embedding_model_selection.v1",
+  "boundary": "Local interim diagnostic evidence, not a leaderboard or production claim. Retrieval numbers are the ERB doc-recall measurements from docs/ERB_EMBEDDING_EVIDENCE.md (local Gemma judge). See docs/PUBLIC_CLAIMS_POLICY.md.",
+  "evidence": "docs/ERB_EMBEDDING_EVIDENCE.md",
+  "metric_key": "overall_doc_recall",
+  "selection_rule": "Maximize overall_doc_recall; on a tie (within 0.5), prefer the smaller index_bytes_per_vector; the caller may still override for cost.",
+  "candidates": [
+    {
+      "name": "lexical-bm25-baseline",
+      "model": null,
+      "dimension": 0,
+      "metric": "none",
+      "overall_doc_recall": 55.7,
+      "index_bytes_per_vector": 0,
+      "coverage": "EN corpus; no vector index",
+      "notes": "Headline lexical-only ERB run; the retrieval baseline."
+    },
+    {
+      "name": "bge-m3-dense",
+      "model": "BAAI/bge-m3",
+      "dimension": 1024,
+      "metric": "dot_product",
+      "overall_doc_recall": 67.5,
+      "index_bytes_per_vector": 2048,
+      "coverage": "EN + RU (multilingual bge-m3); dense single-vector",
+      "notes": "Dense+lexical hybrid over pre-embedded corpus_bge_m3.jsonl. +11.8 overall doc recall vs lexical; flat on the semantic type (a decomposition problem, not a dense-similarity one)."
+    }
+  ],
+  "chosen": {
+    "name": "bge-m3-dense",
+    "model": "BAAI/bge-m3",
+    "dimension": 1024,
+    "metric": "dot_product",
+    "rationale": "Highest overall doc recall (67.5 vs 55.7). Multilingual (EN+RU) single dense vector fits the engine's i16 vector index; 2 KB/vector at Q15 i16. It does NOT fix the weak `semantic` pool (flat recall) — that needs query decomposition (A3/A4), not a different embedding model. Metric dot_product matches the engine default for normalized bge-m3 vectors."
+  }
+}

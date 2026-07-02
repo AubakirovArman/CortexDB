@@ -1,4 +1,5 @@
 ANN_FIXTURE_BASELINE ?= crates/cortex-engine/fixtures/ann_fixture_baseline_v1.json
+EMBEDDING_MODEL_SELECTION_REPORT ?= target/embedding-model-selection/report.json
 AUDIT_RECEIPT_BINDING_REPORT ?= target/audit-receipt-binding/report.json
 TRANSPARENCY_ANCHOR_REPORT ?= target/transparency-anchor/report.json
 TRANSPARENCY_WITNESS_REPORT ?= target/transparency-witness/report.json
