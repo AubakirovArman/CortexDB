@@ -180,6 +180,24 @@ fn path_encodes_auto_search_routing_contract() {
 }
 
 #[test]
+fn path_encodes_embedded_search_contract() {
+    let value = path(
+        "/v1/search",
+        &[
+            ("scope", "project:investments"),
+            ("mode", "vector"),
+            ("q", "solar budget"),
+            ("embed_query", "true"),
+            ("limit", "10"),
+        ],
+    );
+    assert_eq!(
+        value,
+        "/v1/search?scope=project%3Ainvestments&mode=vector&q=solar+budget&embed_query=true&limit=10"
+    );
+}
+
+#[test]
 fn search_explain_path_encodes_hybrid_contract() {
     let value = path(
         "/v1/search/explain",

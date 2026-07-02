@@ -36,6 +36,41 @@ impl AsyncCortexDbClient {
         decode_value(self.search_keyword(scope, query, limit).await?)
     }
 
+    /// Searches with the query text embedded server-side at request time
+    /// (`embed_query=true`). See the sync client's `search_embedded`.
+    pub async fn search_embedded(
+        &self,
+        scope: &str,
+        query: &str,
+        mode: &str,
+        limit: usize,
+    ) -> SdkResult<serde_json::Value> {
+        self.post(
+            &path(
+                "/v1/search",
+                &[
+                    ("scope", scope),
+                    ("mode", mode),
+                    ("q", query),
+                    ("embed_query", "true"),
+                    ("limit", &limit.to_string()),
+                ],
+            ),
+            "",
+        )
+        .await
+    }
+
+    pub async fn search_embedded_response(
+        &self,
+        scope: &str,
+        query: &str,
+        mode: &str,
+        limit: usize,
+    ) -> SdkResult<SearchResponse> {
+        decode_value(self.search_embedded(scope, query, mode, limit).await?)
+    }
+
     pub async fn search_auto(
         &self,
         scope: &str,

@@ -106,11 +106,39 @@ impl ToolExecutor for SdkToolExecutor {
     fn search(&self, args: SearchArgs) -> Result<ToolCallResult, String> {
         let scope = self.scope(args.scope);
         let limit = args.limit.unwrap_or(10) as usize;
-        self.client
-            .search_keyword(&scope, &args.query, limit)
+        let response = match parse_search_mode(args.mode.as_deref())? {
+            SearchToolMode::Keyword => self.client.search_keyword(&scope, &args.query, limit),
+            // Semantic/hybrid/auto embed the query text server-side at request
+            // time; the server fails closed if no embedding endpoint is set.
+            SearchToolMode::Embedded(mode) => {
+                self.client
+                    .search_embedded(&scope, &args.query, mode, limit)
+            }
+        };
+        response
             .and_then(|response| serde_json::to_string_pretty(&response).map_err(Into::into))
             .map(ToolCallResult::text)
             .map_err(|error| error.to_string())
+    }
+}
+
+enum SearchToolMode {
+    Keyword,
+    Embedded(&'static str),
+}
+
+/// Maps the agent-facing `search` mode to a `/v1/search` mode. `semantic` maps
+/// to pure-vector search; `hybrid` blends lexical and vector; `auto` lets the
+/// server pick. All non-keyword modes embed the query text server-side.
+fn parse_search_mode(value: Option<&str>) -> Result<SearchToolMode, String> {
+    match value.unwrap_or("keyword") {
+        "keyword" => Ok(SearchToolMode::Keyword),
+        "semantic" => Ok(SearchToolMode::Embedded("vector")),
+        "hybrid" => Ok(SearchToolMode::Embedded("hybrid")),
+        "auto" => Ok(SearchToolMode::Embedded("auto")),
+        other => Err(format!(
+            "unsupported search mode: {other} (expected keyword, semantic, hybrid, or auto)"
+        )),
     }
 }
 
@@ -126,10 +154,43 @@ fn parse_mode(value: &str) -> Result<AqlRetrievalMode, String> {
 
 #[cfg(test)]
 mod tests {
-    use super::parse_mode;
+    use super::{parse_mode, parse_search_mode, SearchToolMode};
 
     #[test]
     fn rejects_unknown_mode() {
         assert!(parse_mode("oracle").is_err());
+    }
+
+    #[test]
+    fn search_mode_defaults_to_keyword() {
+        assert!(matches!(
+            parse_search_mode(None).unwrap(),
+            SearchToolMode::Keyword
+        ));
+        assert!(matches!(
+            parse_search_mode(Some("keyword")).unwrap(),
+            SearchToolMode::Keyword
+        ));
+    }
+
+    #[test]
+    fn search_mode_maps_semantic_to_vector() {
+        assert!(matches!(
+            parse_search_mode(Some("semantic")).unwrap(),
+            SearchToolMode::Embedded("vector")
+        ));
+        assert!(matches!(
+            parse_search_mode(Some("hybrid")).unwrap(),
+            SearchToolMode::Embedded("hybrid")
+        ));
+        assert!(matches!(
+            parse_search_mode(Some("auto")).unwrap(),
+            SearchToolMode::Embedded("auto")
+        ));
+    }
+
+    #[test]
+    fn search_mode_rejects_unknown() {
+        assert!(parse_search_mode(Some("oracle")).is_err());
     }
 }

@@ -39,6 +39,7 @@ pub struct SearchArgs {
     pub query: String,
     pub scope: Option<String>,
     pub limit: Option<u32>,
+    pub mode: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, PartialEq, Eq)]
@@ -138,14 +139,19 @@ pub fn tools_list_result() -> Value {
             },
             {
                 "name": TOOL_SEARCH,
-                "description": "Keyword-search CortexDB for cells in a scope (permission-scoped). Returns ranked cells, not a governed ContextPack; prefer retrieve_context for grounded agent context.",
+                "description": "Search CortexDB for cells in a scope (permission-scoped). Default mode is keyword. Set mode=semantic|hybrid|auto to search by meaning: the query text is embedded server-side, so no vector is needed (requires an embedding endpoint configured on the server, else it fails closed). Returns ranked cells, not a governed ContextPack; prefer retrieve_context for grounded agent context.",
                 "inputSchema": {
                     "type": "object",
                     "required": ["query"],
                     "properties": {
                         "query": {"type": "string"},
                         "scope": {"type": "string"},
-                        "limit": {"type": "integer", "minimum": 1}
+                        "limit": {"type": "integer", "minimum": 1},
+                        "mode": {
+                            "type": "string",
+                            "enum": ["keyword", "semantic", "hybrid", "auto"],
+                            "description": "keyword (default, lexical); semantic (embed query, vector search); hybrid (lexical + vector); auto (server picks)."
+                        }
                     },
                     "additionalProperties": false
                 }

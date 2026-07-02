@@ -46,7 +46,7 @@ profile provenance in the manifest and the CLI-side query embedder.
 | Item | State | Notes | Gate |
 | --- | --- | --- | --- |
 | B1.1 Feedback silent-overwrite | Landed | `next_feedback_cell_id` probes for a free id in a loop (mirrors session-id allocation) so a second feedback write cannot clobber the first. | engine tests |
-| TE1 `search` MCP tool | Landed | Permission-scoped `search` tool across `tools.rs`/`server.rs`/`sdk_executor.rs` + `MCP.md`. | mcp tests |
+| TE1 `search` MCP tool | Landed | Permission-scoped `search` tool across `tools.rs`/`server.rs`/`sdk_executor.rs` + `MCP.md`. Now supports `mode=semantic\|hybrid\|auto`: the agent sends text only and the server embeds the query (`embed_query=true`) — semantic search reaches the MCP surface. SDK gains `search_embedded` (sync + async). | mcp tests |
 | Track F baseline | Landed | Per-PR `retrieval-recall-baseline-check` with cross-mode adversarial fixtures; foundation for detecting silent recall regressions. | `retrieval-recall-baseline-check` |
 
 ## Reading this ledger

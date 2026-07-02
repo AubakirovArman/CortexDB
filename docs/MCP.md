@@ -13,13 +13,27 @@ The adapter exposes the governed agent surface plus permission-scoped search:
 | `retrieve_context` | Build and execute `RETRIEVE CONTEXT` and return a ContextPack, prompt, or markdown. |
 | `verify_fact` | Build and execute deterministic `VERIFY FACT`. |
 | `remember` | Build and execute policy-checked `REMEMBER`. |
-| `search` | Permission-scoped keyword search returning ranked cells (not a governed ContextPack). |
+| `search` | Permission-scoped search returning ranked cells (not a governed ContextPack). Defaults to keyword; `mode=semantic\|hybrid\|auto` searches by meaning. |
 
 Raw `put` is not an MCP tool. Prefer `retrieve_context` for grounded agent
 context: unlike `search`, it returns a permission-filtered, token-budgeted,
 cited ContextPack. `search` is offered for exploration and cell lookup; it is
 still AgentView-scoped through the server and cannot read outside the caller's
 readable scopes.
+
+`search` takes an optional `mode`:
+
+| `mode` | Behavior |
+|---|---|
+| `keyword` (default) | Lexical BM25 search. |
+| `semantic` | Embeds the query text server-side and runs vector search. |
+| `hybrid` | Embeds the query and blends lexical + vector. |
+| `auto` | Embeds the query and lets the server pick the strategy. |
+
+The non-keyword modes require an embedding endpoint configured on the server
+(`CORTEXDB_EMBEDDING_*`); with none configured the call fails closed rather than
+silently returning keyword results. The agent never supplies a vector — the
+server embeds the query at request time.
 
 ## AgentView Mapping
 
