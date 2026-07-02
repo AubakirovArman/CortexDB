@@ -53,6 +53,7 @@ pub struct Database {
     pub(crate) embedding_profile: Option<crate::embedding_pipeline::EmbeddingProfile>,
     pub(crate) retrieval_diversify_lambda_q16: Option<u64>,
     pub(crate) retrieval_recency_window_seconds: Option<u64>,
+    pub(crate) retrieval_two_stage_rerank_weight_q16: Option<u64>,
     pub(crate) feature_flags: EngineFeatureFlags,
     pub(crate) ingestion_backpressure_policy: crate::ingestion::IngestionBackpressurePolicy,
     pub(crate) ingestion_rate_state: Mutex<crate::ingestion::IngestionRateState>,

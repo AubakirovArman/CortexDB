@@ -21,6 +21,10 @@ retrieval-diversify-check:
 retrieval-temporal-window-check:
 	cargo test -p cortex-engine --lib retrieval_rank::temporal_tests
 
+.PHONY: retrieval-two-stage-rerank-check
+retrieval-two-stage-rerank-check:
+	cargo test -p cortex-engine --lib retrieval_rank::two_stage
+
 .PHONY: hnsw-build-scaling-check
 hnsw-build-scaling-check:
 	cargo test -p cortex-engine --lib search::hnsw::index::tests

@@ -22,8 +22,8 @@ use super::trace::{drain, elapsed_nanos, MaterializedOp, PhysicalOp, PhysicalOpe
 use crate::access_capture::MAX_CAPTURED_ACCESS_DENIALS;
 use crate::database::{
     diversify_retrieved_cells, expand_parent_context, rank_retrieved_cells_with_window,
-    suppress_duplicate_content, CandidateResolver, CapturedAccessDenialSet, Database,
-    RetrievedCell,
+    suppress_duplicate_content, two_stage_rerank, CandidateResolver, CapturedAccessDenialSet,
+    Database, RetrievedCell,
 };
 use crate::error::EngineResult;
 use crate::plan::{choose_retrieve_path, CostModelDecision, CostModelOptions, ExecutionPath};
@@ -94,6 +94,28 @@ pub fn execute_retrieve<P: CandidateResolver>(
         MaterializedOp::new("RankOp", rank_input_count, ranked, elapsed_nanos(started));
     let ranked = drain(&mut rank_op);
     collector.push(rank_op.trace());
+
+    // Optional A7.2 two-stage rerank (off by default; a no-op unless a Q16 blend
+    // weight is configured and the query carries a vector). Runs before
+    // diversification so an exact dense pass refines the ranked pool first, then
+    // diversity demotes near-duplicates within the reranked order. A weight of
+    // `Some(0)` is treated exactly like `None` — the stage is skipped entirely,
+    // so neither the ordering nor the operator trace differs from "off".
+    let rerank_weight = database
+        .retrieval_two_stage_rerank_weight_q16
+        .filter(|weight| *weight > 0);
+    let ranked = if let Some(weight) = rerank_weight {
+        let started = Instant::now();
+        let input_count = ranked.len();
+        let reranked = two_stage_rerank(ranked, &plan.task, weight);
+        let mut rerank_op =
+            MaterializedOp::new("RerankOp", input_count, reranked, elapsed_nanos(started));
+        let reranked = drain(&mut rerank_op);
+        collector.push(rerank_op.trace());
+        reranked
+    } else {
+        ranked
+    };
 
     // Optional MMR diversification (off by default; a no-op unless a Q16 lambda
     // < 65535 is configured on the database). Applied after ranking so the most

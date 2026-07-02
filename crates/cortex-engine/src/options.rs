@@ -211,6 +211,12 @@ pub struct DatabaseOptions {
     /// time is data-derived (newest created timestamp), so it is deterministic
     /// and wall-clock-free. Off by default.
     pub retrieval_recency_window_seconds: Option<u64>,
+    /// Optional A7.2 two-stage retrieve: an exact dense rerank of the ranked
+    /// candidate pool, as a Q16 blend weight in `[0, 65535]`. `None` or `0` is
+    /// off (stage-1 order preserved); `65535` orders purely by dense similarity
+    /// to the query vector. A no-op when the query has no vector, so existing
+    /// retrieval output and its goldens are unchanged.
+    pub retrieval_two_stage_rerank_weight_q16: Option<u64>,
 }
 
 impl Default for DatabaseOptions {
@@ -237,6 +243,7 @@ impl Default for DatabaseOptions {
             embedding_profile: None,
             retrieval_diversify_lambda_q16: None,
             retrieval_recency_window_seconds: None,
+            retrieval_two_stage_rerank_weight_q16: None,
         }
     }
 }
