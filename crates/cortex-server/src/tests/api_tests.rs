@@ -1,7 +1,24 @@
-use crate::handle_http;
+use crate::{handle_http, handle_http_with_options, ReceiptSigningKey, ServerOptions};
 
 include!("api_tests/memory.rs");
 include!("api_tests/feedback.rs");
+include!("api_tests/receipt_identity.rs");
+
+const RECEIPT_TEST_SEED: &str = "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f";
+
+fn receipt_options() -> ServerOptions {
+    ServerOptions {
+        receipt_signing_key: Some(
+            ReceiptSigningKey::from_seed_hex("receipt-key-api-test", RECEIPT_TEST_SEED).unwrap(),
+        ),
+        ..ServerOptions::default()
+    }
+}
+
+fn response_json(response: &str) -> serde_json::Value {
+    let (_, body) = response.split_once("\r\n\r\n").unwrap();
+    serde_json::from_str(body).unwrap()
+}
 
 #[test]
 fn v1_context_returns_context_pack() {
@@ -23,6 +40,41 @@ fn v1_context_returns_context_pack() {
     assert!(response.contains(r#""cells":[{"cell_id":1"#));
     assert!(response.contains(r#""citation":"doc-a""#));
     assert!(response.contains(r#""source_url":"https://example.test/doc-a""#));
+}
+
+#[test]
+fn v1_context_emits_signed_accountability_receipt_when_key_configured() {
+    let dir = tempfile::tempdir().unwrap();
+    let options = receipt_options();
+    let put = concat!(
+        "POST /v1/cell?cell_id=1 HTTP/1.1\r\n\r\n",
+        "scope=project:investments\nstatus=ready\n",
+        "source=doc-a\nalpha budget"
+    );
+    assert!(handle_http_with_options(dir.path(), put, &options).contains(r#""seq":1"#));
+
+    let request = concat!(
+        "POST /v1/context?scope=project:investments HTTP/1.1\r\n\r\n",
+        "RETRIEVE CONTEXT FOR TASK \"budget\" IN BRAIN investment_projects ",
+        "WHERE space = project:investments AND status = \"ready\" LIMIT 10 CANDIDATES;"
+    );
+    let response = handle_http_with_options(dir.path(), request, &options);
+    let value = response_json(&response);
+    let receipt = &value["accountability_receipt"];
+
+    assert_eq!(receipt["schema_version"], "accountability_receipt.v1");
+    assert_eq!(
+        receipt["header"]["schema_version"],
+        "accountability_receipt.v1"
+    );
+    assert_eq!(receipt["header"]["key_id"], "receipt-key-api-test");
+    assert_eq!(
+        receipt["header"]["signature"]["public_key_hex"],
+        ReceiptSigningKey::from_seed_hex("receipt-key-api-test", RECEIPT_TEST_SEED)
+            .unwrap()
+            .public_key_hex()
+    );
+    assert_eq!(receipt["leaves"]["access"][0]["decision"], "allowed");
 }
 
 #[test]
@@ -51,6 +103,30 @@ fn v1_context_returns_prompt_and_markdown_exports() {
     let markdown_response = handle_http(dir.path(), markdown);
     assert!(markdown_response.contains("# CortexDB ContextPack"));
     assert!(markdown_response.contains("### Cell 1"));
+}
+
+#[test]
+fn v1_verify_emits_signed_accountability_receipt_when_key_configured() {
+    let dir = tempfile::tempdir().unwrap();
+    let options = receipt_options();
+    let put = concat!(
+        "POST /v1/cell?cell_id=1 HTTP/1.1\r\n\r\n",
+        "scope=project:test\nstatus=ready\nsource=doc-a\n\nThe budget is 1.2B KZT."
+    );
+    handle_http_with_options(dir.path(), put, &options);
+
+    let request = concat!(
+        "POST /v1/verify?scope=project:test HTTP/1.1\r\n\r\n",
+        "VERIFY FACT \"The budget is 1.2B KZT\" IN BRAIN test;"
+    );
+    let response = handle_http_with_options(dir.path(), request, &options);
+    let value = response_json(&response);
+    let receipt = &value["accountability_receipt"];
+
+    assert_eq!(value["verdict"], "supported");
+    assert_eq!(receipt["schema_version"], "accountability_receipt.v1");
+    assert_eq!(receipt["header"]["key_id"], "receipt-key-api-test");
+    assert_eq!(receipt["leaves"]["verification"][0]["status"], "supported");
 }
 
 #[test]

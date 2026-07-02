@@ -12,6 +12,10 @@ encrypted-backup-check:
 	cargo test -p cortex-cli backup_encrypted_and_restore_encrypted_commands_roundtrip_database
 	python3 scripts/encrypted_backup_check.py --root "$(ENCRYPTED_BACKUP_ROOT)" --report "$(ENCRYPTED_BACKUP_REPORT)"
 
+encrypted-backup-legacy-refuse-check:
+	cargo test -p cortex-engine encrypted_backup_legacy_v1_archive_is_refused
+	python3 scripts/encrypted_backup_legacy_refuse_check.py --root "." --report "$(ENCRYPTED_BACKUP_LEGACY_REFUSE_REPORT)"
+
 encrypted-backup-rotation-check:
 	python3 scripts/encrypted_backup_rotation_check.py --root "$(ENCRYPTED_BACKUP_ROTATION_ROOT)" --report "$(ENCRYPTED_BACKUP_ROTATION_REPORT)"
 

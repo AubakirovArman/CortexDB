@@ -127,6 +127,7 @@ fn inference_audit_log_records_decisions_without_prompt_or_secret() {
         let options = ServerOptions {
             audit_log_enabled: true,
             audit_log_path: Some(audit_path_for_server),
+            audit_log_mac_key: Some(test_audit_mac_key()),
             llm_test_double_enabled: true,
             ..Default::default()
         };
@@ -180,6 +181,14 @@ fn inference_audit_log_records_decisions_without_prompt_or_secret() {
             "LLM audit leaked sensitive request data {leaked:?}: {audit_raw}"
         );
     }
+}
+
+fn test_audit_mac_key() -> crate::AuditMacKey {
+    crate::AuditMacKey::from_hex(
+        "test-audit-key",
+        "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+    )
+    .unwrap()
 }
 
 fn body_json(response: &str) -> Value {

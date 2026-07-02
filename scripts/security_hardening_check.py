@@ -76,7 +76,9 @@ REQUIRED_MARKERS = {
         ("scripts/audit_export_retention_check.py", "cortexdb.audit_export_retention_report.v1"),
     ],
     "audit_productization": [
-        ("docs/AUDIT_LOG_FORMAT.md", "cortexdb.audit.v1"),
+        ("docs/AUDIT_LOG_FORMAT.md", "cortexdb.audit.v2"),
+        ("docs/AUDIT_LOG_FORMAT.md", "CORTEXDB_AUDIT_MAC_KEY_HEX"),
+        ("docs/AUDIT_LOG_FORMAT.md", "--mac-key-file"),
         ("docs/AUDIT_LOG_FORMAT.md", "CORTEXDB_AUDIT_LOG_ROTATE_BYTES"),
         ("docs/archive/SECURITY_HARDENING_EVIDENCE.md", "audit_productization_gate: true"),
         ("Makefile", "audit-productization-check"),

@@ -18,12 +18,18 @@ REQUIRED_TERMS = {
         "ContextConflictVisibility",
         "visible_conflict_count",
         "extract_project_metric_value",
+        "extract_numeric_values",
+        "compare_numeric_values",
+        ".is_conflict()",
     ],
     "engine tests": [
         "conflict_visibility_is_zero_without_conflicting_values",
         "conflict_visibility_reports_conflicting_project_metric_values",
         "conflict_visibility_counts_distinct_conflict_groups",
         "conflict_visibility_is_exported_in_json_prompt_and_markdown",
+        "normalized_equivalent_numeric_formats_have_zero_visible_conflicts",
+        "context_pack_conflicts_match_verify_numeric_conflicts_on_shared_corpus",
+        "verify_fact_aql",
     ],
     "public json": [
         "conflict_visibility_q16",

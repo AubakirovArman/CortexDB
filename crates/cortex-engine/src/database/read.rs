@@ -129,15 +129,28 @@ impl Database {
         let now = current_unix_seconds();
         let cells = candidates
             .into_iter()
-            .filter_map(|candidate| provider.cell_id_for_candidate(candidate))
-            .filter(|cell_id| self.memory_lifecycle_store.is_active_at(*cell_id, now))
-            .filter_map(|cell_id| {
+            .filter_map(|candidate| {
+                provider
+                    .cell_id_for_candidate(candidate)
+                    .map(|cell_id| (candidate, cell_id))
+            })
+            .filter(|(_, cell_id)| self.memory_lifecycle_store.is_active_at(*cell_id, now))
+            .filter_map(|(candidate, cell_id)| {
                 self.memtable
                     .read(txn, cell_id)
                     .filter(|version| {
                         cell_version_meets_quality_thresholds(version, &plan.quality_thresholds)
                     })
-                    .and_then(|version| self.retrieved_cell_from_version(version).ok())
+                    .and_then(|version| {
+                        let mut cell = self.retrieved_cell_from_version(version).ok()?;
+                        cell.captured_access_decision = provider
+                            .captured_access_decision_for_candidate(
+                                candidate,
+                                cell.cell_id,
+                                &cell.descriptor,
+                            );
+                        Some(cell)
+                    })
             })
             .collect::<Vec<_>>();
         let ranked =
@@ -238,6 +251,7 @@ impl Database {
             cell_id: version.cell_id,
             payload: self.payload_for_version(version)?,
             descriptor: version.descriptor.clone(),
+            captured_access_decision: None,
         })
     }
 }

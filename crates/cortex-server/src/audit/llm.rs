@@ -4,7 +4,7 @@ use serde::Serialize;
 
 use crate::audit_chain::{AUDIT_CHAIN_ID, AUDIT_CHAIN_ZERO_HASH};
 
-use super::{AuditAction, AuditRecord, AuditSink};
+use super::{AuditAction, AuditRecord, AuditSink, AUDIT_SCHEMA_VERSION_V1};
 
 #[derive(Clone, Copy, Serialize)]
 pub(super) struct LlmInferenceAuditFields<'a> {
@@ -54,13 +54,15 @@ pub(crate) fn emit_llm_inference_decision(
     };
     let error_code = event.error_code.unwrap_or("");
     let mut record = AuditRecord {
-        schema_version: "cortexdb.audit.v1",
+        schema_version: AUDIT_SCHEMA_VERSION_V1,
         audit_event: "llm_inference_decision",
         audit_action: AuditAction::Inference.as_str(),
         chain_id: AUDIT_CHAIN_ID,
         sequence: 0,
         prev_hash: AUDIT_CHAIN_ZERO_HASH.to_owned(),
         event_hash: String::new(),
+        mac_key_id: None,
+        event_mac: None,
         principal_id: event.principal_id.unwrap_or(""),
         auth_role: event.auth_role.unwrap_or(""),
         auth_agent_id: event.auth_agent_id,
@@ -73,6 +75,7 @@ pub(crate) fn emit_llm_inference_decision(
         error_code,
         duration_ms: event.duration_ms,
         unix_time_ms: unix_time_ms(),
+        accountability_receipt_hash: None,
         llm: Some(llm),
     };
     tracing::info!(

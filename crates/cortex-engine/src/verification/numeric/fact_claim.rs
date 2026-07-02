@@ -6,18 +6,27 @@ use cortex_core::memtable::{MemTable, ReadTxn};
 use cortex_core::{CellDescriptor, CellId};
 
 use crate::plan::PolicyRewrite;
-use crate::query::{scope_id, CellMetadata};
+use crate::query::{scope_id, CellMetadata, SourceRef};
 use crate::search::tokenize;
 use crate::source_trust::{SourceTrust, SourceTrustCategory};
 use crate::typed_body::FactBody;
 
-use super::super::temporal::extract_temporal_query_range;
-use super::super::{VerificationEvidence, VerificationMatchKind, VerificationNumericConflict};
-use super::{extract_numeric_values, normalized_numeric_equal, numeric_conflict, NumericValue};
+use super::super::temporal::{
+    extract_temporal_query_range, temporal_validity_from_metadata, TemporalQueryRange,
+    TemporalValidity,
+};
+use super::super::{
+    VerificationEvidence, VerificationMatchKind, VerificationNumericConflict,
+    VerificationNumericConflictKind,
+};
+use super::{
+    compare_numeric_values, extract_numeric_values, normalized_numeric_equal, numeric_conflict,
+    parse_currency_code, NumericComparison, NumericValue,
+};
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct FactClaimStore {
-    records: BTreeMap<CellId, NumericFactRecord>,
+    records: BTreeMap<CellId, Vec<NumericFactRecord>>,
     index: NumericFactIndex,
 }
 
@@ -30,14 +39,16 @@ pub struct NumericFactRecord {
     pub(crate) project: Option<String>,
     pub(crate) source: Option<String>,
     pub(crate) citation: Option<String>,
+    pub(crate) source_ref: Option<SourceRef>,
+    pub(crate) temporal_validity: TemporalValidity,
     pub(crate) source_trust_q16: u16,
     pub(crate) source_trust_category: SourceTrustCategory,
 }
 
 impl FactClaimStore {
     pub fn from_memtable(memtable: &MemTable, txn: ReadTxn) -> Self {
-        Self::from_records(memtable.visible_iter(txn).filter_map(|version| {
-            Self::record_from_payload(version.cell_id, &version.payload, &version.descriptor)
+        Self::from_records(memtable.visible_iter(txn).flat_map(|version| {
+            Self::records_from_payload(version.cell_id, &version.payload, &version.descriptor)
         }))
     }
 
@@ -49,46 +60,71 @@ impl FactClaimStore {
         store
     }
 
-    pub fn record_from_payload(
+    pub fn records_from_payload(
         cell_id: CellId,
         payload: &[u8],
         descriptor: &CellDescriptor,
-    ) -> Option<NumericFactRecord> {
+    ) -> Vec<NumericFactRecord> {
         let metadata = CellMetadata::from_payload_with_descriptor(payload, descriptor);
         let body = FactBody::parse(metadata.body_text.as_bytes());
-        let metric = body.metric?;
+        let Some(metric) = body.metric else {
+            return Vec::new();
+        };
         let values = body
             .value
             .as_deref()
-            .map(extract_numeric_values)
-            .unwrap_or_else(|| extract_numeric_values(&metadata.body_text));
-        let value = single_numeric_value(values)?;
+            .map(|value| explicit_numeric_values(value, body.currency.as_deref()))
+            .map(prefer_contextual_numeric_values)
+            .unwrap_or_else(|| contextual_numeric_values(&metadata.body_text, &metric));
+        if values.is_empty() {
+            return Vec::new();
+        }
         let source_trust =
             SourceTrust::from_metadata(metadata.source_trust_q16, metadata.source_trust_class);
         let citation = metadata.citation().map(str::to_owned);
-        Some(NumericFactRecord {
-            cell_id,
-            scope: metadata.scope,
-            metric,
-            value,
-            project: body.project.or(metadata.project),
-            source: metadata.source.or(metadata.citation),
-            citation,
-            source_trust_q16: source_trust.q16,
-            source_trust_category: source_trust.category,
-        })
+        let source = metadata
+            .source
+            .clone()
+            .or_else(|| metadata.citation.clone())
+            .or_else(|| {
+                metadata
+                    .source_ref
+                    .as_ref()
+                    .map(|source_ref| source_ref.source_id.clone())
+            });
+        let source_ref = metadata.source_ref.clone();
+        let temporal_validity = temporal_validity_from_metadata(&metadata);
+        let project = body.project.or(metadata.project);
+        values
+            .into_iter()
+            .map(|value| NumericFactRecord {
+                cell_id,
+                scope: metadata.scope.clone(),
+                metric: metric.clone(),
+                value,
+                project: project.clone(),
+                source: source.clone(),
+                citation: citation.clone(),
+                source_ref: source_ref.clone(),
+                temporal_validity,
+                source_trust_q16: source_trust.q16,
+                source_trust_category: source_trust.category,
+            })
+            .collect()
     }
 
-    pub fn apply_record(&mut self, cell_id: CellId, record: Option<NumericFactRecord>) {
+    pub fn apply_records(&mut self, cell_id: CellId, records: Vec<NumericFactRecord>) {
         self.apply_tombstone(cell_id);
-        if let Some(record) = record {
+        for record in records {
             self.insert_record(record);
         }
     }
 
     pub fn apply_tombstone(&mut self, cell_id: CellId) {
-        if let Some(record) = self.records.remove(&cell_id) {
-            self.index.remove(&record);
+        if let Some(records) = self.records.remove(&cell_id) {
+            for record in records {
+                self.index.remove(&record);
+            }
         }
     }
 
@@ -96,6 +132,7 @@ impl FactClaimStore {
     pub fn visible_records(&self, view: &AgentView) -> Vec<NumericFactRecord> {
         self.records
             .values()
+            .flatten()
             .filter(|record| PolicyRewrite::allows_scope(view, scope_id(&record.scope)))
             .cloned()
             .collect()
@@ -109,9 +146,6 @@ impl FactClaimStore {
         contradicting_evidence: &mut Vec<VerificationEvidence>,
         numeric_conflicts: &mut Vec<VerificationNumericConflict>,
     ) {
-        if extract_temporal_query_range(fact).is_some() {
-            return;
-        }
         let fact_values = extract_numeric_values(fact);
         if fact_values.is_empty() {
             return;
@@ -129,7 +163,9 @@ impl FactClaimStore {
             .map(|item| item.cell_id)
             .collect::<BTreeSet<_>>();
 
-        for record in self.indexed_records_for_fact(fact, view, &fact_values) {
+        let temporal_query = extract_temporal_query_range(fact);
+        let indexed_records = self.indexed_records_for_fact(fact, view, &fact_values);
+        for record in indexed_records.iter().cloned() {
             let Some(matched_terms) = typed_claim_matched_terms(fact, &record) else {
                 continue;
             };
@@ -156,9 +192,21 @@ impl FactClaimStore {
                 item.match_kind = VerificationMatchKind::NumericContradiction;
                 contradicting_evidence.push(item);
             }
+            let kind =
+                citation_conflict_kind(&record, &indexed_records, &fact_values, temporal_query);
+            if kind != VerificationNumericConflictKind::Numeric {
+                if let Some(existing) = numeric_conflicts
+                    .iter_mut()
+                    .find(|item| item.cell_id == record.cell_id)
+                {
+                    existing.kind = kind;
+                    continue;
+                }
+            }
             if conflict_seen.insert(record.cell_id) {
                 numeric_conflicts.push(VerificationNumericConflict {
                     cell_id: record.cell_id,
+                    kind,
                     metric: record.metric.clone(),
                     left: numeric_display(fact_value),
                     right: numeric_display(&record.value),
@@ -170,9 +218,6 @@ impl FactClaimStore {
     }
 
     pub(crate) fn indexed_cell_ids_for_fact(&self, fact: &str, view: &AgentView) -> Vec<CellId> {
-        if extract_temporal_query_range(fact).is_some() {
-            return Vec::new();
-        }
         let fact_values = extract_numeric_values(fact);
         if fact_values.is_empty() {
             return Vec::new();
@@ -185,7 +230,7 @@ impl FactClaimStore {
 
     fn insert_record(&mut self, record: NumericFactRecord) {
         self.index.insert(&record);
-        self.records.insert(record.cell_id, record);
+        self.records.entry(record.cell_id).or_default().push(record);
     }
 
     fn indexed_records_for_fact(
@@ -195,6 +240,7 @@ impl FactClaimStore {
         fact_values: &[NumericValue],
     ) -> Vec<NumericFactRecord> {
         let query = NumericFactQuery::from_fact(fact);
+        let temporal_query = extract_temporal_query_range(fact);
         let mut cell_ids = BTreeSet::new();
         for metric_key in self.index.matching_metric_keys(&query, view) {
             let Some(value_buckets) = self.index.by_metric.get(&metric_key) else {
@@ -211,7 +257,13 @@ impl FactClaimStore {
         }
         cell_ids
             .into_iter()
-            .filter_map(|cell_id| self.records.get(&cell_id).cloned())
+            .filter_map(|cell_id| self.records.get(&cell_id))
+            .flat_map(|records| records.iter().cloned())
+            .filter(|record| {
+                fact_values.iter().any(|fact_value| {
+                    NumericValueKey::from_value(&record.value).is_comparable_with(fact_value)
+                }) && record_matches_temporal_query(record, temporal_query)
+            })
             .collect()
     }
 }
@@ -366,9 +418,22 @@ impl NumericValueKey {
             (None, None) => {}
         }
         match (&self.unit, value.unit.as_deref().and_then(normalized_text)) {
-            (Some(left), Some(right)) => left == &right,
+            (Some(_), Some(_)) => {
+                compare_numeric_values(&self.as_numeric_value(), value)
+                    != NumericComparison::Incomparable
+            }
             (Some(_), None) | (None, Some(_)) => false,
             (None, None) => true,
+        }
+    }
+
+    fn as_numeric_value(&self) -> NumericValue {
+        NumericValue {
+            raw: String::new(),
+            scaled_value: self.scaled_value,
+            currency: self.currency.clone(),
+            unit: self.unit.clone(),
+            magnitude: None,
         }
     }
 }
@@ -387,10 +452,138 @@ impl NumericFactQuery {
     }
 }
 
-fn single_numeric_value(values: Vec<NumericValue>) -> Option<NumericValue> {
-    let mut values = values.into_iter();
-    let value = values.next()?;
-    values.next().is_none().then_some(value)
+fn contextual_numeric_values(text: &str, metric: &str) -> Vec<NumericValue> {
+    let metric_terms = tokenize(metric);
+    let mut values = Vec::new();
+    for segment in text.split(['\n', ';']) {
+        if is_contradiction_marker_segment(segment) {
+            continue;
+        }
+        let terms = tokenize(segment);
+        if metric_terms.iter().any(|term| terms.contains(term)) {
+            values.extend(extract_numeric_values(segment));
+        }
+    }
+    if values.is_empty() {
+        values = extract_numeric_values(text);
+    }
+    prefer_contextual_numeric_values(values)
+}
+
+fn is_contradiction_marker_segment(segment: &str) -> bool {
+    segment
+        .trim_start()
+        .to_ascii_lowercase()
+        .starts_with("contradicts=")
+}
+
+fn explicit_numeric_values(value: &str, currency: Option<&str>) -> Vec<NumericValue> {
+    let mut values = extract_numeric_values(value);
+    let currency = currency.and_then(parse_currency_code);
+    if let Some(currency) = currency {
+        for value in &mut values {
+            if value.currency.is_none() && value.unit.is_none() {
+                value.currency = Some(currency.clone());
+            }
+        }
+    }
+    values
+}
+
+fn prefer_contextual_numeric_values(values: Vec<NumericValue>) -> Vec<NumericValue> {
+    if values
+        .iter()
+        .any(|value| value.currency.is_some() || value.unit.is_some())
+    {
+        return values
+            .into_iter()
+            .filter(|value| value.currency.is_some() || value.unit.is_some())
+            .collect();
+    }
+    values
+}
+
+fn record_matches_temporal_query(
+    record: &NumericFactRecord,
+    query: Option<TemporalQueryRange>,
+) -> bool {
+    query
+        .map(|query| temporal_window_overlaps_query(record.temporal_validity, query))
+        .unwrap_or(true)
+}
+
+fn citation_conflict_kind(
+    record: &NumericFactRecord,
+    records: &[NumericFactRecord],
+    fact_values: &[NumericValue],
+    temporal_query: Option<TemporalQueryRange>,
+) -> VerificationNumericConflictKind {
+    if records.iter().any(|candidate| {
+        candidate.cell_id != record.cell_id
+            && same_source_ref(record, candidate)
+            && !normalized_numeric_equal(&candidate.value, &record.value)
+            && candidate.value.conflicts_with(&record.value)
+            && fact_values
+                .iter()
+                .any(|fact_value| normalized_numeric_equal(fact_value, &candidate.value))
+    }) {
+        VerificationNumericConflictKind::Citation
+    } else if temporal_query.is_some() && !record.temporal_validity.is_empty() {
+        VerificationNumericConflictKind::Temporal
+    } else {
+        VerificationNumericConflictKind::Numeric
+    }
+}
+
+pub(crate) fn same_source_ref(left: &NumericFactRecord, right: &NumericFactRecord) -> bool {
+    citation_source_key(left).is_some_and(|left_key| {
+        citation_source_key(right).is_some_and(|right_key| left_key == right_key)
+    })
+}
+
+pub(crate) fn citation_source_key(record: &NumericFactRecord) -> Option<CitationSourceKey> {
+    CitationSourceKey::from_source_ref(record.source_ref.as_ref()?)
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub(crate) struct CitationSourceKey {
+    source_id: String,
+    source_url: Option<String>,
+    document_id: Option<String>,
+    page: Option<u32>,
+    row: Option<u32>,
+    cell_range: Option<String>,
+    json_path: Option<String>,
+}
+
+impl CitationSourceKey {
+    fn from_source_ref(source_ref: &SourceRef) -> Option<Self> {
+        if source_ref.source_url.is_none()
+            && source_ref.document_id.is_none()
+            && source_ref.page.is_none()
+            && source_ref.row.is_none()
+            && source_ref.cell_range.is_none()
+            && source_ref.json_path.is_none()
+        {
+            return None;
+        }
+        Some(Self {
+            source_id: normalized_source_text(&source_ref.source_id)?,
+            source_url: normalized_source_opt(&source_ref.source_url),
+            document_id: normalized_source_opt(&source_ref.document_id),
+            page: source_ref.page,
+            row: source_ref.row,
+            cell_range: normalized_source_opt(&source_ref.cell_range),
+            json_path: normalized_source_opt(&source_ref.json_path),
+        })
+    }
+}
+
+fn temporal_window_overlaps_query(
+    temporal_validity: TemporalValidity,
+    query: TemporalQueryRange,
+) -> bool {
+    temporal_validity.overlaps_query(query)
 }
 
 fn typed_claim_evidence(record: &NumericFactRecord, matched_terms: u32) -> VerificationEvidence {
@@ -434,6 +627,15 @@ fn normalized_text(value: &str) -> Option<String> {
 
 fn text_terms_intersect(value: &str, terms: &BTreeSet<String>) -> bool {
     tokenize(value).iter().any(|term| terms.contains(term))
+}
+
+fn normalized_source_opt(value: &Option<String>) -> Option<String> {
+    value.as_deref().and_then(normalized_source_text)
+}
+
+fn normalized_source_text(value: &str) -> Option<String> {
+    let value = value.trim();
+    (!value.is_empty()).then(|| value.to_ascii_lowercase())
 }
 
 fn numeric_display(value: &NumericValue) -> String {

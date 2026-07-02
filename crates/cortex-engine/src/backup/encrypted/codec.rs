@@ -20,13 +20,39 @@ struct ArchiveHeader {
     schema_version: String,
     cipher_suite: String,
     kdf: String,
-    nonce: u64,
+    kdf_params: ArchiveKdfParams,
+    salt: String,
+    nonce: String,
     file_count: usize,
     plaintext_len: u64,
     ciphertext_len: u64,
-    plaintext_hash: String,
-    ciphertext_hash: String,
-    auth_tag: String,
+    aead_tag: String,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq, Serialize)]
+struct ArchiveKdfParams {
+    memory_cost_kib: u32,
+    time_cost: u32,
+    parallelism: u32,
+    output_len: usize,
+}
+
+#[derive(Debug, Deserialize)]
+struct ArchiveHeaderProbe {
+    schema_version: Option<String>,
+}
+
+#[derive(Serialize)]
+struct ArchiveHeaderAad<'a> {
+    schema_version: &'a str,
+    cipher_suite: &'a str,
+    kdf: &'a str,
+    kdf_params: ArchiveKdfParams,
+    salt: &'a str,
+    nonce: &'a str,
+    file_count: usize,
+    plaintext_len: u64,
+    ciphertext_len: u64,
 }
 
 pub(super) struct DecodedArchive {
@@ -41,21 +67,23 @@ pub(super) fn write_encrypted_archive(
 ) -> EngineResult<CopyReport> {
     let entries = collect_archive_entries(source)?;
     let plaintext = encode_plaintext_archive(&entries)?;
-    let nonce = crypto::archive_nonce(source, archive_path, entries.len(), plaintext.len());
-    let ciphertext = crypto::apply_keystream(&plaintext, passphrase, nonce);
-    let header = ArchiveHeader {
+    let mut header = ArchiveHeader {
         schema_version: crypto::SCHEMA_VERSION.to_owned(),
         cipher_suite: crypto::CIPHER_SUITE.to_owned(),
         kdf: crypto::KDF.to_owned(),
-        nonce,
+        kdf_params: ArchiveKdfParams::from_crypto(crypto::kdf_params()),
+        salt: crypto::generate_salt_hex()?,
+        nonce: crypto::generate_nonce_hex()?,
         file_count: entries.len(),
         plaintext_len: plaintext.len() as u64,
-        ciphertext_len: ciphertext.len() as u64,
-        plaintext_hash: crypto::hash_hex(&plaintext),
-        ciphertext_hash: crypto::hash_hex(&ciphertext),
-        auth_tag: crypto::auth_tag(passphrase, nonce, &plaintext, &ciphertext),
+        ciphertext_len: plaintext.len() as u64,
+        aead_tag: String::new(),
     };
-    write_archive_file(archive_path, &header, &ciphertext)?;
+    let aad = header_aad(&header)?;
+    let sealed = crypto::seal_archive(passphrase, &header.salt, &header.nonce, &aad, &plaintext)?;
+    header.ciphertext_len = sealed.ciphertext.len() as u64;
+    header.aead_tag = sealed.tag_hex;
+    write_archive_file(archive_path, &header, &sealed.ciphertext)?;
     Ok(CopyReport {
         files_copied: entries.len(),
         bytes_copied: plaintext.len() as u64,
@@ -88,15 +116,20 @@ pub(super) fn read_encrypted_archive(
             "encrypted backup archive header length exceeds file size".to_owned(),
         ));
     }
-    let header = serde_json::from_slice::<ArchiveHeader>(&raw[header_len_end..header_end])
-        .map_err(|error| {
-            EngineError::StorageInvariant(format!("invalid encrypted backup header: {error}"))
-        })?;
+    let header = parse_archive_header(&raw[header_len_end..header_end])?;
     validate_header(&header)?;
     let ciphertext = &raw[header_end..];
     validate_ciphertext(&header, ciphertext)?;
-    let plaintext = crypto::apply_keystream(ciphertext, passphrase, header.nonce);
-    validate_plaintext(passphrase, &header, &plaintext, ciphertext)?;
+    let aad = header_aad(&header)?;
+    let plaintext = crypto::open_archive(
+        passphrase,
+        &header.salt,
+        &header.nonce,
+        &header.aead_tag,
+        &aad,
+        ciphertext,
+    )?;
+    validate_plaintext(&header, &plaintext)?;
     Ok(DecodedArchive {
         plaintext,
         ciphertext_len: ciphertext.len() as u64,
@@ -192,15 +225,54 @@ fn write_archive_file(path: &Path, header: &ArchiveHeader, ciphertext: &[u8]) ->
     Ok(())
 }
 
+fn parse_archive_header(bytes: &[u8]) -> EngineResult<ArchiveHeader> {
+    let value = serde_json::from_slice::<serde_json::Value>(bytes).map_err(|error| {
+        EngineError::StorageInvariant(format!("invalid encrypted backup header: {error}"))
+    })?;
+    let probe = serde_json::from_value::<ArchiveHeaderProbe>(value.clone()).map_err(|error| {
+        EngineError::StorageInvariant(format!("invalid encrypted backup header: {error}"))
+    })?;
+    if probe.schema_version.as_deref() == Some(crypto::LEGACY_SCHEMA_VERSION) {
+        return Err(EngineError::StorageInvariant(
+            "legacy encrypted backup v1 is refused; recreate the backup with encrypted backup v2"
+                .to_owned(),
+        ));
+    }
+    serde_json::from_value::<ArchiveHeader>(value).map_err(|error| {
+        EngineError::StorageInvariant(format!("invalid encrypted backup header: {error}"))
+    })
+}
+
+fn header_aad(header: &ArchiveHeader) -> EngineResult<Vec<u8>> {
+    let aad = ArchiveHeaderAad {
+        schema_version: &header.schema_version,
+        cipher_suite: &header.cipher_suite,
+        kdf: &header.kdf,
+        kdf_params: header.kdf_params,
+        salt: &header.salt,
+        nonce: &header.nonce,
+        file_count: header.file_count,
+        plaintext_len: header.plaintext_len,
+        ciphertext_len: header.ciphertext_len,
+    };
+    serde_json::to_vec(&aad).map_err(|error| {
+        EngineError::StorageInvariant(format!("encrypted backup AAD failed: {error}"))
+    })
+}
+
 fn validate_header(header: &ArchiveHeader) -> EngineResult<()> {
     if header.schema_version != crypto::SCHEMA_VERSION
         || header.cipher_suite != crypto::CIPHER_SUITE
         || header.kdf != crypto::KDF
+        || header.kdf_params != ArchiveKdfParams::from_crypto(crypto::kdf_params())
     {
         return Err(EngineError::StorageInvariant(
             "unsupported encrypted backup header".to_owned(),
         ));
     }
+    validate_hex_len("encrypted backup salt", &header.salt, 16)?;
+    validate_hex_len("encrypted backup nonce", &header.nonce, 24)?;
+    validate_hex_len("encrypted backup tag", &header.aead_tag, 16)?;
     Ok(())
 }
 
@@ -210,33 +282,36 @@ fn validate_ciphertext(header: &ArchiveHeader, ciphertext: &[u8]) -> EngineResul
             "encrypted backup ciphertext length mismatch".to_owned(),
         ));
     }
-    if crypto::hash_hex(ciphertext) != header.ciphertext_hash {
+    Ok(())
+}
+
+fn validate_plaintext(header: &ArchiveHeader, plaintext: &[u8]) -> EngineResult<()> {
+    if plaintext.len() as u64 != header.plaintext_len {
         return Err(EngineError::StorageInvariant(
-            "encrypted backup ciphertext checksum mismatch".to_owned(),
+            "encrypted backup plaintext length mismatch".to_owned(),
         ));
     }
     Ok(())
 }
 
-fn validate_plaintext(
-    passphrase: &str,
-    header: &ArchiveHeader,
-    plaintext: &[u8],
-    ciphertext: &[u8],
-) -> EngineResult<()> {
-    if plaintext.len() as u64 != header.plaintext_len
-        || crypto::hash_hex(plaintext) != header.plaintext_hash
-    {
-        return Err(EngineError::StorageInvariant(
-            "encrypted backup passphrase or plaintext checksum is invalid".to_owned(),
-        ));
-    }
-    if crypto::auth_tag(passphrase, header.nonce, plaintext, ciphertext) != header.auth_tag {
-        return Err(EngineError::StorageInvariant(
-            "encrypted backup authentication tag mismatch".to_owned(),
-        ));
+fn validate_hex_len(name: &'static str, value: &str, bytes: usize) -> EngineResult<()> {
+    if value.len() != bytes * 2 || !value.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+        return Err(EngineError::StorageInvariant(format!(
+            "{name} has invalid hex encoding"
+        )));
     }
     Ok(())
+}
+
+impl ArchiveKdfParams {
+    fn from_crypto(params: cortex_crypto::KdfParams) -> Self {
+        Self {
+            memory_cost_kib: params.memory_cost_kib,
+            time_cost: params.time_cost,
+            parallelism: params.parallelism,
+            output_len: params.output_len,
+        }
+    }
 }
 
 fn read_u32(bytes: &[u8], offset: &mut usize) -> EngineResult<u32> {

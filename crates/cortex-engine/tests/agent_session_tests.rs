@@ -67,6 +67,44 @@ fn agent_session_records_context_and_temporary_memory() {
 }
 
 #[test]
+fn session_cell_ids_preserve_max_documented_agent_slot() {
+    let dir = tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    let low = view("agent:finance");
+    let mut high = view("agent:finance");
+    high.agent_id = AgentId(0x0fff_ffff);
+
+    let low_session = db
+        .start_agent_session(&low, "agent:finance", b"low", 60, 1_000)
+        .unwrap();
+    let high_session = db
+        .start_agent_session(&high, "agent:finance", b"high", 60, 1_001)
+        .unwrap();
+
+    assert_eq!(
+        encoded_agent_slot(low_session.context_cell_id),
+        low.agent_id.0
+    );
+    assert_eq!(
+        encoded_agent_slot(high_session.context_cell_id),
+        high.agent_id.0
+    );
+}
+
+#[test]
+fn session_cell_ids_reject_agent_slot_overflow() {
+    let dir = tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    let mut view = view("agent:finance");
+    view.agent_id = AgentId(0x1000_0007);
+
+    let error = db
+        .start_agent_session(&view, "agent:finance", b"overflow", 60, 1_000)
+        .unwrap_err();
+    assert!(matches!(error, EngineError::StorageInvariant(_)));
+}
+
+#[test]
 fn session_retrieval_filters_by_session_and_ttl() {
     let dir = tempdir().unwrap();
     let mut db = Database::open(dir.path()).unwrap();
@@ -300,4 +338,8 @@ fn session_retrieval_authorizes_with_descriptor_scope_over_payload_scope() {
     assert!(db
         .retrieve_session_cells("session-typed", &view("agent:private"), 1_010)
         .is_empty());
+}
+
+fn encoded_agent_slot(cell_id: CellId) -> u64 {
+    (cell_id.0 >> 32) & 0x0fff_ffff
 }

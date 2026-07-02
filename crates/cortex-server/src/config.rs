@@ -1,19 +1,127 @@
+use std::fmt;
 use std::path::PathBuf;
+use std::sync::Arc;
 
-use cortex_engine::DatabaseOptions;
+use cortex_crypto::{KeyId, MacKey, SigningSeed};
+use cortex_engine::{ClusterConfig, DatabaseOptions, NodeId};
 
 use crate::auth::{AuthRole, AuthTokenPolicy};
+use crate::receipt_signer::ReceiptExternalSigner;
 
 pub const DEFAULT_ACTOR_QUEUE_CAPACITY: usize = 1024;
 pub const DEFAULT_READ_ROUTE_TIMEOUT_MS: u64 = 30_000;
 pub const DEFAULT_WRITE_ROUTE_TIMEOUT_MS: u64 = 30_000;
 pub const DEFAULT_ADMIN_ROUTE_TIMEOUT_MS: u64 = 10_000;
+pub const DEFAULT_CLUSTER_INGRESS_MAX_IN_FLIGHT_PER_NODE: usize = 64;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum AuditLogFsyncPolicy {
     #[default]
     Always,
     FlushOnly,
+}
+
+#[derive(Clone, PartialEq, Eq)]
+pub struct AuditMacKey {
+    key_id: KeyId,
+    secret: Arc<MacKey>,
+}
+
+impl AuditMacKey {
+    pub fn from_hex(key_id: &str, raw_hex: &str) -> Result<Self, String> {
+        let key_id = KeyId::new(key_id.to_owned()).map_err(|error| error.to_string())?;
+        let bytes = decode_hex_32(raw_hex, "audit MAC key")?;
+        let secret =
+            MacKey::from_slice("audit MAC key", &bytes).map_err(|error| error.to_string())?;
+        Ok(Self {
+            key_id,
+            secret: Arc::new(secret),
+        })
+    }
+
+    pub fn key_id(&self) -> &str {
+        self.key_id.as_str()
+    }
+
+    pub(crate) fn mac_key(&self) -> &MacKey {
+        &self.secret
+    }
+}
+
+impl fmt::Debug for AuditMacKey {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("AuditMacKey")
+            .field("key_id", &self.key_id)
+            .field("secret", &"redacted")
+            .finish()
+    }
+}
+
+#[derive(Clone, PartialEq, Eq)]
+pub struct ReceiptSigningKey {
+    key_id: KeyId,
+    seed: Arc<SigningSeed>,
+}
+
+impl ReceiptSigningKey {
+    pub fn from_seed_hex(key_id: &str, raw_hex: &str) -> Result<Self, String> {
+        let key_id = KeyId::new(key_id.to_owned()).map_err(|error| error.to_string())?;
+        let bytes = decode_hex_32(raw_hex, "receipt signing seed")?;
+        let seed = SigningSeed::from_slice("receipt signing seed", &bytes)
+            .map_err(|error| error.to_string())?;
+        Ok(Self {
+            key_id,
+            seed: Arc::new(seed),
+        })
+    }
+
+    pub fn key_id(&self) -> &str {
+        self.key_id.as_str()
+    }
+
+    pub fn public_key_hex(&self) -> String {
+        cortex_crypto::hex_lower(&cortex_crypto::ed25519_public_key(&self.seed))
+    }
+
+    pub(crate) fn to_crypto_key(&self) -> cortex_crypto::ReceiptSigningKey {
+        let seed = SigningSeed::from_slice("receipt signing seed", self.seed.as_bytes())
+            .expect("stored receipt signing seed is always 32 bytes");
+        cortex_crypto::ReceiptSigningKey::from_seed(self.key_id.clone(), seed)
+    }
+}
+
+impl fmt::Debug for ReceiptSigningKey {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ReceiptSigningKey")
+            .field("key_id", &self.key_id)
+            .field("seed", &"redacted")
+            .finish()
+    }
+}
+
+fn decode_hex_32(raw_hex: &str, name: &str) -> Result<[u8; 32], String> {
+    let raw_hex = raw_hex.trim();
+    if raw_hex.len() != 64 {
+        return Err(format!(
+            "{name} must be 64 lowercase or uppercase hex characters"
+        ));
+    }
+    let mut bytes = [0_u8; 32];
+    for (index, chunk) in raw_hex.as_bytes().chunks_exact(2).enumerate() {
+        let high = hex_nibble(chunk[0]).ok_or_else(|| format!("{name} contains non-hex data"))?;
+        let low = hex_nibble(chunk[1]).ok_or_else(|| format!("{name} contains non-hex data"))?;
+        bytes[index] = (high << 4) | low;
+    }
+    Ok(bytes)
+}
+
+fn hex_nibble(byte: u8) -> Option<u8> {
+    match byte {
+        b'0'..=b'9' => Some(byte - b'0'),
+        b'a'..=b'f' => Some(byte - b'a' + 10),
+        b'A'..=b'F' => Some(byte - b'A' + 10),
+        _ => None,
+    }
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -84,6 +192,35 @@ pub struct ServerOptions {
     pub audit_log_rotate_bytes: Option<u64>,
     /// File durability policy for the audit JSONL sink.
     pub audit_log_fsync_policy: AuditLogFsyncPolicy,
+    /// Required 32-byte MAC key for the persisted audit JSONL chain.
+    ///
+    /// File audit uses this key to emit `cortexdb.audit.v2` records with
+    /// HMAC-SHA-256. The key is intentionally not logged or serialized.
+    pub audit_log_mac_key: Option<AuditMacKey>,
+    /// Optional local Ed25519 node key for accountability receipt signing.
+    pub receipt_signing_key: Option<ReceiptSigningKey>,
+    /// Optional external command signer for accountability receipt signing.
+    pub receipt_external_signer: Option<ReceiptExternalSigner>,
+    /// Durable database-instance identity used in accountability receipt headers.
+    ///
+    /// Server startup loads or creates this from the database root whenever
+    /// receipt signing is configured.
+    pub db_instance_id: Option<String>,
+    /// Optional persisted cluster topology known to this server process.
+    ///
+    /// Multi-node topologies are exposed through `/v1/cluster/status`. Accountable
+    /// context ingress uses the first configured node as a fixed primary forwarding
+    /// target and fails closed when that target is unavailable.
+    pub cluster_config: Option<ClusterConfig>,
+    /// Optional operator-provided context-ingress leader override.
+    ///
+    /// When set, accountable context ingress forwards to this configured node
+    /// instead of falling back to the first node in `cluster_config`. This is
+    /// an explicit operator hint, not automatic Raft leader discovery.
+    pub cluster_ingress_leader: Option<NodeId>,
+    /// Maximum cached-monitor forwarded context-ingress routes in flight per
+    /// selected Raft leader. Defaults to 64.
+    pub cluster_ingress_max_in_flight_per_node: usize,
     /// Enables the deterministic local LLM inference test-double endpoint.
     ///
     /// Disabled by default. This does not enable a production model runtime or
@@ -136,6 +273,14 @@ impl ServerOptions {
             DEFAULT_ADMIN_ROUTE_TIMEOUT_MS
         } else {
             self.admin_route_timeout_ms
+        }
+    }
+
+    pub(crate) fn cluster_ingress_max_in_flight_per_node(&self) -> usize {
+        if self.cluster_ingress_max_in_flight_per_node == 0 {
+            DEFAULT_CLUSTER_INGRESS_MAX_IN_FLIGHT_PER_NODE
+        } else {
+            self.cluster_ingress_max_in_flight_per_node
         }
     }
 

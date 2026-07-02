@@ -692,12 +692,14 @@ OpenApiAnnEvaluationResponse = TypedDict(
 OpenApiContextPackResponse = TypedDict(
     'OpenApiContextPackResponse',
     {
+        'accountability_receipt': 'dict[str, Any] | None',
         'anomalies': 'list[OpenApiContextPackAnomalyResponse]',
         'answerability_q16': 'int',
         'cells': 'list[OpenApiContextPackCellResponse]',
         'citations_required': 'bool',
         'conflict_visibility_q16': 'int',
         'estimated_tokens': 'int',
+        'grounding_report': 'OpenApiAnswerGroundingReportResponse | Any',
         'schema_version': "Literal['context_pack.v1']",
         'token_budget_tokens': 'int',
         'truncated': 'bool',
@@ -725,10 +727,12 @@ OpenApiContextAccessDecisionResponse = TypedDict(
     'OpenApiContextAccessDecisionResponse',
     {
         'agent_id': 'int | Any',
+        'agent_view_digest': 'str | Any',
         'auth_role': 'str',
         'cell_id': 'int',
         'decision': "Literal['allowed', 'not_recorded']",
         'policy': 'str',
+        'policy_version': 'str | Any',
         'principal_id': 'str',
         'reason': 'str',
         'scope': 'str',
@@ -799,7 +803,7 @@ OpenApiContextPackAnomalyResponse = TypedDict(
     'OpenApiContextPackAnomalyResponse',
     {
         'cell_id': 'int | Any',
-        'code': "Literal['redundant_cell', 'missing_citation', 'token_overload', 'scope_mismatch', 'insufficient_context', 'visible_conflict']",
+        'code': "Literal['redundant_cell', 'missing_citation', 'token_overload', 'scope_mismatch', 'insufficient_context', 'visible_conflict', 'retrieval_incomplete']",
         'message': 'str',
         'why_excluded': 'str | Any',
     },
@@ -994,6 +998,7 @@ OpenApiRememberResponse = TypedDict(
 OpenApiVerificationReportResponse = TypedDict(
     'OpenApiVerificationReportResponse',
     {
+        'accountability_receipt': 'dict[str, Any] | None',
         'confidence_q16': 'int',
         'contradicting': 'list[OpenApiVerificationEvidenceResponse]',
         'contradicting_evidence': 'list[OpenApiVerificationEvidenceResponse]',
@@ -1011,6 +1016,7 @@ OpenApiVerificationReportResponse = TypedDict(
 OpenApiNumericConflictResponse = TypedDict(
     'OpenApiNumericConflictResponse',
     {
+        'kind': "Literal['numeric', 'temporal', 'citation']",
         'left': 'str',
         'metric': 'str',
         'right': 'str',

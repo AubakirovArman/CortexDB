@@ -69,11 +69,15 @@ pub struct ContextAccessDecisionResponse {
     pub cell_id: u64,
     pub decision: String,
     pub policy: String,
+    #[serde(default)]
+    pub policy_version: Option<String>,
     pub reason: String,
     pub scope: String,
     pub scope_id: u64,
     #[serde(default)]
     pub agent_id: Option<u64>,
+    #[serde(default)]
+    pub agent_view_digest: Option<String>,
     #[serde(default)]
     pub principal_id: Option<String>,
     #[serde(default)]
@@ -112,6 +116,10 @@ pub struct ContextPackResponse {
     pub visible_conflict_count: u32,
     pub cells: Vec<ContextPackCellResponse>,
     pub anomalies: Vec<ContextPackAnomalyResponse>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub grounding_report: Option<AnswerGroundingReportResponse>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub accountability_receipt: Option<serde_json::Value>,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq, Eq)]

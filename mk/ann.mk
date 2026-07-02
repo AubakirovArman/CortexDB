@@ -1,3 +1,9 @@
+cosine-metric-correctness-check:
+	cargo test -p cortex-engine cosine_metric
+	python3 scripts/cosine_metric_correctness_check.py --report "$(COSINE_METRIC_CORRECTNESS_REPORT)"
+
+hnsw-cosine-correctness-check: cosine-metric-correctness-check
+
 ann-fixture-check:
 	cargo run --release -p cortex-engine --bin ann_fixture_gate -- --baseline $(ANN_FIXTURE_BASELINE)
 

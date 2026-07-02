@@ -4,6 +4,7 @@ use crate::query::CellMetadata;
 use crate::source_trust::SourceTrust;
 
 use super::super::conditions::extract_query_conditions;
+use super::super::frozen_weights;
 use super::super::hnsw::DistanceMetric;
 use super::super::routing::{
     classify_search_query_intent, routed_candidate_limit, routed_result_limit, SearchQueryIntent,
@@ -29,7 +30,8 @@ pub(super) fn database_index_query(query: SearchQuery<'_>) -> SearchQuery<'_> {
 }
 
 pub(super) fn search_rerank_candidate_limit(query: SearchQuery<'_>) -> usize {
-    routed_candidate_limit(query.text, query.limit).max(query.limit.max(32))
+    routed_candidate_limit(query.text, query.limit)
+        .max(query.limit.max(frozen_weights::RERANK_MIN_CANDIDATE_LIMIT))
 }
 
 pub(super) fn search_rerank_result_limit(query: SearchQuery<'_>) -> usize {
@@ -129,7 +131,7 @@ fn search_result_recency_scores_q16(results: &[DatabaseSearchResult]) -> Vec<u64
     if max <= min {
         return created
             .into_iter()
-            .map(|value| value.map(|_| u64::from(u16::MAX)).unwrap_or(0))
+            .map(|value| value.map(|_| frozen_weights::Q16_ONE_U64).unwrap_or(0))
             .collect();
     }
     let span = max - min;
@@ -137,7 +139,9 @@ fn search_result_recency_scores_q16(results: &[DatabaseSearchResult]) -> Vec<u64
         .into_iter()
         .map(|value| {
             value
-                .map(|created| (created.saturating_sub(min).min(span) * u64::from(u16::MAX)) / span)
+                .map(|created| {
+                    (created.saturating_sub(min).min(span) * frozen_weights::Q16_ONE_U64) / span
+                })
                 .unwrap_or(0)
         })
         .collect()
@@ -163,11 +167,26 @@ fn metadata_rerank_weights(query_text: &str) -> (u64, u64) {
         .is_some()
         || looks_temporal_or_current(query_text);
     match classify_search_query_intent(query_text) {
-        SearchQueryIntent::ConflictingInfo => (18_000, 24_000),
-        SearchQueryIntent::Constrained if temporal => (12_000, 22_000),
-        _ if temporal => (8_000, 18_000),
-        SearchQueryIntent::InfoNotFound => (4_000, 2_000),
-        _ => (3_000, 3_000),
+        SearchQueryIntent::ConflictingInfo => (
+            frozen_weights::METADATA_CONFLICTING_INFO_TRUST_Q16,
+            frozen_weights::METADATA_CONFLICTING_INFO_FRESHNESS_Q16,
+        ),
+        SearchQueryIntent::Constrained if temporal => (
+            frozen_weights::METADATA_CONSTRAINED_TEMPORAL_TRUST_Q16,
+            frozen_weights::METADATA_CONSTRAINED_TEMPORAL_FRESHNESS_Q16,
+        ),
+        _ if temporal => (
+            frozen_weights::METADATA_TEMPORAL_TRUST_Q16,
+            frozen_weights::METADATA_TEMPORAL_FRESHNESS_Q16,
+        ),
+        SearchQueryIntent::InfoNotFound => (
+            frozen_weights::METADATA_INFO_NOT_FOUND_TRUST_Q16,
+            frozen_weights::METADATA_INFO_NOT_FOUND_FRESHNESS_Q16,
+        ),
+        _ => (
+            frozen_weights::METADATA_DEFAULT_TRUST_Q16,
+            frozen_weights::METADATA_DEFAULT_FRESHNESS_Q16,
+        ),
     }
 }
 
@@ -191,5 +210,8 @@ fn looks_temporal_or_current(query_text: &str) -> bool {
 }
 
 fn weighted_metadata_component(value_q16: u64, weight_q16: u64) -> u64 {
-    value_q16.saturating_mul(1024).saturating_mul(weight_q16) / u64::from(u16::MAX)
+    value_q16
+        .saturating_mul(frozen_weights::METADATA_RERANK_SCALE)
+        .saturating_mul(weight_q16)
+        / frozen_weights::Q16_ONE_U64
 }

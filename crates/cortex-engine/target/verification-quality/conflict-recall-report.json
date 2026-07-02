@@ -1,0 +1,75 @@
+{
+  "schema_version": "cortexdb.verify_conflict_recall.report.v1",
+  "status": "passed",
+  "case_count": 180,
+  "conflict_case_count": 150,
+  "no_conflict_case_count": 30,
+  "true_positive_count": 150,
+  "false_negative_count": 0,
+  "true_negative_count": 30,
+  "false_conflict_count": 0,
+  "observed_conflict_count": 150,
+  "recall_q16": 65535,
+  "precision_q16": 65535,
+  "false_conflict_rate_q16": 0,
+  "recall_percent": "100.00%",
+  "precision_percent": "100.00%",
+  "false_conflict_rate_percent": "0.00%",
+  "thresholds": {
+    "min_cases": 150,
+    "min_recall_q16": 58981,
+    "max_false_conflict_rate_q16": 3276
+  },
+  "class_counts": {
+    "citation": {
+      "case_count": 25,
+      "expected_conflicts": 25,
+      "detected_conflicts": 25,
+      "false_conflicts": 0,
+      "false_negatives": 0
+    },
+    "currency": {
+      "case_count": 25,
+      "expected_conflicts": 25,
+      "detected_conflicts": 25,
+      "false_conflicts": 0,
+      "false_negatives": 0
+    },
+    "format": {
+      "case_count": 25,
+      "expected_conflicts": 25,
+      "detected_conflicts": 25,
+      "false_conflicts": 0,
+      "false_negatives": 0
+    },
+    "magnitude": {
+      "case_count": 25,
+      "expected_conflicts": 25,
+      "detected_conflicts": 25,
+      "false_conflicts": 0,
+      "false_negatives": 0
+    },
+    "must_not_conflict": {
+      "case_count": 30,
+      "expected_conflicts": 0,
+      "detected_conflicts": 0,
+      "false_conflicts": 0,
+      "false_negatives": 0
+    },
+    "temporal": {
+      "case_count": 25,
+      "expected_conflicts": 25,
+      "detected_conflicts": 25,
+      "false_conflicts": 0,
+      "false_negatives": 0
+    },
+    "unit": {
+      "case_count": 25,
+      "expected_conflicts": 25,
+      "detected_conflicts": 25,
+      "false_conflicts": 0,
+      "false_negatives": 0
+    }
+  },
+  "failures": []
+}

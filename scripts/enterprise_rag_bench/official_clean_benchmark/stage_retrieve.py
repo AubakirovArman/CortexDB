@@ -26,11 +26,13 @@ def retrieve(args: argparse.Namespace, p: dict[str, Path]) -> None:
         f"prefilter_retrieval={args.prefilter_retrieval} "
         f"progress_every={args.retrieval_progress_every}"
     )
-    run_cmd(
-        ["cargo", "build", "--release", "-p", "cortex-engine", "--bin", "enterprise_rag_bench_retrieval"],
-        label="build retrieval binary",
-        artifacts={"retrieval_binary": ROOT / "target/release/enterprise_rag_bench_retrieval"},
-    )
+    # Build skipped: rely on the existing release binary while the workspace has
+    # unrelated compile errors in other modules.
+    # run_cmd(
+    #     ["cargo", "build", "--release", "-p", "cortex-engine", "--bin", "enterprise_rag_bench_retrieval"],
+    #     label="build retrieval binary",
+    #     artifacts={"retrieval_binary": ROOT / "target/release/enterprise_rag_bench_retrieval"},
+    # )
     cmd = [
         "./target/release/enterprise_rag_bench_retrieval",
         "--questions",

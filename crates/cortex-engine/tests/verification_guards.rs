@@ -1,8 +1,8 @@
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
 use cortex_core::{CellId, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
 use cortex_engine::verification::{
-    VerificationGuardCode, VerificationMatchKind, VerificationReportExportFormat,
-    VerificationStatus,
+    VerificationGuardCode, VerificationMatchKind, VerificationNumericConflictKind,
+    VerificationReportExportFormat, VerificationStatus,
 };
 use cortex_engine::{scope_id, Database};
 use std::collections::BTreeSet;
@@ -165,6 +165,100 @@ fn verification_report_contains_structured_numeric_conflict() {
 }
 
 #[test]
+fn verify_fact_detects_conflict_from_multivalue_evidence_body() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(8),
+        b"scope=project:investments\nstatus=verified\ntype=fact\nsource=annual-report\nmetric=budget\nproject=Solar Plant\n\nSolar Plant budget for 2025 increased to 1.4B KZT."
+            .to_vec(),
+    )
+    .unwrap();
+
+    let report = db
+        .verify_fact_aql(
+            r#"VERIFY FACT "Solar Plant budget is 1.2B KZT" IN BRAIN investment_projects;"#,
+            &view(),
+        )
+        .unwrap();
+
+    assert_eq!(report.status, VerificationStatus::Contradicted);
+    assert_eq!(report.numeric_conflicts.len(), 1);
+    let conflict = &report.numeric_conflicts[0];
+    assert_eq!(conflict.cell_id, CellId(8));
+    assert_eq!(conflict.metric, "budget");
+    assert_eq!(conflict.left, "1.2B KZT");
+    assert_eq!(conflict.right, "1.4B KZT");
+    assert_eq!(conflict.evidence_value.scaled_value, 1_400_000_000);
+}
+
+#[test]
+fn dated_verify_fact_still_reports_numeric_conflict() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(10),
+        b"scope=project:investments\nstatus=verified\ntype=fact\nsource=annual-report\nmetric=budget\nproject=Solar Plant\nvalid_from=2025-01-01\nvalid_to=2025-12-31\n\nSolar Plant budget is 1.4B KZT."
+            .to_vec(),
+    )
+    .unwrap();
+
+    let report = db
+        .verify_fact_aql(
+            r#"VERIFY FACT "Solar Plant budget is 1.2B KZT on 2025-05-01" IN BRAIN investment_projects;"#,
+            &view(),
+        )
+        .unwrap();
+
+    assert_eq!(report.status, VerificationStatus::Contradicted);
+    assert_eq!(report.numeric_conflicts.len(), 1);
+    let conflict = &report.numeric_conflicts[0];
+    assert_eq!(conflict.cell_id, CellId(10));
+    assert_eq!(conflict.metric, "budget");
+    assert_eq!(conflict.kind, VerificationNumericConflictKind::Temporal);
+    assert_eq!(conflict.left, "1.2B KZT");
+    assert_eq!(conflict.right, "1.4B KZT");
+    assert!(report
+        .guards
+        .iter()
+        .all(|guard| guard.code != VerificationGuardCode::StaleFact));
+}
+
+#[test]
+fn verify_fact_reports_citation_numeric_conflict_kind() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(12),
+        citation_fact_payload("ifc:solar-budget", "report-q1.pdf", 3, "1.2B KZT"),
+    )
+    .unwrap();
+    db.put_cell(
+        CellId(13),
+        citation_fact_payload("ifc:solar-budget", "report-q1.pdf", 3, "1.4B KZT"),
+    )
+    .unwrap();
+
+    let report = db
+        .verify_fact_aql(
+            r#"VERIFY FACT "Solar Plant budget is 1.2B KZT" IN BRAIN investment_projects;"#,
+            &view(),
+        )
+        .unwrap();
+
+    assert_eq!(report.status, VerificationStatus::Mixed);
+    let conflict = report
+        .numeric_conflicts
+        .iter()
+        .find(|conflict| conflict.cell_id == CellId(13))
+        .expect("same source disagreement should be surfaced as a numeric conflict");
+    assert_eq!(conflict.kind, VerificationNumericConflictKind::Citation);
+    assert_eq!(conflict.metric, "budget");
+    assert_eq!(conflict.left, "1.2B KZT");
+    assert_eq!(conflict.right, "1.4B KZT");
+}
+
+#[test]
 fn verification_report_does_not_infer_billions_from_decimal_percent() {
     let dir = tempfile::tempdir().unwrap();
     let mut db = Database::open(dir.path()).unwrap();
@@ -308,6 +402,13 @@ fn verification_report_exports_markdown_and_audit_text() {
     assert!(audit.contains("status=contradicted"));
     assert!(audit.contains("numeric_conflict.0.metric=budget"));
     assert!(audit.contains("contradicting.0.source_trust_category=official"));
+}
+
+fn citation_fact_payload(source_id: &str, document_id: &str, page: u32, value: &str) -> Vec<u8> {
+    format!(
+        "scope=project:investments\nstatus=verified\ntype=fact\nsource_id={source_id}\ndocument_id={document_id}\npage={page}\nsource_trust_q16=50000\n\nproject=Solar Plant\nmetric=budget\nvalue={value}\nSolar Plant budget is {value}."
+    )
+    .into_bytes()
 }
 
 fn fact_cell(source: Option<&str>, body: &str) -> KnowledgeCell {

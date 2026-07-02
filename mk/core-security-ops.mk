@@ -5,6 +5,50 @@ security-check:
 	$(MAKE) openapi-contract-check
 	python3 scripts/security_beta_check.py --report "$(SECURITY_REPORT)"
 
+crypto-deps-readiness-check:
+	python3 scripts/crypto_deps_readiness_check.py --root "." --report "$(CRYPTO_DEPS_READINESS_REPORT)"
+
+crypto-deps-policy-check:
+	$(MAKE) crypto-deps-readiness-check
+	python3 scripts/crypto_deps_policy_check.py --root "." --report "$(CRYPTO_DEPS_POLICY_REPORT)"
+
+crypto-primitives-check:
+	cargo test -p cortex-crypto
+	python3 scripts/crypto_primitives_check.py --root "." --report "$(CRYPTO_PRIMITIVES_REPORT)"
+
+key-management-check:
+	cargo test -p cortex-crypto receipt_key
+	cargo test -p cortex-server audit_tests
+	cargo test -p cortex-server parse_audit_log_mac_key_validates_hex_and_key_id
+	cargo test -p cortex-server parse_receipt_signing_key
+	cargo test -p cortex-server parse_receipt_external_signer
+	cargo test -p cortex-server receipt_signer
+	cargo test -p cortex-cli receipt_key_generate_export_and_rotate_preserves_dual_trust
+	cargo test -p cortex-cli receipt_key_rotate_writes_verifiable_reanchor_record
+	cargo test -p cortex-cli audit_review_verify_chain_requires_mac_key_for_v2_and_rejects_mac_tampering
+	cargo test -p cortex-cli audit_verify_alias_accepts_keyed_v2_chain_with_key_file
+	python3 scripts/key_management_check.py --root "." --report "$(KEY_MANAGEMENT_REPORT)"
+
+database-instance-identity-check:
+	cargo test -p cortex-server database_instance_id --all-features
+	python3 scripts/database_instance_identity_check.py --root "." --report "$(DATABASE_INSTANCE_IDENTITY_REPORT)"
+
+crypto-claims-honesty-check:
+	python3 scripts/crypto_claims_honesty_check.py --root "." --report "$(CRYPTO_CLAIMS_HONESTY_REPORT)"
+
+crypto-foundation-check:
+	$(MAKE) crypto-deps-policy-check
+	$(MAKE) crypto-primitives-check
+	$(MAKE) encrypted-backup-check
+	$(MAKE) encrypted-backup-legacy-refuse-check
+	$(MAKE) audit-chain-check
+	$(MAKE) audit-receipt-binding-check
+	$(MAKE) key-management-check
+	$(MAKE) database-instance-identity-check
+	$(MAKE) secrets-check
+	$(MAKE) crypto-claims-honesty-check
+	python3 scripts/crypto_foundation_check.py --root "." --crypto-deps-policy-report "$(CRYPTO_DEPS_POLICY_REPORT)" --crypto-primitives-report "$(CRYPTO_PRIMITIVES_REPORT)" --encrypted-backup-report "$(ENCRYPTED_BACKUP_REPORT)" --encrypted-backup-legacy-refuse-report "$(ENCRYPTED_BACKUP_LEGACY_REFUSE_REPORT)" --audit-chain-report "$(AUDIT_CHAIN_REPORT)" --audit-receipt-binding-report "$(AUDIT_RECEIPT_BINDING_REPORT)" --key-management-report "$(KEY_MANAGEMENT_REPORT)" --database-instance-identity-report "$(DATABASE_INSTANCE_IDENTITY_REPORT)" --llm-secrets-report "$(LLM_INFERENCE_SECRETS_REPORT)" --secrets-hygiene-report "$(SECRETS_HYGIENE_REPORT)" --crypto-claims-honesty-report "$(CRYPTO_CLAIMS_HONESTY_REPORT)" --report "$(CRYPTO_FOUNDATION_REPORT)"
+
 rbac-policy-store-check:
 	cargo test -p cortex-server auth_policy_tests
 	cargo test -p cortex-cli auth_review
@@ -25,6 +69,11 @@ audit-chain-check:
 	cargo test -p cortex-cli audit_review_verify_chain_accepts_valid_sequence_and_rejects_tampering
 	python3 scripts/enterprise_rbac_gate_check.py --gate audit-chain --report "$(AUDIT_CHAIN_REPORT)"
 
+audit-receipt-binding-check:
+	cargo test -p cortex-server receipt_hash
+	cargo test -p cortex-cli audit_review_verify_chain_rejects_receipt_hash_tampering
+	python3 scripts/audit_receipt_binding_check.py --root "." --report "$(AUDIT_RECEIPT_BINDING_REPORT)"
+
 audit-export-retention-check:
 	cargo test -p cortex-cli cli_audit_siem_tests
 	python3 scripts/audit_export_retention_check.py --report "$(AUDIT_EXPORT_RETENTION_REPORT)"
@@ -39,14 +88,46 @@ audit-productization-check:
 security-hardening-check: security-check rbac-policy-store-check quota-policy-check audit-chain-check audit-export-retention-check audit-productization-check
 	python3 scripts/security_hardening_check.py --report "$(SECURITY_HARDENING_REPORT)"
 
-security-gate-v2-check: security-hardening-check
-	python3 scripts/security_gate_v2_check.py --security-report "$(SECURITY_REPORT)" --security-hardening-report "$(SECURITY_HARDENING_REPORT)" --rbac-report "$(RBAC_POLICY_STORE_REPORT)" --quota-report "$(QUOTA_POLICY_REPORT)" --audit-chain-report "$(AUDIT_CHAIN_REPORT)" --audit-export-retention-report "$(AUDIT_EXPORT_RETENTION_REPORT)" --report "$(SECURITY_GATE_V2_REPORT)"
+security-gate-v2-check: security-hardening-check crypto-foundation-check
+	python3 scripts/security_gate_v2_check.py --security-report "$(SECURITY_REPORT)" --security-hardening-report "$(SECURITY_HARDENING_REPORT)" --rbac-report "$(RBAC_POLICY_STORE_REPORT)" --quota-report "$(QUOTA_POLICY_REPORT)" --audit-chain-report "$(AUDIT_CHAIN_REPORT)" --audit-export-retention-report "$(AUDIT_EXPORT_RETENTION_REPORT)" --crypto-foundation-report "$(CRYPTO_FOUNDATION_REPORT)" --report "$(SECURITY_GATE_V2_REPORT)"
 
 security-release-report-check: security-gate-v2-check compliance-boundary-check
 	python3 scripts/security_release_report_check.py --security-gate-v2-report "$(SECURITY_GATE_V2_REPORT)" --compliance-boundary-report "$(COMPLIANCE_BOUNDARY_REPORT)" --report "$(SECURITY_RELEASE_REPORT)"
 
 compliance-boundary-check:
-	python3 scripts/compliance_boundary_check.py --report "$(COMPLIANCE_BOUNDARY_REPORT)"
+	python3 scripts/compliance_boundary_check.py --report "$(COMPLIANCE_BOUNDARY_REPORT)" $(COMPLIANCE_BOUNDARY_ARGS) $(COMPLIANCE_BOUNDARY_PRODUCTION_ORIGIN_ARGS)
+
+receipt-kms-hsm-custody-check:
+	python3 scripts/receipt_kms_hsm_custody_check.py --root "." --report "$(RECEIPT_KMS_HSM_CUSTODY_REPORT)" $(RECEIPT_KMS_HSM_CUSTODY_ARGS) $(RECEIPT_KMS_HSM_CUSTODY_PRODUCTION_ORIGIN_ARGS)
+
+receipt-production-readiness-check:
+	$(MAKE) accountability-receipt-check
+	$(MAKE) transparency-slo-check
+	$(MAKE) key-management-check
+	$(MAKE) receipt-kms-hsm-custody-check
+	$(MAKE) receipt-production-evidence-handoff-consistency-check
+	$(MAKE) security-release-report-check
+	python3 scripts/receipt_production_readiness_check.py --root "." --accountability-receipt-report "$(ACCOUNTABILITY_RECEIPT_REPORT)" --transparency-slo-report "$(TRANSPARENCY_SLO_REPORT)" --key-management-report "$(KEY_MANAGEMENT_REPORT)" --receipt-kms-hsm-custody-report "$(RECEIPT_KMS_HSM_CUSTODY_REPORT)" --handoff-consistency-report "$(RECEIPT_PRODUCTION_EVIDENCE_HANDOFF_CONSISTENCY_REPORT)" --security-release-report "$(SECURITY_RELEASE_REPORT)" --compliance-boundary-report "$(COMPLIANCE_BOUNDARY_REPORT)" --report "$(RECEIPT_PRODUCTION_READINESS_REPORT)"
+
+receipt-production-evidence-preflight-check: production-evidence-origin-check receipt-production-evidence-handoff-consistency-check
+	python3 scripts/receipt_production_evidence_preflight.py --report "$(RECEIPT_PRODUCTION_EVIDENCE_PREFLIGHT_REPORT)" $(RECEIPT_KMS_HSM_CUSTODY_ARGS) $(COMPLIANCE_BOUNDARY_ARGS)
+
+receipt-production-evidence-production-preflight-check: production-evidence-origin-check receipt-production-evidence-handoff-consistency-check
+	python3 scripts/receipt_production_evidence_preflight.py --report "$(RECEIPT_PRODUCTION_EVIDENCE_PREFLIGHT_REPORT)" --require-production-origin-proof $(RECEIPT_KMS_HSM_CUSTODY_ARGS) $(COMPLIANCE_BOUNDARY_ARGS) $(RECEIPT_PRODUCTION_ORIGIN_ARGS)
+
+receipt-production-evidence-handoff-check:
+	python3 scripts/receipt_production_evidence_handoff.py --report "$(RECEIPT_PRODUCTION_EVIDENCE_HANDOFF_REPORT)"
+
+receipt-production-evidence-handoff-consistency-check:
+	python3 scripts/receipt_production_evidence_handoff_check.py --report "$(RECEIPT_PRODUCTION_EVIDENCE_HANDOFF_CONSISTENCY_REPORT)"
+
+production-evidence-origin-check:
+	python3 scripts/evidence_origin_check.py --root "." --report "$(PRODUCTION_EVIDENCE_ORIGIN_REPORT)"
+
+receipt-production-ready-check:
+	$(MAKE) receipt-production-evidence-production-preflight-check
+	$(MAKE) receipt-production-readiness-check
+	python3 scripts/receipt_production_readiness_check.py --root "." --accountability-receipt-report "$(ACCOUNTABILITY_RECEIPT_REPORT)" --transparency-slo-report "$(TRANSPARENCY_SLO_REPORT)" --key-management-report "$(KEY_MANAGEMENT_REPORT)" --receipt-kms-hsm-custody-report "$(RECEIPT_KMS_HSM_CUSTODY_REPORT)" --handoff-consistency-report "$(RECEIPT_PRODUCTION_EVIDENCE_HANDOFF_CONSISTENCY_REPORT)" --security-release-report "$(SECURITY_RELEASE_REPORT)" --compliance-boundary-report "$(COMPLIANCE_BOUNDARY_REPORT)" --production-evidence-preflight-report "$(RECEIPT_PRODUCTION_EVIDENCE_PREFLIGHT_REPORT)" --report "$(RECEIPT_PRODUCTION_READY_REPORT)" --require-production-ready
 
 metrics-contract-v2-check:
 	cargo test -p cortex-server metrics
@@ -146,6 +227,9 @@ consensus-rejoin-check: replication-partition-check replication-lifecycle-check
 
 distributed-consensus-research-check: distributed-consensus-check consensus-partition-soak-check consensus-failover-slo-check consensus-rejoin-check
 	python3 scripts/distributed_consensus_research_check.py --report "$(CONSENSUS_RESEARCH_REPORT)"
+
+consensus-release-lane-check:
+	python3 scripts/consensus_release_lane_check.py --runs "$(CONSENSUS_RELEASE_LANE_RUNS)" --run-root "$(CONSENSUS_RELEASE_LANE_ROOT)" --report "$(CONSENSUS_RELEASE_LANE_REPORT)"
 
 cloud-tenant-lifecycle-check: tenant-recovery-check observability-check http-contract-ops-check
 	python3 scripts/managed_cloud_gate_check.py --gate tenant-lifecycle --evidence tenant_recovery="$(TENANT_RECOVERY_REPORT)" --evidence observability="$(OBSERVABILITY_REPORT)" --evidence http_contract_ops="$(HTTP_CONTRACT_OPS_REPORT)" --report "$(MANAGED_CLOUD_TENANT_REPORT)"

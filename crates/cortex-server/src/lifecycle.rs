@@ -8,6 +8,9 @@ use tower_http::cors::CorsLayer;
 use tower_http::limit::RequestBodyLimitLayer;
 
 use crate::config::ServerOptions;
+use crate::database_identity::{
+    load_or_create_database_instance_id, validate_database_instance_id,
+};
 use crate::handler::axum_handler;
 use crate::rate_limit::{GlobalRateLimit, PrincipalRateLimits, TenantQueueLimits};
 use crate::state::AppState;
@@ -18,6 +21,7 @@ pub fn serve(root: &Path, addr: &str) -> std::io::Result<()> {
 }
 
 pub fn serve_with_options(root: &Path, addr: &str, options: ServerOptions) -> std::io::Result<()> {
+    let options = prepare_server_options(root, options)?;
     validate_server_options(&options)?;
     let rt = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
@@ -33,6 +37,7 @@ pub fn serve_with_options(root: &Path, addr: &str, options: ServerOptions) -> st
                     audit::AuditSinkOptions::from_parts(
                         options.audit_log_rotate_bytes,
                         options.audit_log_fsync_policy,
+                        options.audit_log_mac_key.clone(),
                     ),
                 )
             })
@@ -41,10 +46,16 @@ pub fn serve_with_options(root: &Path, addr: &str, options: ServerOptions) -> st
         let rate_limit = options
             .request_rate_limit_per_minute
             .map(GlobalRateLimit::new);
+        let cluster_ingress_monitor =
+            crate::cluster::ClusterIngressMonitor::from_options(&options).map(|monitor| {
+                monitor.refresh_once();
+                Arc::new(monitor)
+            });
         let state = AppState {
             root: root.to_owned(),
             dbs: Arc::new(Mutex::new(BTreeMap::new())),
             options: Arc::new(options),
+            cluster_ingress_monitor,
             audit_sink,
             request_count: Arc::new(AtomicU64::new(0)),
             request_rejected: Arc::new(AtomicU64::new(0)),
@@ -83,6 +94,17 @@ pub fn serve_with_options(root: &Path, addr: &str, options: ServerOptions) -> st
             .with_state(state.clone());
         if let Some(cors) = cors {
             app = app.layer(cors);
+        }
+
+        if let Some(monitor) = state.cluster_ingress_monitor.clone() {
+            tokio::spawn(async move {
+                let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(1));
+                loop {
+                    interval.tick().await;
+                    let monitor = monitor.clone();
+                    let _ = tokio::task::spawn_blocking(move || monitor.refresh_once()).await;
+                }
+            });
         }
 
         tokio::spawn(async {
@@ -185,6 +207,18 @@ pub fn serve_with_options(root: &Path, addr: &str, options: ServerOptions) -> st
     })
 }
 
+fn prepare_server_options(
+    root: &Path,
+    mut options: ServerOptions,
+) -> std::io::Result<ServerOptions> {
+    if (options.receipt_signing_key.is_some() || options.receipt_external_signer.is_some())
+        && options.db_instance_id.is_none()
+    {
+        options.db_instance_id = Some(load_or_create_database_instance_id(root)?);
+    }
+    Ok(options)
+}
+
 async fn shutdown_signal() {
     let ctrl_c = async {
         let _ = tokio::signal::ctrl_c().await;
@@ -235,6 +269,66 @@ fn validate_server_options(options: &ServerOptions) -> std::io::Result<()> {
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidInput,
             "tenant_queue_quota must be greater than zero",
+        ));
+    }
+    if options.audit_log_path.is_some() && options.audit_log_mac_key.is_none() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "audit_log_mac_key is required when audit_log_path is set",
+        ));
+    }
+    if options.receipt_signing_key.is_some() && options.receipt_external_signer.is_some() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "configure only one receipt signer mode",
+        ));
+    }
+    if let Some(db_instance_id) = options.db_instance_id.as_deref() {
+        validate_database_instance_id(db_instance_id)
+            .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidInput, error))?;
+    }
+    if (options.receipt_signing_key.is_some() || options.receipt_external_signer.is_some())
+        && options.db_instance_id.is_none()
+    {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "database instance identity is required when receipt signing is configured",
+        ));
+    }
+    if let Some(cluster) = &options.cluster_config {
+        cluster.validate_replication_config().map_err(|error| {
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                format!("invalid cluster config: {error}"),
+            )
+        })?;
+        let distributed = cluster.nodes.len() > 1 || cluster.replication_factor > 1;
+        if distributed
+            && !options
+                .engine_database_options
+                .feature_flags
+                .experimental_replication
+        {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "multi-node cluster_config requires CORTEXDB_EXPERIMENTAL_REPLICATION=true",
+            ));
+        }
+        if let Some(leader) = options.cluster_ingress_leader {
+            if !cluster.nodes.iter().any(|node| node.id == leader) {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    format!(
+                        "cluster_ingress_leader {} is not present in cluster_config",
+                        leader.0
+                    ),
+                ));
+            }
+        }
+    } else if options.cluster_ingress_leader.is_some() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "cluster_ingress_leader requires cluster_config",
         ));
     }
     Ok(())

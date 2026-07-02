@@ -93,7 +93,171 @@ engine-internal-boundary-check:
 	python3 scripts/engine_internal_boundary_check.py --report "$(ENGINE_INTERNAL_BOUNDARY_REPORT)"
 
 engine-determinism-check:
+	$(MAKE) verify-determinism-check
 	python3 scripts/engine_determinism_check.py --report "$(ENGINE_DETERMINISM_REPORT)"
+
+canonical-serialization-check:
+	cargo test -p cortex-engine canonical
+	python3 scripts/canonical_serialization_check.py --report "$(CANONICAL_SERIALIZATION_REPORT)"
+
+accountability-canonical-check: canonical-serialization-check
+
+accountability-cell-hash-check:
+	cargo test -p cortex-engine --test accountability_cell_hash --all-features
+	python3 scripts/accountability_cell_hash_check.py --root "." --report "$(ACCOUNTABILITY_CELL_HASH_REPORT)"
+
+context-access-decision-capture-check:
+	cargo test -p cortex-engine --lib retrieve_execution_report_captures_permission_denials_without_forbidden_payload
+	cargo test -p cortex-engine --test context_access_decision_capture --all-features
+	python3 scripts/context_access_decision_capture_check.py --root "." --report "$(CONTEXT_ACCESS_DECISION_CAPTURE_REPORT)"
+
+accountability-receipt-schema-check:
+	cargo test -p cortexdb-sdk context_pack_v1_deserializes_optional_accountability_receipt
+	python3 scripts/accountability_receipt_schema_check.py --root "." --report "$(ACCOUNTABILITY_RECEIPT_SCHEMA_REPORT)"
+
+accountability-receipt-determinism-check:
+	cargo test -p cortex-engine accountability_receipt_body --all-features
+	python3 scripts/accountability_receipt_determinism_check.py --root "." --report "$(ACCOUNTABILITY_RECEIPT_DETERMINISM_REPORT)"
+
+accountability-receipt-sign-check:
+	cargo test -p cortex-engine accountability_receipt_header --all-features
+	python3 scripts/accountability_receipt_sign_check.py --root "." --report "$(ACCOUNTABILITY_RECEIPT_SIGN_REPORT)"
+
+accountability-receipt-verify-check:
+	cargo test -p cortex-receipt-verify
+	cargo run -p cortex-receipt-verify -- --input "$(ACCOUNTABILITY_RECEIPT_VERIFY_FIXTURE)"
+	python3 scripts/accountability_receipt_verify_check.py --root "." --fixture "$(ACCOUNTABILITY_RECEIPT_VERIFY_FIXTURE)" --report "$(ACCOUNTABILITY_RECEIPT_VERIFY_REPORT)"
+
+accountability-receipt-tamper-check:
+	python3 scripts/accountability_receipt_tamper_check.py --root "." --fixture "$(ACCOUNTABILITY_RECEIPT_VERIFY_FIXTURE)" --report "$(ACCOUNTABILITY_RECEIPT_TAMPER_REPORT)"
+
+accountability-receipt-check:
+	$(MAKE) accountability-receipt-schema-check
+	$(MAKE) accountability-receipt-determinism-check
+	$(MAKE) accountability-receipt-sign-check
+	$(MAKE) accountability-receipt-verify-check
+	$(MAKE) accountability-receipt-tamper-check
+	python3 scripts/accountability_receipt_check.py --root "." --schema-report "$(ACCOUNTABILITY_RECEIPT_SCHEMA_REPORT)" --determinism-report "$(ACCOUNTABILITY_RECEIPT_DETERMINISM_REPORT)" --sign-report "$(ACCOUNTABILITY_RECEIPT_SIGN_REPORT)" --verify-report "$(ACCOUNTABILITY_RECEIPT_VERIFY_REPORT)" --tamper-report "$(ACCOUNTABILITY_RECEIPT_TAMPER_REPORT)" --report "$(ACCOUNTABILITY_RECEIPT_REPORT)"
+
+receipt-replica-invariance-check:
+	cargo test -p cortex-engine --test receipt_replica_invariance --all-features
+	cargo test -p cortex-engine accountability_receipt_header_is_replica_invariant_for_same_committed_inputs --all-features
+	cargo test -p cortex-engine accountability_receipt_header_changes_when_audit_chain_head_changes --all-features
+	cargo test -p cortex-receipt-verify
+	$(MAKE) accountability-receipt-schema-check
+	$(MAKE) accountability-receipt-verify-check
+	$(MAKE) transparency-anchor-check
+	python3 scripts/receipt_replica_invariance_check.py --root "." --fixture "$(ACCOUNTABILITY_RECEIPT_VERIFY_FIXTURE)" --report "$(RECEIPT_REPLICA_INVARIANCE_REPORT)"
+
+consensus-failover-binder-check:
+	cargo test -p cortex-engine --test cluster_fail_closed --all-features
+	cargo test -p cortex-engine --test replication_partition_matrix --all-features
+	python3 scripts/consensus_failover_binder_check.py --root "." --report "$(CONSENSUS_FAILOVER_BINDER_REPORT)"
+
+multi-agent-cluster-consistency-check:
+	$(MAKE) multi-agent-consistency-check
+	cargo test -p cortex-engine --test multi_agent_cluster_consistency --all-features
+	python3 scripts/multi_agent_cluster_consistency_check.py --root "." --report "$(MULTI_AGENT_CLUSTER_CONSISTENCY_REPORT)"
+
+http-raft-routing-accountability-check:
+	cargo test -p cortex-server http_raft_arbitrary_node_context_receipts_use_replicated_snapshot --all-features
+	python3 scripts/http_raft_routing_accountability_check.py --root "." --report "$(HTTP_RAFT_ROUTING_ACCOUNTABILITY_REPORT)"
+
+raft-ingress-production-guard-check:
+	cargo test -p cortex-server cluster_ingress_guard_tests --all-features
+	python3 scripts/raft_ingress_production_guard_check.py --root "." --report "$(RAFT_INGRESS_PRODUCTION_GUARD_REPORT)"
+
+raft-ingress-forwarding-check:
+	cargo test -p cortex-server cluster_ingress_guard_tests --all-features
+	python3 scripts/raft_ingress_forwarding_check.py --root "." --report "$(RAFT_INGRESS_FORWARDING_REPORT)"
+
+raft-ingress-leader-hint-check:
+	cargo test -p cortex-server cluster_ingress_leader_hint_tests --all-features
+	cargo test -p cortex-server parse_cluster_ingress_leader_accepts_positive_node_id
+	python3 scripts/raft_ingress_leader_hint_check.py --root "." --report "$(RAFT_INGRESS_LEADER_HINT_REPORT)"
+
+raft-ingress-auto-discovery-check:
+	cargo test -p cortex-engine --test replication_cluster_config cluster_config_roundtrips_optional_ingress_addresses --all-features
+	cargo test -p cortex-engine --test replication_transport replication_status_frame_reports_known_leader_without_log_mutation --all-features
+	cargo test -p cortex-server cluster_ingress_discovery_tests --all-features
+	python3 scripts/raft_ingress_auto_discovery_check.py --root "." --report "$(RAFT_INGRESS_AUTO_DISCOVERY_REPORT)"
+
+raft-ingress-health-routing-check:
+	cargo test -p cortex-server cluster_ingress_health_tests --all-features
+	python3 scripts/raft_ingress_health_routing_check.py --root "." --report "$(RAFT_INGRESS_HEALTH_ROUTING_REPORT)"
+
+raft-ingress-lifecycle-monitor-check:
+	cargo test -p cortex-server production_monitor_uses_cached_leader_after_status_peer_exits --all-features
+	python3 scripts/raft_ingress_lifecycle_monitor_check.py --root "." --report "$(RAFT_INGRESS_LIFECYCLE_MONITOR_REPORT)"
+
+raft-ingress-load-policy-check:
+	cargo test -p cortex-server cluster_ingress_load_tests --all-features
+	python3 scripts/raft_ingress_load_policy_check.py --root "." --report "$(RAFT_INGRESS_LOAD_POLICY_REPORT)"
+
+raft-ingress-adaptive-scheduling-check: raft-ingress-load-policy-check
+	cargo test -p cortex-server cluster_ingress_adaptive_tests --all-features
+	python3 scripts/raft_ingress_adaptive_scheduling_check.py --root "." --report "$(RAFT_INGRESS_ADAPTIVE_SCHEDULING_REPORT)"
+
+raft-ingress-load-metrics-check: raft-ingress-adaptive-scheduling-check
+	cargo test -p cortex-server parse_cluster_ingress_max_in_flight --all-features
+	cargo test -p cortex-server metrics_prometheus_output_contains_contract_series --all-features
+	python3 scripts/raft_ingress_load_metrics_check.py --root "." --report "$(RAFT_INGRESS_LOAD_METRICS_REPORT)"
+
+transparency-anchor-check:
+	cargo test -p cortex-engine transparency_log --all-features
+	cargo test -p cortex-server parse_transparency_log_path
+	python3 scripts/transparency_anchor_check.py --root "." --report "$(TRANSPARENCY_ANCHOR_REPORT)"
+
+transparency-witness-check:
+	$(MAKE) transparency-anchor-check
+	cargo test -p cortex-engine transparency_witness --all-features
+	python3 scripts/transparency_witness_check.py --root "." --report "$(TRANSPARENCY_WITNESS_REPORT)"
+
+transparency-witness-quorum-check:
+	$(MAKE) transparency-witness-check
+	cargo test -p cortex-engine transparency_witness_quorum --all-features
+	python3 scripts/transparency_witness_quorum_check.py --root "." --report "$(TRANSPARENCY_WITNESS_QUORUM_REPORT)"
+
+transparency-inclusion-check:
+	$(MAKE) transparency-witness-quorum-check
+	cargo test -p cortex-engine transparency_inclusion --all-features
+	python3 scripts/transparency_inclusion_check.py --root "." --report "$(TRANSPARENCY_INCLUSION_REPORT)"
+
+transparency-consistency-check:
+	$(MAKE) transparency-inclusion-check
+	cargo test -p cortex-engine transparency_consistency --all-features
+	python3 scripts/transparency_consistency_check.py --root "." --report "$(TRANSPARENCY_CONSISTENCY_REPORT)"
+
+transparency-availability-check:
+	$(MAKE) transparency-consistency-check
+	cargo test -p cortex-engine transparency_availability --all-features
+	python3 scripts/transparency_availability_check.py --root "." --report "$(TRANSPARENCY_AVAILABILITY_REPORT)"
+
+transparency-gossip-check:
+	$(MAKE) transparency-availability-check
+	cargo test -p cortex-engine transparency_gossip --all-features
+	python3 scripts/transparency_gossip_check.py --root "." --report "$(TRANSPARENCY_GOSSIP_REPORT)"
+
+transparency-slo-check:
+	$(MAKE) transparency-gossip-check
+	cargo test -p cortex-engine transparency_slo --all-features
+	python3 scripts/transparency_slo_check.py --root "." --report "$(TRANSPARENCY_SLO_REPORT)"
+
+correctness-prerequisites-check:
+	$(MAKE) cosine-metric-correctness-check
+	$(MAKE) cell-id-collision-check
+	$(MAKE) conflict-normalization-check
+	$(MAKE) ann-budget-disclosure-check
+	$(MAKE) ann-metric-matrix-check
+	$(MAKE) context-pack-conflict-visibility-check
+	$(MAKE) engine-determinism-check
+	python3 scripts/correctness_prerequisites_check.py --root "." --report "$(CORRECTNESS_PREREQUISITES_REPORT)"
+
+cell-id-collision-check:
+	cargo test -p cortex-engine --test agent_session_tests session_cell_ids
+	cargo test -p cortex-engine --test feedback_tests feedback_cell_ids
+	cargo test -p cortex-engine --test remember_write_contract_tests remember_
+	python3 scripts/cell_id_collision_check.py --report "$(CELL_ID_COLLISION_REPORT)"
 
 engine-panic-audit-check:
 	python3 scripts/engine_panic_audit_check.py --report "target/engine-panic-audit/report.json"

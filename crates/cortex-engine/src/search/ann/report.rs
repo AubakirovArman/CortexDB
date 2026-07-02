@@ -31,6 +31,7 @@ fn slo_violations(report: &AnnSearchReport, policy: AnnSearchPolicy) -> Vec<AnnS
             AnnFallbackReason::InsufficientResults => AnnSloViolation::InsufficientResults,
             AnnFallbackReason::LowRecall => AnnSloViolation::LowRecall,
             AnnFallbackReason::VisitBudgetExceeded => AnnSloViolation::VisitBudgetExceeded,
+            AnnFallbackReason::SparseAllowedSet => AnnSloViolation::SparseAllowedSet,
             AnnFallbackReason::NoPersistedSegments => AnnSloViolation::NoPersistedSegments,
             AnnFallbackReason::UncheckpointedChanges => AnnSloViolation::UncheckpointedChanges,
             AnnFallbackReason::HnswDisabled => AnnSloViolation::HnswDisabled,

@@ -46,6 +46,7 @@ class GuardResponse:
 
 @dataclass(frozen=True)
 class NumericConflictResponse:
+    kind: str
     metric: str
     left: str
     right: str
@@ -53,6 +54,7 @@ class NumericConflictResponse:
     @classmethod
     def from_json(cls, value: dict[str, Any]) -> "NumericConflictResponse":
         return cls(
+            kind=str(value.get("kind", "numeric")),
             metric=str(value["metric"]),
             left=str(value["left"]),
             right=str(value["right"]),
@@ -71,6 +73,7 @@ class VerificationReportResponse:
     supporting: tuple[EvidenceResponse, ...]
     contradicting: tuple[EvidenceResponse, ...]
     numeric_conflicts: tuple[NumericConflictResponse, ...]
+    accountability_receipt: dict[str, Any] | None = None
 
     @classmethod
     def from_json(cls, value: dict[str, Any]) -> "VerificationReportResponse":
@@ -85,4 +88,9 @@ class VerificationReportResponse:
             supporting=tuple(EvidenceResponse.from_json(row) for row in value["supporting"]),
             contradicting=tuple(EvidenceResponse.from_json(row) for row in value["contradicting"]),
             numeric_conflicts=tuple(NumericConflictResponse.from_json(row) for row in value["numeric_conflicts"]),
+            accountability_receipt=(
+                dict(value["accountability_receipt"])
+                if value.get("accountability_receipt") is not None
+                else None
+            ),
         )

@@ -10,7 +10,10 @@ use crate::verification::temporal::{
     temporal_fact_overlaps_metadata, temporal_stale_reason_with_metadata, TemporalStaleReason,
 };
 
-use super::{VerificationEvidence, VerificationGuard, VerificationNumericConflict};
+use super::{
+    VerificationEvidence, VerificationGuard, VerificationNumericConflict,
+    VerificationNumericConflictKind,
+};
 
 pub(super) fn citation_guard(evidence: &VerificationEvidence) -> Option<VerificationGuard> {
     evidence.citation.is_none().then(|| VerificationGuard {
@@ -46,6 +49,7 @@ pub(super) fn numeric_mismatch_conflict(
     let right = numeric_display(&details.evidence_value);
     Some(VerificationNumericConflict {
         cell_id,
+        kind: VerificationNumericConflictKind::Numeric,
         metric: metric_name(payload),
         left,
         right,

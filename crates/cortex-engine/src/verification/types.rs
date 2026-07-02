@@ -68,6 +68,23 @@ pub struct VerificationReport {
     pub numeric_conflicts: Vec<VerificationNumericConflict>,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum VerificationNumericConflictKind {
+    Numeric,
+    Temporal,
+    Citation,
+}
+
+impl VerificationNumericConflictKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Numeric => "numeric",
+            Self::Temporal => "temporal",
+            Self::Citation => "citation",
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum VerificationGuardCode {
     MissingCitation,
@@ -95,6 +112,7 @@ pub struct VerificationGuard {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct VerificationNumericConflict {
     pub cell_id: CellId,
+    pub kind: VerificationNumericConflictKind,
     pub metric: String,
     pub left: String,
     pub right: String,

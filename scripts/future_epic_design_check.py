@@ -59,7 +59,7 @@ EPIC_MARKERS: dict[str, dict[str, object]] = {
     "enterprise-rbac": {
         "title": "Enterprise RBAC And Compliance",
         "docs": {
-            "docs/ENTERPRISE_RBAC_COMPLIANCE_DESIGN.md": [
+            "docs/archive/ENTERPRISE_RBAC_COMPLIANCE_DESIGN.md": [
                 "Policy Store",
                 "Principal Lifecycle",
                 "Quota Model",

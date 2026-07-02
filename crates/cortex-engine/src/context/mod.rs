@@ -13,6 +13,7 @@ mod freshness;
 mod grounding;
 mod large_cell;
 mod pack;
+mod receipt_evidence;
 mod scoring;
 mod span;
 mod token_estimator;
@@ -29,6 +30,7 @@ pub use grounding::{
 };
 pub use large_cell::ContextLargeCellPolicy;
 pub(crate) use pack::ContextPackBuilder;
+pub use receipt_evidence::ContextPackReceiptEvidence;
 pub use token_estimator::{estimate_tokens, estimate_tokens_for_profile, ContextTokenProfile};
 pub use trace::{
     ContextPipelineCellTrace, ContextPipelineStageTrace, ContextPipelineTrace,
@@ -110,10 +112,12 @@ pub struct ContextAccessDecision {
     pub cell_id: CellId,
     pub decision: ContextAccessDecisionOutcome,
     pub policy: String,
+    pub policy_version: Option<String>,
     pub reason: String,
     pub scope: String,
     pub scope_id: u64,
     pub agent_id: Option<u64>,
+    pub agent_view_digest: Option<String>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -152,6 +156,7 @@ pub struct ContextPack {
     pub conflict_visibility_q16: u16,
     pub visible_conflict_count: u32,
     pub anomalies: Vec<ContextPackAnomaly>,
+    pub grounding_report: Option<AnswerGroundingReport>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -168,6 +173,7 @@ pub enum ContextPackAnomalyCode {
     ScopeMismatch,
     InsufficientContext,
     VisibleConflict,
+    RetrievalIncomplete,
 }
 
 impl ContextPackAnomalyCode {
@@ -179,6 +185,7 @@ impl ContextPackAnomalyCode {
             Self::ScopeMismatch => "scope_mismatch",
             Self::InsufficientContext => "insufficient_context",
             Self::VisibleConflict => "visible_conflict",
+            Self::RetrievalIncomplete => "retrieval_incomplete",
         }
     }
 }

@@ -5,14 +5,15 @@ use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::audit_chain::{self, AUDIT_CHAIN_ZERO_HASH};
-use crate::config::AuditLogFsyncPolicy;
+use crate::config::{AuditLogFsyncPolicy, AuditMacKey};
 
-use super::{audit_event_hash, AuditRecord};
+use super::{audit_event_hash, audit_event_mac, AuditRecord, AUDIT_SCHEMA_VERSION_V2};
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub(crate) struct AuditSinkOptions {
     pub(crate) rotate_bytes: Option<u64>,
     pub(crate) fsync_policy: AuditLogFsyncPolicy,
+    pub(crate) mac_key: Option<AuditMacKey>,
 }
 
 pub(crate) struct AuditSink {
@@ -25,19 +26,26 @@ struct AuditSinkState {
     current_size: u64,
     next_sequence: u64,
     prev_hash: String,
+    mac_key: AuditMacKey,
     options: AuditSinkOptions,
 }
 
 impl AuditSink {
     #[cfg(test)]
     pub(crate) fn open(path: &Path) -> io::Result<Self> {
-        Self::open_with_options(path, AuditSinkOptions::default())
+        Self::open_with_options(path, AuditSinkOptions::test_default())
     }
 
     pub(crate) fn open_with_options(path: &Path, options: AuditSinkOptions) -> io::Result<Self> {
         if let Some(parent) = path.parent() {
             fs::create_dir_all(parent)?;
         }
+        let mac_key = options.mac_key.clone().ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "audit log MAC key is required for persisted audit chain v2",
+            )
+        })?;
         let (next_sequence, prev_hash) = audit_chain::tail(path)?;
         let file = OpenOptions::new().create(true).append(true).open(path)?;
         let current_size = file.metadata()?.len();
@@ -48,6 +56,7 @@ impl AuditSink {
                 current_size,
                 next_sequence,
                 prev_hash,
+                mac_key,
                 options,
             }),
         })
@@ -58,11 +67,21 @@ impl AuditSink {
             .state
             .lock()
             .map_err(|e| io::Error::other(e.to_string()))?;
-        fill_chain_fields(record, state.next_sequence, &state.prev_hash);
+        fill_chain_fields(
+            record,
+            state.next_sequence,
+            &state.prev_hash,
+            &state.mac_key,
+        );
         let mut line = encode_record(record)?;
         if state.should_rotate(line.len() as u64) {
             state.rotate()?;
-            fill_chain_fields(record, state.next_sequence, &state.prev_hash);
+            fill_chain_fields(
+                record,
+                state.next_sequence,
+                &state.prev_hash,
+                &state.mac_key,
+            );
             line = encode_record(record)?;
         }
         state.file.write_all(&line)?;
@@ -112,10 +131,18 @@ impl AuditSinkState {
     }
 }
 
-fn fill_chain_fields(record: &mut AuditRecord<'_>, sequence: u64, prev_hash: &str) {
+fn fill_chain_fields(
+    record: &mut AuditRecord<'_>,
+    sequence: u64,
+    prev_hash: &str,
+    mac_key: &AuditMacKey,
+) {
+    record.schema_version = AUDIT_SCHEMA_VERSION_V2;
     record.sequence = sequence;
     record.prev_hash = prev_hash.to_owned();
+    record.mac_key_id = Some(mac_key.key_id().to_owned());
     record.event_hash = audit_event_hash(record);
+    record.event_mac = Some(audit_event_mac(record, mac_key.mac_key()));
 }
 
 fn encode_record(record: &AuditRecord<'_>) -> io::Result<Vec<u8>> {

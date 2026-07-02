@@ -42,6 +42,7 @@ pub(crate) fn verification_report_to_json(report: &VerificationReport, db: &Data
         .numeric_conflicts
         .iter()
         .map(|conflict| NumericConflictResponse {
+            kind: conflict.kind.as_str().to_owned(),
             metric: conflict.metric.clone(),
             left: conflict.left.clone(),
             right: conflict.right.clone(),

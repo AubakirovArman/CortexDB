@@ -42,6 +42,7 @@ export interface ContextPackResponse {
   citations_required: boolean;
   cells: ContextPackCellResponse[];
   anomalies: ContextPackAnomalyResponse[];
+  grounding_report?: AnswerGroundingReportResponse | null;
 }
 
 export interface AnswerGroundingSpanResponse {

@@ -2,6 +2,7 @@ use std::sync::atomic::Ordering;
 
 use crate::auth::AuthRouteContext;
 use crate::config::ServerOptions;
+use crate::receipt::ReceiptEmissionContext;
 use crate::responses::RouterError;
 use crate::router::route_database_with_auth;
 
@@ -84,6 +85,7 @@ impl DatabaseActor {
             target,
             body,
             AuthRouteContext::for_agent(auth_agent_id),
+            None,
         )
     }
 
@@ -93,6 +95,7 @@ impl DatabaseActor {
         target: &str,
         body: &[u8],
         auth_context: AuthRouteContext,
+        receipt_context: Option<&ReceiptEmissionContext>,
     ) -> Result<String, RouterError> {
         self.ensure_open()?;
         let permit = match self.semaphore.try_acquire() {
@@ -106,10 +109,10 @@ impl DatabaseActor {
 
         let result = if is_write_route(method, target) {
             let guard = self.db.write();
-            route_database_with_auth(guard, method, target, body, auth_context)
+            route_database_with_auth(guard, method, target, body, auth_context, receipt_context)
         } else {
             let guard = self.db.read();
-            route_database_with_auth(guard, method, target, body, auth_context)
+            route_database_with_auth(guard, method, target, body, auth_context, receipt_context)
         };
 
         drop(permit);

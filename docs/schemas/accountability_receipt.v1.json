@@ -1,0 +1,419 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cortexdb.local/schemas/accountability_receipt.v1.json",
+  "title": "CortexDB Accountability Receipt v1",
+  "description": "Frozen JSON contract for CortexDB accountability receipt v1. This schema defines the receipt object before runtime emission, signing, and standalone verification are enabled.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "header",
+    "leaves"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "accountability_receipt.v1"
+    },
+    "header": {
+      "$ref": "#/$defs/receipt_header"
+    },
+    "leaves": {
+      "$ref": "#/$defs/receipt_leaves"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "hex32": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "hex64": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{128}$"
+    },
+    "q16": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 65535
+    },
+    "u64": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "nullable_u64": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "nullable_string": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "receipt_header": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "hash_alg",
+        "sig_alg",
+        "db_instance_id",
+        "key_id",
+        "created_unix_seconds",
+        "access_root",
+        "provenance_root",
+        "cell_set_root",
+        "verification_root",
+        "budget_commitment",
+        "conflict_commitment",
+        "pack_root",
+        "determinism_hash",
+        "audit_chain_head",
+        "signature"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "accountability_receipt.v1"
+        },
+        "hash_alg": {
+          "const": "blake3-256"
+        },
+        "sig_alg": {
+          "const": "ed25519"
+        },
+        "db_instance_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "key_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "created_unix_seconds": {
+          "$ref": "#/$defs/u64"
+        },
+        "access_root": {
+          "$ref": "#/$defs/hex32"
+        },
+        "provenance_root": {
+          "$ref": "#/$defs/hex32"
+        },
+        "cell_set_root": {
+          "$ref": "#/$defs/hex32"
+        },
+        "verification_root": {
+          "$ref": "#/$defs/hex32"
+        },
+        "budget_commitment": {
+          "$ref": "#/$defs/hex32"
+        },
+        "conflict_commitment": {
+          "$ref": "#/$defs/hex32"
+        },
+        "pack_root": {
+          "$ref": "#/$defs/hex32"
+        },
+        "determinism_hash": {
+          "$ref": "#/$defs/hex32"
+        },
+        "audit_chain_head": {
+          "$ref": "#/$defs/hex32"
+        },
+        "signature": {
+          "$ref": "#/$defs/receipt_signature"
+        }
+      },
+      "additionalProperties": false
+    },
+    "receipt_signature": {
+      "type": "object",
+      "required": [
+        "key_id",
+        "sig_alg",
+        "public_key_hex",
+        "signature_hex"
+      ],
+      "properties": {
+        "key_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sig_alg": {
+          "const": "ed25519"
+        },
+        "public_key_hex": {
+          "$ref": "#/$defs/hex32"
+        },
+        "signature_hex": {
+          "$ref": "#/$defs/hex64"
+        }
+      },
+      "additionalProperties": false
+    },
+    "receipt_leaves": {
+      "type": "object",
+      "required": [
+        "access",
+        "provenance",
+        "cell_set",
+        "verification",
+        "budget",
+        "conflict"
+      ],
+      "properties": {
+        "access": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/access_leaf"
+          }
+        },
+        "provenance": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/provenance_leaf"
+          }
+        },
+        "cell_set": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/cell_set_leaf"
+          }
+        },
+        "verification": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/verification_leaf"
+          }
+        },
+        "budget": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/budget_leaf"
+          }
+        },
+        "conflict": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/conflict_leaf"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "access_leaf": {
+      "type": "object",
+      "required": [
+        "leaf_type",
+        "decision",
+        "policy",
+        "policy_version",
+        "reason",
+        "agent_id",
+        "agent_view_digest",
+        "evidence_digest"
+      ],
+      "properties": {
+        "leaf_type": {
+          "type": "string",
+          "enum": [
+            "admitted_cell",
+            "denied_candidate"
+          ]
+        },
+        "cell_id": {
+          "$ref": "#/$defs/nullable_u64"
+        },
+        "candidate": {
+          "$ref": "#/$defs/nullable_u64"
+        },
+        "cell_id_hash": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/hex32"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "decision": {
+          "type": "string",
+          "enum": [
+            "allowed",
+            "denied"
+          ]
+        },
+        "policy": {
+          "type": "string"
+        },
+        "policy_version": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "scope_id": {
+          "$ref": "#/$defs/nullable_u64"
+        },
+        "agent_id": {
+          "$ref": "#/$defs/nullable_u64"
+        },
+        "agent_view_digest": {
+          "$ref": "#/$defs/hex32"
+        },
+        "evidence_digest": {
+          "$ref": "#/$defs/hex32"
+        }
+      },
+      "additionalProperties": false
+    },
+    "provenance_leaf": {
+      "type": "object",
+      "required": [
+        "cell_id",
+        "cell_content_hash"
+      ],
+      "properties": {
+        "cell_id": {
+          "$ref": "#/$defs/u64"
+        },
+        "cell_content_hash": {
+          "$ref": "#/$defs/hex32"
+        },
+        "source_cell_id": {
+          "$ref": "#/$defs/nullable_u64"
+        },
+        "source_byte_start": {
+          "$ref": "#/$defs/nullable_u64"
+        },
+        "source_byte_end": {
+          "$ref": "#/$defs/nullable_u64"
+        },
+        "source_line_start": {
+          "$ref": "#/$defs/nullable_u64"
+        },
+        "source_line_end": {
+          "$ref": "#/$defs/nullable_u64"
+        },
+        "source_ref": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "citation": {
+          "$ref": "#/$defs/nullable_string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "cell_set_leaf": {
+      "type": "object",
+      "required": [
+        "cell_id",
+        "cell_content_hash"
+      ],
+      "properties": {
+        "cell_id": {
+          "$ref": "#/$defs/u64"
+        },
+        "cell_content_hash": {
+          "$ref": "#/$defs/hex32"
+        }
+      },
+      "additionalProperties": false
+    },
+    "verification_leaf": {
+      "type": "object",
+      "required": [
+        "leaf_type",
+        "status",
+        "confidence_q16"
+      ],
+      "properties": {
+        "leaf_type": {
+          "type": "string",
+          "enum": [
+            "verification_report",
+            "verification_evidence",
+            "verification_conflict"
+          ]
+        },
+        "cell_id": {
+          "$ref": "#/$defs/nullable_u64"
+        },
+        "status": {
+          "type": "string"
+        },
+        "confidence_q16": {
+          "$ref": "#/$defs/q16"
+        },
+        "evidence_digest": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/hex32"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "budget_leaf": {
+      "type": "object",
+      "required": [
+        "token_budget_tokens",
+        "estimated_tokens",
+        "truncated"
+      ],
+      "properties": {
+        "token_budget_tokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "estimated_tokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "truncated": {
+          "type": "boolean"
+        },
+        "cell_id": {
+          "$ref": "#/$defs/nullable_u64"
+        },
+        "cell_estimated_tokens": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "conflict_leaf": {
+      "type": "object",
+      "required": [
+        "conflict_visibility_q16",
+        "visible_conflict_count",
+        "anomalies"
+      ],
+      "properties": {
+        "conflict_visibility_q16": {
+          "$ref": "#/$defs/q16"
+        },
+        "visible_conflict_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "anomalies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

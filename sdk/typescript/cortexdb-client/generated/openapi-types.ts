@@ -475,12 +475,14 @@ export interface OpenApiAnnEvaluationResponse {
 }
 
 export interface OpenApiContextPackResponse {
+  accountability_receipt?: Record<string, unknown> | null;
   anomalies: OpenApiContextPackAnomalyResponse[];
   answerability_q16: number;
   cells: OpenApiContextPackCellResponse[];
   citations_required: boolean;
   conflict_visibility_q16: number;
   estimated_tokens: number;
+  grounding_report?: OpenApiAnswerGroundingReportResponse | unknown;
   schema_version: "context_pack.v1";
   token_budget_tokens: number;
   truncated: boolean;
@@ -500,10 +502,12 @@ export interface OpenApiContextPackCellResponse {
 
 export interface OpenApiContextAccessDecisionResponse {
   agent_id: number | unknown;
+  agent_view_digest?: string | unknown;
   auth_role?: string;
   cell_id: number;
   decision: "allowed" | "not_recorded";
   policy: string;
+  policy_version?: string | unknown;
   principal_id?: string;
   reason: string;
   scope: string;
@@ -554,7 +558,7 @@ export interface OpenApiSourceRefResponse {
 
 export interface OpenApiContextPackAnomalyResponse {
   cell_id: number | unknown;
-  code: "redundant_cell" | "missing_citation" | "token_overload" | "scope_mismatch" | "insufficient_context" | "visible_conflict";
+  code: "redundant_cell" | "missing_citation" | "token_overload" | "scope_mismatch" | "insufficient_context" | "visible_conflict" | "retrieval_incomplete";
   message: string;
   why_excluded: string | unknown;
 }
@@ -686,6 +690,7 @@ export interface OpenApiRememberResponse {
 }
 
 export interface OpenApiVerificationReportResponse {
+  accountability_receipt?: Record<string, unknown> | null;
   confidence_q16: number;
   contradicting?: OpenApiVerificationEvidenceResponse[];
   contradicting_evidence: OpenApiVerificationEvidenceResponse[];
@@ -699,6 +704,7 @@ export interface OpenApiVerificationReportResponse {
 }
 
 export interface OpenApiNumericConflictResponse {
+  kind: "numeric" | "temporal" | "citation";
   left: string;
   metric: string;
   right: string;

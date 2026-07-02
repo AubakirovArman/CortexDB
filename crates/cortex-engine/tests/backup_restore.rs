@@ -606,7 +606,76 @@ fn encrypted_backup_corrupt_ciphertext_is_rejected() {
         .unwrap_err()
         .to_string();
 
-    assert!(error.contains("ciphertext checksum"));
+    assert!(error.contains("authentication"));
+    assert!(!target.exists());
+}
+
+#[test]
+fn encrypted_backup_tamper_matrix_is_rejected_without_target() {
+    let root = tempfile::tempdir().unwrap();
+    let source = root.path().join("source");
+    let archive = root.path().join("backup.cdbenc");
+    let passphrase = "correct passphrase tamper matrix";
+
+    {
+        let mut db = Database::open(&source).unwrap();
+        db.put_cell(CellId(95), b"tamper matrix payload".to_vec())
+            .unwrap();
+    }
+    Database::encrypted_backup_path(&source, &archive, passphrase).unwrap();
+
+    let ciphertext_archive = root.path().join("backup-ciphertext.cdbenc");
+    std::fs::copy(&archive, &ciphertext_archive).unwrap();
+    flip_last_byte(&ciphertext_archive);
+    assert_encrypted_restore_rejected(
+        &ciphertext_archive,
+        root.path().join("target-ciphertext"),
+        passphrase,
+    );
+
+    let tag_archive = root.path().join("backup-tag.cdbenc");
+    std::fs::copy(&archive, &tag_archive).unwrap();
+    flip_header_hex_field(&tag_archive, "aead_tag");
+    assert_encrypted_restore_rejected(&tag_archive, root.path().join("target-tag"), passphrase);
+
+    let nonce_archive = root.path().join("backup-nonce.cdbenc");
+    std::fs::copy(&archive, &nonce_archive).unwrap();
+    flip_header_hex_field(&nonce_archive, "nonce");
+    assert_encrypted_restore_rejected(&nonce_archive, root.path().join("target-nonce"), passphrase);
+
+    let salt_archive = root.path().join("backup-salt.cdbenc");
+    std::fs::copy(&archive, &salt_archive).unwrap();
+    flip_header_hex_field(&salt_archive, "salt");
+    assert_encrypted_restore_rejected(&salt_archive, root.path().join("target-salt"), passphrase);
+
+    let aad_archive = root.path().join("backup-aad.cdbenc");
+    std::fs::copy(&archive, &aad_archive).unwrap();
+    rewrite_encrypted_header(&aad_archive, |header| {
+        let file_count = header
+            .get("file_count")
+            .and_then(serde_json::Value::as_u64)
+            .unwrap();
+        header["file_count"] = serde_json::Value::from(file_count + 1);
+    });
+    assert_encrypted_restore_rejected(&aad_archive, root.path().join("target-aad"), passphrase);
+}
+
+#[test]
+fn encrypted_backup_legacy_v1_archive_is_refused() {
+    let root = tempfile::tempdir().unwrap();
+    let archive = root.path().join("legacy.cdbenc");
+    let target = root.path().join("target");
+    write_legacy_v1_encrypted_archive(&archive);
+
+    let error = Database::restore_from_encrypted_backup(
+        &archive,
+        &target,
+        "correct passphrase legacy refusal",
+    )
+    .unwrap_err()
+    .to_string();
+
+    assert!(error.contains("legacy encrypted backup v1 is refused"));
     assert!(!target.exists());
 }
 
@@ -633,4 +702,79 @@ fn corrupt_first_byte(path: &Path) {
     let mut bytes = std::fs::read(path).unwrap();
     bytes[0] ^= 0xFF;
     std::fs::write(path, bytes).unwrap();
+}
+
+fn flip_last_byte(path: &Path) {
+    let mut bytes = std::fs::read(path).unwrap();
+    let last = bytes.len() - 1;
+    bytes[last] ^= 0x7f;
+    std::fs::write(path, bytes).unwrap();
+}
+
+fn assert_encrypted_restore_rejected(archive: &Path, target: PathBuf, passphrase: &str) {
+    let error = Database::restore_from_encrypted_backup(archive, &target, passphrase)
+        .unwrap_err()
+        .to_string();
+    assert!(
+        error.contains("authentication")
+            || error.contains("hex encoding")
+            || error.contains("unsupported encrypted backup header"),
+        "unexpected restore error: {error}"
+    );
+    assert!(!target.exists());
+}
+
+fn flip_header_hex_field(path: &Path, field: &str) {
+    rewrite_encrypted_header(path, |header| {
+        let value = header
+            .get(field)
+            .and_then(serde_json::Value::as_str)
+            .unwrap();
+        let mut bytes = value.as_bytes().to_vec();
+        bytes[0] = if bytes[0] == b'0' { b'1' } else { b'0' };
+        header[field] = serde_json::Value::String(String::from_utf8(bytes).unwrap());
+    });
+}
+
+fn rewrite_encrypted_header(path: &Path, mutate: impl FnOnce(&mut serde_json::Value)) {
+    const ARCHIVE_MAGIC: &[u8] = b"CDBENC1\n";
+    let raw = std::fs::read(path).unwrap();
+    assert!(raw.starts_with(ARCHIVE_MAGIC));
+    let header_len_start = ARCHIVE_MAGIC.len();
+    let header_len_end = header_len_start + 4;
+    let header_len =
+        u32::from_le_bytes(raw[header_len_start..header_len_end].try_into().unwrap()) as usize;
+    let header_end = header_len_end + header_len;
+    let mut header: serde_json::Value =
+        serde_json::from_slice(&raw[header_len_end..header_end]).unwrap();
+    mutate(&mut header);
+    let header_bytes = serde_json::to_vec(&header).unwrap();
+    let mut rewritten = Vec::new();
+    rewritten.extend_from_slice(ARCHIVE_MAGIC);
+    rewritten.extend_from_slice(&(header_bytes.len() as u32).to_le_bytes());
+    rewritten.extend_from_slice(&header_bytes);
+    rewritten.extend_from_slice(&raw[header_end..]);
+    std::fs::write(path, rewritten).unwrap();
+}
+
+fn write_legacy_v1_encrypted_archive(path: &Path) {
+    const ARCHIVE_MAGIC: &[u8] = b"CDBENC1\n";
+    let header = serde_json::json!({
+        "schema_version": "cortexdb.encrypted_backup.v1",
+        "cipher_suite": "legacy-suite",
+        "kdf": "legacy-kdf",
+        "nonce": 1_u64,
+        "file_count": 0_usize,
+        "plaintext_len": 0_u64,
+        "ciphertext_len": 0_u64,
+        "plaintext_hash": "0000000000000000",
+        "ciphertext_hash": "0000000000000000",
+        "auth_tag": "0000000000000000"
+    });
+    let header_bytes = serde_json::to_vec(&header).unwrap();
+    let mut archive = Vec::new();
+    archive.extend_from_slice(ARCHIVE_MAGIC);
+    archive.extend_from_slice(&(header_bytes.len() as u32).to_le_bytes());
+    archive.extend_from_slice(&header_bytes);
+    std::fs::write(path, archive).unwrap();
 }

@@ -12,6 +12,16 @@ pub(crate) fn audit_http_response(
     status: StatusCode,
     error_code: Option<ErrorCode>,
 ) {
+    audit_http_response_with_receipt_hash(state, event, status, error_code, None);
+}
+
+pub(crate) fn audit_http_response_with_receipt_hash(
+    state: &AppState,
+    event: &RequestAudit<'_>,
+    status: StatusCode,
+    error_code: Option<ErrorCode>,
+    accountability_receipt_hash: Option<&str>,
+) {
     if !state.options.audit_log_enabled {
         return;
     }
@@ -29,6 +39,7 @@ pub(crate) fn audit_http_response(
             status: status.as_u16(),
             error_code: error_code.map(ErrorCode::as_str),
             duration_ms: event.started.elapsed().as_millis() as u64,
+            accountability_receipt_hash,
         },
         state.audit_sink.as_deref(),
     );

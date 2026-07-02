@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import http.client
 import json
+import os
 import time
 import urllib.error
 import urllib.parse
@@ -43,14 +44,22 @@ def chat_json(
             "reasoning_effort": "none",
         }
     else:
+        thinking_enabled = os.environ.get("DEEPSEEK_THINKING") == "enabled"
+        # When thinking is on, reasoning tokens consume the max_tokens budget,
+        # so reserve extra room for the chain-of-thought plus the JSON verdict.
+        max_tokens = 4096 if thinking_enabled else 220
         payload = {
             "model": model,
             "messages": [{"role": "user", "content": prompt}],
             "temperature": 0,
-            "max_tokens": 220,
+            "max_tokens": max_tokens,
         }
         if not omit_thinking_field:
-            payload["thinking"] = {"type": "disabled"}
+            if thinking_enabled:
+                payload["thinking"] = {"type": "enabled"}
+                payload["reasoning_effort"] = "high"
+            else:
+                payload["thinking"] = {"type": "disabled"}
     return chat_json_openai_compatible(
         api_key=api_key,
         base_url=base_url,

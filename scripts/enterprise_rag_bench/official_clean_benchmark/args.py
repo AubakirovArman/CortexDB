@@ -126,6 +126,7 @@ def build_parser() -> argparse.ArgumentParser:
             "type-aware-v17",
             "evidence-first-v18",
             "evidence-audit-v11",
+            "exact-first-v1",
         ],
         default="official-clean-v1",
         help="Answer prompt style; evidence-first-v18 enables the two-phase evidence-first prompt.",

@@ -9,13 +9,8 @@ use super::large_cell::estimate_cell_tokens;
 use super::ContextPackOptions;
 use crate::context::scoring::apply_feedback_bonus;
 use crate::database::RetrievedCell;
-use crate::search::tokenize;
+use crate::search::{frozen_weights, tokenize};
 use crate::source_trust::SourceTrust;
-
-const COVERAGE_VALUE: i64 = 100_000;
-const MATCHED_TERM_VALUE: i64 = 10_000;
-const CITATION_VALUE: i64 = 5_000;
-const REDUNDANCY_VALUE: i64 = 20_000;
 
 pub(crate) fn order_by_value_per_token(
     cells: Vec<RetrievedCell>,
@@ -128,8 +123,10 @@ fn value_per_token_rank(candidate: &CandidatePlan, context: RankContext<'_>) -> 
         context.source_freshness_range,
     );
     let mut value = new_terms
-        .saturating_mul(COVERAGE_VALUE)
-        .saturating_add(matched_terms.saturating_mul(MATCHED_TERM_VALUE))
+        .saturating_mul(frozen_weights::VALUE_PER_TOKEN_COVERAGE_VALUE)
+        .saturating_add(
+            matched_terms.saturating_mul(frozen_weights::VALUE_PER_TOKEN_MATCHED_TERM_VALUE),
+        )
         .saturating_add(i64::from(
             *context
                 .base_bm25_scores
@@ -139,7 +136,7 @@ fn value_per_token_rank(candidate: &CandidatePlan, context: RankContext<'_>) -> 
         .saturating_add(i64::from(source_trust.score_bonus()))
         .saturating_add(i64::from(source_freshness.score_bonus()));
     if context.citations_required && metadata.citation().is_some() {
-        value = value.saturating_add(CITATION_VALUE);
+        value = value.saturating_add(frozen_weights::VALUE_PER_TOKEN_CITATION_VALUE);
     }
     let feedback_bonus = *context
         .feedback_scores
@@ -153,9 +150,13 @@ fn value_per_token_rank(candidate: &CandidatePlan, context: RankContext<'_>) -> 
         .map(|selected| weighted_jaccard_q16(&candidate.terms, selected))
         .max()
         .unwrap_or(0) as i64;
-    value = value.saturating_sub((redundancy.saturating_mul(REDUNDANCY_VALUE)) / 65_536);
+    value = value.saturating_sub(
+        (redundancy.saturating_mul(frozen_weights::VALUE_PER_TOKEN_REDUNDANCY_VALUE))
+            / i64::from(frozen_weights::Q16_SCALE_U32),
+    );
 
-    i128::from(value.max(0)).saturating_mul(65_536) / i128::from(candidate.token_cost)
+    i128::from(value.max(0)).saturating_mul(frozen_weights::Q16_SCALE_I128)
+        / i128::from(candidate.token_cost)
 }
 
 fn clamp_to_u32(value: i64) -> u32 {

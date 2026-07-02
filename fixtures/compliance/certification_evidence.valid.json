@@ -1,0 +1,52 @@
+{
+  "certification_id": "SOC2-FIXTURE-2026-001",
+  "controls": [
+    "accountability_receipts_reviewed",
+    "audit_log_immutability_reviewed",
+    "transparency_log_operations_reviewed",
+    "key_custody_boundary_reviewed",
+    "operator_responsibility_matrix_reviewed"
+  ],
+  "evidence_artifacts": [
+    {
+      "kind": "redacted_external_report",
+      "sha256_hex": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "uri": "evidence://fixture/soc2-redacted-report.pdf"
+    },
+    {
+      "kind": "immutability_attestation",
+      "sha256_hex": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "uri": "evidence://fixture/immutability-attestation.json"
+    }
+  ],
+  "external_review": {
+    "assurance_level": "certified",
+    "issued_at": "2026-01-01T00:00:00Z",
+    "nda_required": true,
+    "reviewer": "fixture-auditor",
+    "valid_until": "2027-01-01T00:00:00Z"
+  },
+  "framework": "soc2_type_ii",
+  "immutability_evidence": {
+    "append_only_export": true,
+    "external_immutable_store": true,
+    "retention_days": 365,
+    "retention_policy_ref": "evidence://fixture/retention-policy",
+    "tamper_evidence_ref": "evidence://fixture/tamper-evidence",
+    "tamper_evident_reviewed": true
+  },
+  "issuer": "fixture-auditor",
+  "operator_responsibilities": [
+    "operate the external immutable evidence store",
+    "retain the redacted report under the evidence request process",
+    "bind production receipt key custody evidence separately"
+  ],
+  "report_ref": "evidence://fixture/soc2-redacted-report",
+  "schema_version": "cortexdb.compliance_certification_evidence.v1",
+  "scope": {
+    "product": "CortexDB",
+    "production_grade_public_receipts": true,
+    "receipt_schema": "accountability_receipt.v1",
+    "version_range": "v0.2.0-beta.2-fixture"
+  }
+}

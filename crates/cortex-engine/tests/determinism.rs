@@ -3,9 +3,13 @@ use std::collections::BTreeSet;
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
 use cortex_core::CellId;
 use cortex_engine::{
-    scope_id, ContextPackOptions, Database, SearchLimit, VerificationEvidence,
-    VerificationNumericConflict, VerificationReport,
+    canonical::canonical_verification_report_bytes, scope_id, ContextPackOptions, Database,
+    SearchLimit, VerificationEvidence, VerificationNumericConflict, VerificationReport,
 };
+
+const EXPECTED_CONTEXT_SNAPSHOT: &str =
+    "cells=20:doc-b:solar+plant+budget;10:doc-a:solar+plant+budget;30:doc-c:solar+plant+budget\nanomalies=";
+const EXPECTED_VERIFY_SNAPSHOT: &str = "status=mixed_evidence\nevidence=10:9:exact_text:65535:50000:doc-a;30:9:exact_text:65535:50000:doc-c\ncontradicting=20:6:numeric_contradiction:65535:50000:doc-b\nguards=20:numeric_mismatch\nnumeric_conflicts=20:numeric:budget:1.2B KZT:1.4B KZT";
 
 #[test]
 fn search_results_are_repeatable_and_tie_break_by_cell_id() {
@@ -31,14 +35,7 @@ fn context_pack_output_is_repeatable_and_snapshotted() {
     seed_determinism_cells(&mut db);
 
     let before = context_snapshot(&db);
-    assert_eq!(
-        before,
-        [
-            "cells=20:doc-b:solar+plant+budget;10:doc-a:solar+plant+budget;30:doc-c:solar+plant+budget",
-            "anomalies=",
-        ]
-        .join("\n")
-    );
+    assert_eq!(before, EXPECTED_CONTEXT_SNAPSHOT);
     assert_eq!(context_snapshot(&db), before);
 
     db.checkpoint().unwrap();
@@ -52,21 +49,37 @@ fn verification_report_output_is_repeatable_and_snapshotted() {
     seed_determinism_cells(&mut db);
 
     let before = verification_snapshot(&db);
-    assert_eq!(
-        before,
-        [
-            "status=mixed_evidence",
-            "evidence=10:9:exact_text:65535:50000:doc-a;30:9:exact_text:65535:50000:doc-c",
-            "contradicting=20:6:numeric_contradiction:65535:50000:doc-b",
-            "guards=20:numeric_mismatch",
-            "numeric_conflicts=20:budget:1.2B KZT:1.4B KZT",
-        ]
-        .join("\n")
-    );
+    assert_eq!(before, EXPECTED_VERIFY_SNAPSHOT);
     assert_eq!(verification_snapshot(&db), before);
 
     db.checkpoint().unwrap();
     assert_eq!(verification_snapshot(&db), before);
+}
+
+#[test]
+fn verification_canonical_conflict_bytes_are_repeatable_and_clock_free() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    seed_determinism_cells(&mut db);
+
+    let first = canonical_verification_report_bytes(&verification_report(&db));
+    let second = canonical_verification_report_bytes(&verification_report(&db));
+    let text = std::str::from_utf8(&first).unwrap();
+
+    assert_eq!(first, second);
+    assert!(text.contains(r#""schema_version":"verification_report.canonical.v1""#));
+    assert!(text.contains(r#""numeric_conflicts""#));
+    assert!(text.contains(r#""kind":"numeric""#));
+    assert!(!text.contains("elapsed_nanos"));
+    assert!(!text.contains("total_elapsed_nanos"));
+    assert!(!text.contains("Instant"));
+    assert!(!text.contains("SystemTime"));
+
+    db.checkpoint().unwrap();
+    assert_eq!(
+        canonical_verification_report_bytes(&verification_report(&db)),
+        first
+    );
 }
 
 fn seed_search_tie_cells(db: &mut Database) {
@@ -177,12 +190,7 @@ fn context_snapshot(db: &Database) -> String {
 }
 
 fn verification_snapshot(db: &Database) -> String {
-    let report = db
-        .verify_fact_aql(
-            r#"VERIFY FACT "Solar Plant budget is 1.2B KZT for 2025" IN BRAIN investment_projects;"#,
-            &view(true),
-        )
-        .unwrap();
+    let report = verification_report(db);
     format!(
         "status={}\nevidence={}\ncontradicting={}\nguards={}\nnumeric_conflicts={}",
         report.status.as_str(),
@@ -191,6 +199,14 @@ fn verification_snapshot(db: &Database) -> String {
         guard_snapshot(&report),
         numeric_conflict_snapshot(&report.numeric_conflicts)
     )
+}
+
+fn verification_report(db: &Database) -> VerificationReport {
+    db.verify_fact_aql(
+        r#"VERIFY FACT "Solar Plant budget is 1.2B KZT for 2025" IN BRAIN investment_projects;"#,
+        &view(true),
+    )
+    .unwrap()
 }
 
 fn evidence_snapshot(evidence: &[VerificationEvidence]) -> String {
@@ -231,8 +247,12 @@ fn numeric_conflict_snapshot(conflicts: &[VerificationNumericConflict]) -> Strin
         .iter()
         .map(|conflict| {
             format!(
-                "{}:{}:{}:{}",
-                conflict.cell_id.0, conflict.metric, conflict.left, conflict.right
+                "{}:{}:{}:{}:{}",
+                conflict.cell_id.0,
+                conflict.kind.as_str(),
+                conflict.metric,
+                conflict.left,
+                conflict.right
             )
         })
         .collect::<Vec<_>>()

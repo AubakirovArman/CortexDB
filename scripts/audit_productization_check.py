@@ -12,7 +12,10 @@ from pathlib import Path
 REPORT_SCHEMA = "cortexdb.audit_productization_report.v1"
 MARKERS = {
     "server_schema_and_fields": [
-        ("crates/cortex-server/src/audit.rs", "schema_version: \"cortexdb.audit.v1\""),
+        ("crates/cortex-server/src/audit.rs", 'AUDIT_SCHEMA_VERSION_V2: &str = "cortexdb.audit.v2"'),
+        ("crates/cortex-server/src/audit.rs", "mac_key_id"),
+        ("crates/cortex-server/src/audit.rs", "event_mac"),
+        ("crates/cortex-server/src/audit/sink.rs", "record.schema_version = AUDIT_SCHEMA_VERSION_V2"),
         ("crates/cortex-server/src/audit.rs", "scope_decision"),
         ("crates/cortex-server/src/audit.rs", "AuditAction::Verify"),
         ("crates/cortex-server/src/audit/llm.rs", "llm_inference_decision"),
@@ -39,7 +42,9 @@ MARKERS = {
         ("docs/archive/AUDIT_EXPORT_RETENTION_POLICY.md", "cortexdb.siem.audit.v1"),
     ],
     "format_doc": [
-        ("docs/AUDIT_LOG_FORMAT.md", "cortexdb.audit.v1"),
+        ("docs/AUDIT_LOG_FORMAT.md", "cortexdb.audit.v2"),
+        ("docs/AUDIT_LOG_FORMAT.md", "CORTEXDB_AUDIT_MAC_KEY_HEX"),
+        ("docs/AUDIT_LOG_FORMAT.md", "--mac-key-file"),
         ("docs/AUDIT_LOG_FORMAT.md", "scope_decision"),
         ("docs/AUDIT_LOG_FORMAT.md", "CORTEXDB_AUDIT_LOG_ROTATE_BYTES"),
         ("docs/AUDIT_LOG_FORMAT.md", "CORTEXDB_AUDIT_LOG_FSYNC"),

@@ -272,12 +272,14 @@ fn snapshot_context_pack_response() {
                 cell_id: 1,
                 decision: "allowed".to_owned(),
                 policy: "agent_view_readable_scope".to_owned(),
+                policy_version: None,
                 reason:
                     "cell scope was present in AgentView.readable_scopes before ContextPack packing"
                         .to_owned(),
                 scope: "project:investments".to_owned(),
                 scope_id: 1001,
                 agent_id: Some(7),
+                agent_view_digest: None,
                 principal_id: Some("analyst-7".to_owned()),
                 auth_role: Some("data".to_owned()),
             }),
@@ -298,6 +300,8 @@ fn snapshot_context_pack_response() {
                 why_excluded: None,
             },
         ],
+        grounding_report: None,
+        accountability_receipt: None,
     };
     insta::assert_json_snapshot!(resp);
 }
@@ -324,6 +328,8 @@ fn snapshot_context_trace_response() {
             access_decision: None,
         }],
         anomalies: Vec::new(),
+        grounding_report: None,
+        accountability_receipt: None,
     };
     let verification = VerificationReportResponse {
         fact: "Solar Plant budget is 1.2B KZT".to_owned(),
@@ -336,6 +342,7 @@ fn snapshot_context_trace_response() {
         supporting: Vec::new(),
         contradicting: Vec::new(),
         numeric_conflicts: Vec::new(),
+        accountability_receipt: None,
     };
     let resp = ContextTraceResponse {
         schema_version: "context_trace.v1",
@@ -454,10 +461,12 @@ fn snapshot_verification_report_response() {
             payload_text: "Solar Plant budget is 1.4B KZT".to_owned(),
         }],
         numeric_conflicts: vec![NumericConflictResponse {
+            kind: "numeric".to_owned(),
             metric: "budget".to_owned(),
             left: "1.2B KZT".to_owned(),
             right: "1.4B KZT".to_owned(),
         }],
+        accountability_receipt: None,
     };
     insta::assert_json_snapshot!(resp);
 }

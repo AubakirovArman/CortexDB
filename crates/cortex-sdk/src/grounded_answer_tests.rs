@@ -24,6 +24,8 @@ fn test_context_pack() -> ContextPackResponse {
             access_decision: None,
         }],
         anomalies: Vec::new(),
+        grounding_report: None,
+        accountability_receipt: None,
     }
 }
 

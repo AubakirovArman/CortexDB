@@ -83,6 +83,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         "quota": Path(args.quota_report),
         "audit_chain": Path(args.audit_chain_report),
         "audit_export_retention": Path(args.audit_export_retention_report),
+        "crypto_foundation": Path(args.crypto_foundation_report),
     }
     reports = {name: read_report(path) for name, path in report_paths.items()}
 
@@ -125,6 +126,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--quota-report", required=True)
     parser.add_argument("--audit-chain-report", required=True)
     parser.add_argument("--audit-export-retention-report", required=True)
+    parser.add_argument("--crypto-foundation-report", required=True)
     parser.add_argument("--report", required=True)
     return parser.parse_args(argv)
 

@@ -104,6 +104,7 @@ fn cluster(local_node: NodeId, nodes: &[u64]) -> ClusterConfig {
             .map(|id| ClusterNode {
                 id: NodeId(*id),
                 address: format!("127.0.0.1:91{id:02}"),
+                ingress_address: None,
             })
             .collect(),
         replication_factor: nodes.len(),

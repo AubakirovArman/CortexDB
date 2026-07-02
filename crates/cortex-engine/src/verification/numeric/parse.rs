@@ -38,8 +38,20 @@ pub fn parse_currency_code(value: &str) -> Option<String> {
 
 pub fn parse_unit_code(value: &str) -> Option<String> {
     match value.to_ascii_lowercase().as_str() {
-        "m" | "km" | "cm" | "mm" | "kg" | "g" | "t" | "l" | "ml" | "h" | "min" | "s" | "ms"
-        | "day" | "days" | "week" | "weeks" | "month" | "months" | "year" | "years" => {
+        "m" | "meter" | "meters" => Some("m".to_owned()),
+        "km" | "kilometer" | "kilometers" => Some("km".to_owned()),
+        "cm" | "centimeter" | "centimeters" => Some("cm".to_owned()),
+        "mm" | "millimeter" | "millimeters" => Some("mm".to_owned()),
+        "kg" | "kilogram" | "kilograms" => Some("kg".to_owned()),
+        "g" | "gram" | "grams" => Some("g".to_owned()),
+        "t" | "ton" | "tons" | "tonne" | "tonnes" => Some("t".to_owned()),
+        "l" | "liter" | "liters" | "litre" | "litres" => Some("l".to_owned()),
+        "ml" | "milliliter" | "milliliters" | "millilitre" | "millilitres" => Some("ml".to_owned()),
+        "h" | "hour" | "hours" => Some("h".to_owned()),
+        "min" | "minute" | "minutes" => Some("min".to_owned()),
+        "s" | "second" | "seconds" => Some("s".to_owned()),
+        "ms" | "millisecond" | "milliseconds" => Some("ms".to_owned()),
+        "day" | "days" | "week" | "weeks" | "month" | "months" | "year" | "years" => {
             Some(value.to_ascii_lowercase())
         }
         "hr" | "hrs" => Some("h".to_owned()),
@@ -55,8 +67,9 @@ pub fn extract_numeric_values(text: &str) -> Vec<NumericValue> {
     let mut results = Vec::new();
     let mut i = 0;
     while i < words.len() {
-        let word = words[i]
-            .trim_matches(|c: char| !c.is_alphanumeric() && c != '.' && c != ',' && c != '%');
+        let word = words[i].trim_matches(|c: char| {
+            !c.is_alphanumeric() && c != '.' && c != ',' && c != '%' && c != '$'
+        });
         if let Some(value) = try_parse_numeric_word(word, &words, i) {
             results.push(value);
         }
@@ -67,11 +80,21 @@ pub fn extract_numeric_values(text: &str) -> Vec<NumericValue> {
 
 fn try_parse_numeric_word(word: &str, words: &[&str], index: usize) -> Option<NumericValue> {
     let cleaned = word.replace(',', "");
-    let base_value = parse_decimal(&cleaned)?;
+    let base_value = parse_decimal(cleaned.trim_start_matches('$'))?;
 
     let mut magnitude: Option<Magnitude> = None;
-    let mut currency: Option<String> = None;
+    let mut currency: Option<String> = word.starts_with('$').then(|| "USD".to_owned());
     let mut unit: Option<String> = None;
+
+    if index > 0 {
+        let previous_word = words[index - 1].trim_matches(|c: char| !c.is_alphabetic() && c != '%');
+        if currency.is_none() {
+            currency = parse_currency_code(previous_word);
+        }
+        if unit.is_none() {
+            unit = parse_unit_code(previous_word);
+        }
+    }
 
     for offset in 1..=2 {
         let next_index = index + offset;
@@ -105,11 +128,20 @@ fn try_parse_numeric_word(word: &str, words: &[&str], index: usize) -> Option<Nu
         }
     }
 
-    if magnitude.is_none() {
-        if let Some(last_char) = word.chars().last() {
-            let mag_str = last_char.to_string();
-            if let Some(parsed_magnitude) = parse_magnitude_suffix(&mag_str) {
+    if let Some(suffix) = trailing_context_suffix(cleaned.trim_start_matches('$')) {
+        if magnitude.is_none() {
+            if let Some(parsed_magnitude) = parse_magnitude_suffix(suffix) {
                 magnitude = Some(parsed_magnitude);
+            }
+        }
+        if unit.is_none() {
+            if let Some(parsed_unit) = parse_unit_code(suffix) {
+                unit = Some(parsed_unit);
+            }
+        }
+        if currency.is_none() {
+            if let Some(parsed_currency) = parse_currency_code(suffix) {
+                currency = Some(parsed_currency);
             }
         }
     }
@@ -139,6 +171,13 @@ fn try_parse_numeric_word(word: &str, words: &[&str], index: usize) -> Option<Nu
         unit,
         magnitude,
     })
+}
+
+fn trailing_context_suffix(value: &str) -> Option<&str> {
+    let value = value.trim_end_matches(['.', ',']);
+    let index =
+        value.find(|character: char| character.is_ascii_alphabetic() || character == '%')?;
+    Some(&value[index..])
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

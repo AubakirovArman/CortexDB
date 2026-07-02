@@ -11,7 +11,10 @@ use super::request_timeout_response;
 use crate::quota::{
     acquire_principal_queue_permit, acquire_tenant_queue_permit, enforce_tenant_storage_quota,
 };
-use crate::request_audit::{audit_http_response, RequestAudit};
+use crate::receipt::ReceiptEmissionContext;
+use crate::request_audit::{
+    audit_http_response, audit_http_response_with_receipt_hash, RequestAudit,
+};
 use crate::request_id::with_request_id;
 use crate::responses::{ErrorCode, RouterError};
 use crate::router::query_param_opt_decoded;
@@ -150,6 +153,25 @@ pub(super) async fn handle_database_route(
     let method_clone = method.to_owned();
     let target_clone = target.clone();
     let body_clone = body_bytes.to_vec();
+    let receipt_context = match ReceiptEmissionContext::from_options(&state.options) {
+        Ok(value) => value,
+        Err(error) => {
+            audit_http_response(
+                state,
+                audit_event,
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Some(error.code()),
+            );
+            return with_request_id(
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(error_response(error.code(), error.to_string())),
+                )
+                    .into_response(),
+                request_id,
+            );
+        }
+    };
     let parent_span = tracing::Span::current();
     let route_timeout = Duration::from_millis(crate::actor::route_timeout_ms(
         &state.options,
@@ -176,7 +198,13 @@ pub(super) async fn handle_database_route(
         );
         let _engine_enter = engine_span.enter();
         (
-            actor.route_with_auth(&method_clone, &target_clone, &body_clone, auth_context),
+            actor.route_with_auth(
+                &method_clone,
+                &target_clone,
+                &body_clone,
+                auth_context,
+                receipt_context.as_ref(),
+            ),
             queue_wait_ms,
         )
     });
@@ -221,7 +249,15 @@ pub(super) async fn handle_database_route(
 
     match res {
         Ok(body_str) => {
-            audit_http_response(state, audit_event, StatusCode::OK, None);
+            let receipt_hash =
+                crate::receipt::accountability_receipt_audit_hash_from_response_body(&body_str);
+            audit_http_response_with_receipt_hash(
+                state,
+                audit_event,
+                StatusCode::OK,
+                None,
+                receipt_hash.as_deref(),
+            );
             if method == "POST"
                 && matches!(path, "/v1/search" | "/v1/search/ann-evaluate")
                 && http_metrics::record_ann_search_metrics(state, &body_str)

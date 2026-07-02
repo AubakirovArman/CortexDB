@@ -199,7 +199,7 @@ fn denied_cell_routes_authorize_descriptor_before_lazy_payload_read() {
         ("DELETE", "/v1/cell?cell_id=9"),
         ("POST", "/v1/forget?cell_id=9"),
     ] {
-        let err = route_database_with_auth(&mut db, method, target, b"", auth.clone())
+        let err = route_database_with_auth(&mut db, method, target, b"", auth.clone(), None)
             .expect_err("descriptor scope should deny route before payload read");
         assert!(
             matches!(err, RouterError::PermissionDenied(_)),

@@ -100,8 +100,13 @@ fn policy_store_context_budget_clamps_agent_view_context_pack_budget() {
     assert_eq!(decision["cell_id"], 1);
     assert_eq!(decision["decision"], "allowed");
     assert_eq!(decision["policy"], "agent_view_readable_scope");
+    assert_eq!(decision["policy_version"], "agent_view_readable_scope.v1");
     assert_eq!(decision["scope"], "finance");
     assert_eq!(decision["agent_id"], 7);
+    assert_eq!(
+        decision["agent_view_digest"].as_str().map(str::len),
+        Some(64)
+    );
     assert_eq!(decision["principal_id"], "finance-agent");
     assert_eq!(decision["auth_role"], "data");
 }

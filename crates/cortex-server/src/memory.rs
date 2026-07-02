@@ -7,6 +7,7 @@ use cortex_engine::{
 };
 
 use crate::authz;
+use crate::receipt::ReceiptEmissionContext;
 use crate::responses::{
     EvidenceResponse, FeedbackCellStatsResponse, FeedbackRecordResponse, FeedbackStatsResponse,
     GuardResponse, NumericConflictResponse, RememberResponse, RouterError,
@@ -41,18 +42,31 @@ pub fn handle_verify_shared(
     query: &str,
     body: &[u8],
     authenticated_view: Option<&AgentView>,
+    receipt_context: Option<&ReceiptEmissionContext>,
 ) -> Result<String, RouterError> {
     let scope = query_param_decoded(query, "scope").map_err(RouterError::BadRequest)?;
     let view = authz::verify_view_for_scope(&scope, authenticated_view)?;
     let aql = String::from_utf8_lossy(body);
-    let report = db.verify_fact_aql(&aql, &view)?;
     match verify_output_format(query).as_str() {
         "json" => {
-            let response = map_verification_report(&report, db);
+            let response = if let Some(receipt_context) = receipt_context {
+                let (report, evidence) = db.verify_fact_with_receipt_evidence_aql(&aql, &view)?;
+                let receipt = receipt_context.sign(&evidence, Some(&report))?;
+                map_verification_report(&report, db, Some(receipt))
+            } else {
+                let report = db.verify_fact_aql(&aql, &view)?;
+                map_verification_report(&report, db, None)
+            };
             Ok(serde_json::to_string(&response)?)
         }
-        "markdown" => Ok(report.export(VerificationReportExportFormat::Markdown)),
-        "audit" => Ok(report.export(VerificationReportExportFormat::Audit)),
+        "markdown" => {
+            let report = db.verify_fact_aql(&aql, &view)?;
+            Ok(report.export(VerificationReportExportFormat::Markdown))
+        }
+        "audit" => {
+            let report = db.verify_fact_aql(&aql, &view)?;
+            Ok(report.export(VerificationReportExportFormat::Audit))
+        }
         other => Err(RouterError::BadRequest(format!(
             "unsupported verify format '{other}' (expected json, markdown, or audit)"
         ))),
@@ -160,6 +174,7 @@ fn verify_output_format(query: &str) -> String {
 pub(crate) fn map_verification_report(
     report: &VerificationReport,
     db: &Database,
+    accountability_receipt: Option<serde_json::Value>,
 ) -> VerificationReportResponse {
     let status_str = match report.status {
         VerificationStatus::Supported => "supported",
@@ -215,6 +230,7 @@ pub(crate) fn map_verification_report(
         .numeric_conflicts
         .iter()
         .map(|conflict| NumericConflictResponse {
+            kind: conflict.kind.as_str().to_owned(),
             metric: conflict.metric.clone(),
             left: conflict.left.clone(),
             right: conflict.right.clone(),
@@ -232,5 +248,6 @@ pub(crate) fn map_verification_report(
         supporting: evidence,
         contradicting: contradicting_evidence,
         numeric_conflicts,
+        accountability_receipt,
     }
 }

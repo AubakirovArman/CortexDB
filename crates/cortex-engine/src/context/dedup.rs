@@ -3,52 +3,7 @@ use std::collections::BTreeSet;
 use super::{ContextPackCell, DEFAULT_REDUNDANCY_THRESHOLD_Q16};
 use crate::query::CellMetadata;
 use crate::search::tokenize;
-
-pub(crate) fn integer_sqrt(val: u128) -> u128 {
-    let mut res = 0;
-    let mut add = 1u128 << 63;
-    while add > 0 {
-        let temp = res + add;
-        if temp * temp <= val {
-            res = temp;
-        }
-        add >>= 1;
-    }
-    res
-}
-
-pub(crate) fn cosine_similarity_q16(u: &[i16], v: &[i16]) -> u16 {
-    if u.len() != v.len() || u.is_empty() {
-        return 0;
-    }
-    let mut dot_product: i128 = 0;
-    let mut norm_u_sq: u128 = 0;
-    let mut norm_v_sq: u128 = 0;
-    for i in 0..u.len() {
-        let ui = u[i] as i128;
-        let vi = v[i] as i128;
-        dot_product += ui * vi;
-        norm_u_sq += (ui * ui) as u128;
-        norm_v_sq += (vi * vi) as u128;
-    }
-    if norm_u_sq == 0 || norm_v_sq == 0 || dot_product <= 0 {
-        return 0;
-    }
-
-    let norm_u = integer_sqrt(norm_u_sq);
-    let norm_v = integer_sqrt(norm_v_sq);
-    if norm_u == 0 || norm_v == 0 {
-        return 0;
-    }
-
-    let dot_scaled = (dot_product as u128).saturating_mul(65536);
-    let norm_product = norm_u.saturating_mul(norm_v);
-    if norm_product == 0 {
-        return 0;
-    }
-    let sim = dot_scaled / norm_product;
-    sim.min(65535) as u16
-}
+use crate::search::vector_similarity::cosine_similarity_q16;
 
 pub(crate) fn extract_project_metric_value(
     payload: &[u8],
@@ -57,16 +12,48 @@ pub(crate) fn extract_project_metric_value(
     let mut project = None;
     let mut metric = None;
     let mut value = None;
+    let mut currency = None;
+    let mut unit = None;
     for line in text.lines() {
-        if let Some(val) = line.strip_prefix("project=") {
-            project = Some(val.trim().to_owned());
-        } else if let Some(val) = line.strip_prefix("metric=") {
-            metric = Some(val.trim().to_owned());
-        } else if let Some(val) = line.strip_prefix("value=") {
-            value = Some(val.trim().to_owned());
+        let Some((key, val)) = split_metadata_line(line) else {
+            continue;
+        };
+        match key.as_str() {
+            "project" => project = Some(val),
+            "metric" => metric = Some(val),
+            "value" => value = Some(val),
+            "currency" => currency = Some(val),
+            "unit" => unit = Some(val),
+            _ => {}
         }
     }
+    if let Some(base_value) = value.as_mut() {
+        append_value_context(base_value, currency.as_deref());
+        append_value_context(base_value, unit.as_deref());
+    }
     (project, metric, value)
+}
+
+fn split_metadata_line(line: &str) -> Option<(String, String)> {
+    let (key, value) = line.split_once('=').or_else(|| line.split_once(':'))?;
+    let key = key.trim().to_ascii_lowercase();
+    let value = value.trim();
+    (!key.is_empty() && !value.is_empty()).then(|| (key, value.to_owned()))
+}
+
+fn append_value_context(value: &mut String, context: Option<&str>) {
+    let Some(context) = context.map(str::trim).filter(|context| !context.is_empty()) else {
+        return;
+    };
+    let value_lower = value.to_ascii_lowercase();
+    if value_lower
+        .split_whitespace()
+        .any(|token| token.eq_ignore_ascii_case(context))
+    {
+        return;
+    }
+    value.push(' ');
+    value.push_str(context);
 }
 
 pub(crate) fn is_redundant(

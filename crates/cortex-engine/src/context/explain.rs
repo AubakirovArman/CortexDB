@@ -109,6 +109,7 @@ fn first_excluding_stage(code: ContextPackAnomalyCode) -> &'static str {
         ContextPackAnomalyCode::ScopeMismatch => "agent_scope",
         ContextPackAnomalyCode::InsufficientContext => "answerability",
         ContextPackAnomalyCode::VisibleConflict => "conflict_visibility",
+        ContextPackAnomalyCode::RetrievalIncomplete => "retrieval",
     }
 }
 

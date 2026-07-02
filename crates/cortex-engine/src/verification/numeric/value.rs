@@ -23,7 +23,7 @@ impl NumericValue {
     }
 
     pub fn conflicts_with(&self, other: &Self) -> bool {
-        self.compare_normalized(other) == NumericComparison::Conflict
+        self.compare_normalized(other).is_conflict()
     }
 }
 
@@ -50,7 +50,23 @@ impl Magnitude {
 pub enum NumericComparison {
     Equal,
     Conflict,
+    CurrencyMismatch,
     Incomparable,
+}
+
+impl NumericComparison {
+    pub fn is_conflict(self) -> bool {
+        matches!(self, Self::Conflict | Self::CurrencyMismatch)
+    }
+
+    pub fn reason(self) -> &'static str {
+        match self {
+            Self::Equal => "equal",
+            Self::Conflict => "value_conflict",
+            Self::CurrencyMismatch => "currency_mismatch",
+            Self::Incomparable => "incomparable",
+        }
+    }
 }
 
 pub fn normalized_numeric_equal(left: &NumericValue, right: &NumericValue) -> bool {
@@ -58,14 +74,14 @@ pub fn normalized_numeric_equal(left: &NumericValue, right: &NumericValue) -> bo
 }
 
 pub fn numeric_conflict(left: &NumericValue, right: &NumericValue) -> bool {
-    compare_numeric_values(left, right) == NumericComparison::Conflict
+    compare_numeric_values(left, right).is_conflict()
 }
 
 pub fn compare_numeric_values(left: &NumericValue, right: &NumericValue) -> NumericComparison {
     match (&left.currency, &right.currency) {
         (Some(left_currency), Some(right_currency)) => {
             if left_currency != right_currency {
-                return NumericComparison::Conflict;
+                return NumericComparison::CurrencyMismatch;
             }
             return compare_scaled(left, right);
         }
@@ -75,10 +91,17 @@ pub fn compare_numeric_values(left: &NumericValue, right: &NumericValue) -> Nume
 
     match (&left.unit, &right.unit) {
         (Some(left_unit), Some(right_unit)) => {
-            if left_unit != right_unit {
+            let Some(left_normalized) = normalize_unit_value(left.scaled_value, left_unit) else {
+                return NumericComparison::Incomparable;
+            };
+            let Some(right_normalized) = normalize_unit_value(right.scaled_value, right_unit)
+            else {
+                return NumericComparison::Incomparable;
+            };
+            if left_normalized.class != right_normalized.class {
                 return NumericComparison::Incomparable;
             }
-            compare_scaled(left, right)
+            compare_normalized_scaled(left_normalized.value, right_normalized.value)
         }
         (Some(_), None) | (None, Some(_)) => NumericComparison::Incomparable,
         (None, None) => compare_scaled(left, right),
@@ -86,11 +109,61 @@ pub fn compare_numeric_values(left: &NumericValue, right: &NumericValue) -> Nume
 }
 
 fn compare_scaled(left: &NumericValue, right: &NumericValue) -> NumericComparison {
-    if left.scaled_value == right.scaled_value {
+    compare_normalized_scaled(
+        u128::from(left.scaled_value),
+        u128::from(right.scaled_value),
+    )
+}
+
+fn compare_normalized_scaled(left: u128, right: u128) -> NumericComparison {
+    if left == right {
         NumericComparison::Equal
     } else {
         NumericComparison::Conflict
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct NormalizedUnitValue {
+    class: UnitClass,
+    value: u128,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum UnitClass {
+    Length,
+    Mass,
+    Time,
+    Volume,
+    Ratio,
+}
+
+fn normalize_unit_value(value: u64, unit: &str) -> Option<NormalizedUnitValue> {
+    let (class, multiplier) = match unit {
+        "mm" => (UnitClass::Length, 1),
+        "cm" => (UnitClass::Length, 10),
+        "m" => (UnitClass::Length, 1_000),
+        "km" => (UnitClass::Length, 1_000_000),
+        "g" => (UnitClass::Mass, 1),
+        "kg" => (UnitClass::Mass, 1_000),
+        "t" => (UnitClass::Mass, 1_000_000),
+        "ml" => (UnitClass::Volume, 1),
+        "l" => (UnitClass::Volume, 1_000),
+        "ms" => (UnitClass::Time, 1),
+        "s" => (UnitClass::Time, 1_000),
+        "min" => (UnitClass::Time, 60_000),
+        "h" => (UnitClass::Time, 3_600_000),
+        "day" | "days" => (UnitClass::Time, 86_400_000),
+        "week" | "weeks" => (UnitClass::Time, 604_800_000),
+        "month" | "months" => (UnitClass::Time, 2_592_000_000),
+        "year" | "years" => (UnitClass::Time, 31_536_000_000),
+        "%" => (UnitClass::Ratio, 1),
+        _ => return None,
+    };
+    Some(NormalizedUnitValue {
+        class,
+        value: u128::from(value) * multiplier,
+    })
 }
 
 /// Format a scaled value back to human-readable display string (integer-only).

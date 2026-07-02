@@ -47,8 +47,14 @@ make backup-restore-production-pack-check
 - Backup drills run backup, restore, and restored validation as one operation.
 - Offsite staging first restores the local backup as a preflight drill, then
   publishes an atomically renamed copy under the offsite root.
+- Encrypted backup archives use `cortexdb.encrypted_backup.v2` with
+  `cortexdb.xchacha20poly1305-argon2id.v2`: Argon2id derives the archive key
+  from the supplied passphrase and random salt; XChaCha20-Poly1305 encrypts the
+  backup bytes with a random nonce and authenticates the v2 header as AAD.
 - Encrypted backup restore rejects wrong passphrases or corrupted ciphertext
   before trusting the restored database.
+- Legacy encrypted backup v1 archives are refused on restore; recreate them
+  with the current binary and v2 archive format.
 - Retention pruning only removes directories whose names start with an
   explicit non-empty prefix and keeps at least one latest backup.
 
@@ -73,7 +79,8 @@ detect accidental file changes before restore.
 ## Current Limitations
 
 - Passphrase encrypted backups are a local MVP, not KMS-backed envelope
-  encryption or a compliance custody workflow.
+  encryption, live database-directory encryption, or a compliance custody
+  workflow.
 - Point-in-time restore can only replay sequences still covered by retained
   archived WAL files and checkpoint/segment files present in the backup.
 - Point-in-time restore rejects a target sequence inside an atomic write batch;
@@ -218,7 +225,7 @@ target/backup-rpo-rto/report.json
 ```
 
 `make encrypted-backup-check` is the repeatable encrypted-backup MVP gate. It
-runs engine and CLI roundtrip tests, creates a passphrase archive, verifies
+runs engine and CLI roundtrip tests, creates a v2 passphrase archive, verifies
 that fixture payload bytes are not visible in the archive, restores with the
 correct passphrase, and verifies wrong-passphrase and corrupt-ciphertext
 fail-safe behavior:
@@ -278,13 +285,20 @@ These backup archive corruption tests cover:
 
 Encrypted backup is available as a local passphrase archive MVP through
 `backup-encrypted` and `restore-encrypted`. This supports local release
-evidence and operator drills. The current implementation is a CortexDB-local
-passphrase archive format for workflow validation; it is not a KMS-backed,
-externally audited, or compliance-certified encryption system. KMS-backed
-envelope encryption, remote object restore, and compliance-grade custody remain
-future work documented in
+evidence and operator drills. The current implementation writes
+`cortexdb.encrypted_backup.v2` archives using XChaCha20-Poly1305 with an
+Argon2id-derived key, random salt/nonce, detached AEAD tag, and authenticated
+header AAD. The passphrase holder can decrypt the archive; tampering, wrong
+passphrases, legacy v1 archives, and malformed v2 headers fail closed before a
+restore target is trusted.
+
+This is not live encryption of the running database directory or WAL, and it
+is not a KMS-backed, externally audited, or compliance-certified encryption
+system. KMS-backed envelope encryption, remote object restore, and
+compliance-grade custody remain future work documented in
 [`ENCRYPTED_BACKUPS_DESIGN.md`](archive/ENCRYPTED_BACKUPS_DESIGN.md).
 
-Passphrase rotation is also MVP-scoped: create a fresh archive with the new
+Passphrase rotation is also MVP-scoped: create a fresh v2 archive with the new
 passphrase, keep old passphrases only for retained old archives, and prove
-cross-key restore rejection with `make encrypted-backup-rotation-check`.
+cross-key restore rejection with `make encrypted-backup-rotation-check`. There
+is no in-place rewrap operation or managed key-custody workflow yet.

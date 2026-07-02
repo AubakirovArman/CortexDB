@@ -8,6 +8,7 @@ use crate::auth::AuthRouteContext;
 use crate::authz;
 use crate::context;
 use crate::hnsw_profile;
+use crate::receipt::ReceiptEmissionContext;
 use crate::responses::RouterError;
 use crate::search;
 
@@ -80,6 +81,7 @@ pub fn route_database_with_agent(
         target,
         body,
         AuthRouteContext::for_agent(auth_agent_id),
+        None,
     )
 }
 
@@ -89,6 +91,7 @@ pub(crate) fn route_database_with_auth<A: DatabaseAccess>(
     target: &str,
     body: &[u8],
     auth_context: AuthRouteContext,
+    receipt_context: Option<&ReceiptEmissionContext>,
 ) -> Result<String, RouterError> {
     let (path, query) = target.split_once('?').unwrap_or((target, ""));
     let mut authenticated_view = if is_agent_scoped_route(method, path) {
@@ -121,6 +124,7 @@ pub(crate) fn route_database_with_auth<A: DatabaseAccess>(
                 body,
                 authenticated_view.as_ref(),
                 Some(&auth_context),
+                receipt_context,
             );
         }
         ("POST", "/v1/context/trace") => {
@@ -131,6 +135,7 @@ pub(crate) fn route_database_with_auth<A: DatabaseAccess>(
                 body,
                 authenticated_view.as_ref(),
                 Some(&auth_context),
+                receipt_context,
             );
         }
         ("POST", "/v1/aql") => {
@@ -188,6 +193,7 @@ pub(crate) fn route_database_with_auth<A: DatabaseAccess>(
         query,
         body,
         authenticated_view.as_ref(),
+        receipt_context,
     ) {
         return result;
     }
@@ -264,11 +270,19 @@ pub(crate) fn route_shared_with_auth(
     target: &str,
     body: &[u8],
     auth_context: AuthRouteContext,
+    receipt_context: Option<&ReceiptEmissionContext>,
 ) -> Result<String, RouterError> {
     let mut db = db
         .write()
         .map_err(|e| RouterError::Internal(e.to_string()))?;
-    route_database_with_auth(&mut *db, method, target, body, auth_context)
+    route_database_with_auth(
+        &mut *db,
+        method,
+        target,
+        body,
+        auth_context,
+        receipt_context,
+    )
 }
 
 fn clamp_view_context_budget(view: &mut AgentView, limit: u32) {

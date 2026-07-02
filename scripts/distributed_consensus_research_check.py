@@ -31,12 +31,12 @@ def main() -> int:
 
     errors = []
     require_marker(
-        ROOT / "docs" / "DISTRIBUTED_CONSENSUS_RESEARCH.md",
+        ROOT / "docs" / "archive" / "DISTRIBUTED_CONSENSUS_RESEARCH.md",
         "production_ready=false",
         errors,
     )
     require_marker(
-        ROOT / "docs" / "NEXT_60_EPICS.md",
+        ROOT / "docs" / "archive" / "NEXT_60_EPICS.md",
         "| 59 | Distributed Consensus Research Track | research |",
         errors,
     )

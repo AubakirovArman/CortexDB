@@ -1,0 +1,35 @@
+{
+  "schema_version": "cortexdb.gce_conformance.thin_wrapper_reference.v1",
+  "name": "pgvector_policy_rag_thin_wrapper",
+  "description": "A documented reference shape for pgvector plus an application-side policy engine and a RAG citation library.",
+  "cortexdb_axes": {
+    "anti_correlation": "pass",
+    "determinism": "pass",
+    "dropped_conflict": "pass",
+    "fabricated_citation": "pass",
+    "forged_audit_entry": "pass",
+    "plan_binding": "pass",
+    "receipt_verifiability": "pass",
+    "scope_widening": "pass"
+  },
+  "thin_wrapper_axes": {
+    "anti_correlation": "unknown",
+    "determinism": "fail",
+    "dropped_conflict": "unknown",
+    "fabricated_citation": "unknown",
+    "forged_audit_entry": "unknown",
+    "plan_binding": "fail",
+    "receipt_verifiability": "fail",
+    "scope_widening": "unknown"
+  },
+  "required_failed_axes": [
+    "receipt_verifiability",
+    "determinism",
+    "plan_binding"
+  ],
+  "failure_rationale": {
+    "determinism": "The reference does not expose byte-identical canonical pack and determinism-hash commitments across process boundaries.",
+    "plan_binding": "The reference applies policy as an application-side filter rather than as fail-closed plan algebra with independently checkable enforcement evidence.",
+    "receipt_verifiability": "The reference does not emit accountability_receipt.v1 roots that a standalone verifier can check without trusting the serving stack."
+  }
+}

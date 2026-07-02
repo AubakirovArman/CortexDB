@@ -70,12 +70,16 @@ fn context_pack_v1_sdk_models_roundtrip_full_shape() {
                 cell_id: 42,
                 decision: "allowed".to_owned(),
                 policy: "agent_view_readable_scope".to_owned(),
+                policy_version: Some("agent_view_readable_scope.v1".to_owned()),
                 reason:
                     "cell scope was present in AgentView.readable_scopes before ContextPack packing"
                         .to_owned(),
                 scope: "project:investments".to_owned(),
                 scope_id: 123,
                 agent_id: Some(7),
+                agent_view_digest: Some(
+                    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef".to_owned(),
+                ),
                 principal_id: Some("analyst-7".to_owned()),
                 auth_role: Some("data".to_owned()),
             }),
@@ -86,6 +90,8 @@ fn context_pack_v1_sdk_models_roundtrip_full_shape() {
             message: "candidate exceeded remaining token budget".to_owned(),
             why_excluded: Some("large_cell_policy=exclude".to_owned()),
         }],
+        grounding_report: None,
+        accountability_receipt: None,
     };
 
     assert!(pack.is_v1());
@@ -157,6 +163,40 @@ fn context_pack_v1_deserializes_without_optional_provenance() {
 
     assert_eq!(decoded.cells[0].provenance, None);
     assert_eq!(decoded.cells[0].access_decision, None);
+    assert_eq!(decoded.accountability_receipt, None);
+}
+
+#[test]
+fn context_pack_v1_deserializes_optional_accountability_receipt() {
+    let decoded: ContextPackV1 = serde_json::from_str(
+        r#"{
+          "schema_version":"context_pack.v1",
+          "token_budget_tokens":128,
+          "estimated_tokens":45,
+          "truncated":false,
+          "citations_required":false,
+          "answerability_q16":65535,
+          "conflict_visibility_q16":0,
+          "visible_conflict_count":0,
+          "cells":[],
+          "anomalies":[],
+          "accountability_receipt":{
+            "schema_version":"accountability_receipt.v1",
+            "header":{"pack_root":"00"},
+            "leaves":{}
+          }
+        }"#,
+    )
+    .expect("additive receipt field should remain readable by v1 consumers");
+
+    assert_eq!(
+        decoded
+            .accountability_receipt
+            .as_ref()
+            .and_then(|receipt| receipt.get("schema_version"))
+            .and_then(serde_json::Value::as_str),
+        Some("accountability_receipt.v1")
+    );
 }
 
 #[test]
@@ -194,6 +234,8 @@ fn context_pack_v1_helpers_detect_schema_budget_and_anomalies() {
                 why_excluded: None,
             },
         ],
+        grounding_report: None,
+        accountability_receipt: None,
     };
 
     assert!(!pack.is_v1());
@@ -226,6 +268,8 @@ fn context_pack_v1_grounding_helper_flags_unsupported_answer_spans() {
             access_decision: None,
         }],
         anomalies: Vec::new(),
+        grounding_report: None,
+        accountability_receipt: None,
     };
 
     let report = pack.ground_answer_with_options(

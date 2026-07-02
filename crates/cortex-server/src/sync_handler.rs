@@ -2,6 +2,7 @@ use std::path::Path;
 
 use cortex_engine::Database;
 
+use crate::receipt::ReceiptEmissionContext;
 use crate::responses::ErrorCode;
 use crate::router::{query_param_opt_decoded, route_shared_with_auth};
 use crate::{
@@ -46,6 +47,20 @@ pub fn handle_http(root: &Path, request: &str) -> String {
 /// See `handle_http` for details. This variant accepts `ServerOptions` for auth-token
 /// configuration in legacy integration tests.
 pub fn handle_http_with_options(root: &Path, request: &str, options: &ServerOptions) -> String {
+    let resolved_options;
+    let receipt_signer_configured =
+        options.receipt_signing_key.is_some() || options.receipt_external_signer.is_some();
+    let options = if receipt_signer_configured && options.db_instance_id.is_none() {
+        match crate::database_identity::with_database_instance_id(root, options) {
+            Ok(value) => {
+                resolved_options = value;
+                &resolved_options
+            }
+            Err(error) => return json_error(500, ErrorCode::Internal, &error.to_string()),
+        }
+    } else {
+        options
+    };
     let Some((head, body)) = request.split_once("\r\n\r\n") else {
         return json_error(400, ErrorCode::BadRequest, "bad request");
     };
@@ -159,6 +174,34 @@ pub fn handle_http_with_options(root: &Path, request: &str, options: &ServerOpti
             ),
         };
     }
+    if parts[0] == "GET" && path == "/v1/cluster/status" {
+        return match serde_json::to_string(&crate::cluster::status_response(options)) {
+            Ok(body) => json_response(200, &body),
+            Err(error) => json_error(500, ErrorCode::Internal, &error.to_string()),
+        };
+    }
+    if let Some(decision) = crate::cluster::context_ingress_decision(options, parts[0], path) {
+        match decision {
+            crate::cluster::ContextIngressDecision::Local => {}
+            crate::cluster::ContextIngressDecision::Forward(target) => {
+                return match crate::cluster::forward_http_request(
+                    &target,
+                    parts[0],
+                    parts[1],
+                    body.as_bytes(),
+                    auth_header,
+                    None,
+                    None,
+                ) {
+                    Ok(response) => json_response(response.status_code, &response.body),
+                    Err(error) => json_error(503, ErrorCode::ServiceUnavailable, error.as_str()),
+                };
+            }
+            crate::cluster::ContextIngressDecision::Unavailable(message) => {
+                return json_error(503, ErrorCode::ServiceUnavailable, &message);
+            }
+        }
+    }
 
     let tenant = query_param_opt_decoded(query, "tenant").unwrap_or_else(|| "default".to_owned());
     if !validate_tenant_id(&tenant) {
@@ -180,12 +223,17 @@ pub fn handle_http_with_options(root: &Path, request: &str, options: &ServerOpti
         return json_error(500, ErrorCode::Internal, "failed to open database");
     };
     let db = std::sync::RwLock::new(db);
+    let receipt_context = match ReceiptEmissionContext::from_options(options) {
+        Ok(value) => value,
+        Err(error) => return json_error(error.status_code(), error.code(), &error.to_string()),
+    };
     match route_shared_with_auth(
         &db,
         parts[0],
         parts[1],
         body.as_bytes(),
         auth_decision.route_context(),
+        receipt_context.as_ref(),
     ) {
         Ok(value) => json_response(200, &value),
         Err(error) => json_error(error.status_code(), error.code(), &error.to_string()),

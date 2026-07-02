@@ -60,6 +60,7 @@ fn context_pack_exports_descriptor_source_ref_without_payload_headers() {
         cell_id: CellId(42),
         payload: b"secure evidence".to_vec(),
         descriptor,
+        captured_access_decision: None,
     };
     let pack = ContextPack::from_retrieved_with_feedback_options_and_view(
         vec![cell],

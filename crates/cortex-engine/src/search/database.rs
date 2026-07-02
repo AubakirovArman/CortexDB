@@ -1,9 +1,12 @@
+mod allowed;
 mod ann_reports;
 mod api;
 mod context;
 mod context_store;
 mod diversity;
 mod expansion;
+#[cfg(test)]
+mod fail_closed_invariant_model_tests;
 mod live_store;
 mod persisted;
 mod persisted_rrf;

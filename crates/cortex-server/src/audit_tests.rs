@@ -43,19 +43,24 @@ fn audit_sink_writes_jsonl_without_body_or_query() {
             status: 403,
             error_code: Some("permission_denied"),
             duration_ms: 12,
+            accountability_receipt_hash: None,
         },
         Some(&sink),
     );
 
     let line = std::fs::read_to_string(path).unwrap();
     let value = serde_json::from_str::<serde_json::Value>(line.trim()).unwrap();
-    assert_eq!(value["schema_version"], "cortexdb.audit.v1");
+    assert_eq!(value["schema_version"], "cortexdb.audit.v2");
     assert_eq!(value["audit_event"], "http_response");
     assert_eq!(value["audit_action"], "write");
-    assert_eq!(value["chain_id"], "cortexdb.audit.chain.v1");
+    assert_eq!(value["chain_id"], audit_chain::AUDIT_CHAIN_ID);
     assert_eq!(value["sequence"], 1);
-    assert_eq!(value["prev_hash"], "0000000000000000");
+    assert_eq!(value["prev_hash"], audit_chain::AUDIT_CHAIN_ZERO_HASH);
     assert!(value["event_hash"]
+        .as_str()
+        .is_some_and(audit_chain::is_hex_hash));
+    assert_eq!(value["mac_key_id"], "test-audit-key");
+    assert!(value["event_mac"]
         .as_str()
         .is_some_and(audit_chain::is_hex_hash));
     assert_eq!(value["principal_id"], "principal-a");
@@ -90,6 +95,7 @@ fn audit_sink_records_allowed_scope_decision_for_successful_data_route() {
             status: 200,
             error_code: None,
             duration_ms: 3,
+            accountability_receipt_hash: None,
         },
         Some(&sink),
     );
@@ -101,12 +107,45 @@ fn audit_sink_records_allowed_scope_decision_for_successful_data_route() {
 }
 
 #[test]
+fn audit_sink_records_accountability_receipt_hash() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("audit").join("http.jsonl");
+    let sink = AuditSink::open(&path).unwrap();
+
+    emit_http_response(
+        HttpResponseAudit {
+            method: "POST",
+            path: "/v1/context",
+            tenant: "tenant-a",
+            request_id: "req-receipt",
+            principal_id: Some("principal-a"),
+            auth_role: Some("data"),
+            auth_agent_id: Some(7),
+            status: 200,
+            error_code: None,
+            duration_ms: 4,
+            accountability_receipt_hash: Some("0123456789abcdef"),
+        },
+        Some(&sink),
+    );
+
+    let line = std::fs::read_to_string(path).unwrap();
+    let value = serde_json::from_str::<serde_json::Value>(line.trim()).unwrap();
+    assert_eq!(value["audit_action"], "context");
+    assert_eq!(value["accountability_receipt_hash"], "0123456789abcdef");
+}
+
+#[test]
 fn audit_sink_rotates_active_jsonl_and_keeps_each_file_verifiable() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("audit").join("http.jsonl");
     let sink = AuditSink::open_with_options(
         &path,
-        AuditSinkOptions::from_parts(Some(260), AuditLogFsyncPolicy::FlushOnly),
+        AuditSinkOptions::from_parts(
+            Some(260),
+            AuditLogFsyncPolicy::FlushOnly,
+            Some(test_audit_mac_key()),
+        ),
     )
     .unwrap();
 
@@ -123,6 +162,7 @@ fn audit_sink_rotates_active_jsonl_and_keeps_each_file_verifiable() {
                 status: 200,
                 error_code: None,
                 duration_ms: 1,
+                accountability_receipt_hash: None,
             },
             Some(&sink),
         );
@@ -139,8 +179,14 @@ fn audit_sink_rotates_active_jsonl_and_keeps_each_file_verifiable() {
     let first_active =
         serde_json::from_str::<serde_json::Value>(active.lines().next().unwrap()).unwrap();
     assert_eq!(first_active["sequence"], 1);
-    assert_eq!(first_active["prev_hash"], "0000000000000000");
+    assert_eq!(
+        first_active["prev_hash"],
+        audit_chain::AUDIT_CHAIN_ZERO_HASH
+    );
     assert!(first_active["event_hash"]
+        .as_str()
+        .is_some_and(audit_chain::is_hex_hash));
+    assert!(first_active["event_mac"]
         .as_str()
         .is_some_and(audit_chain::is_hex_hash));
 }
@@ -163,6 +209,7 @@ fn audit_sink_continues_chain_when_reopened() {
                 status: 200,
                 error_code: None,
                 duration_ms: 1,
+                accountability_receipt_hash: None,
             },
             Some(&sink),
         );
@@ -184,6 +231,7 @@ fn audit_sink_continues_chain_when_reopened() {
             status: 200,
             error_code: None,
             duration_ms: 2,
+            accountability_receipt_hash: None,
         },
         Some(&sink),
     );
@@ -217,4 +265,29 @@ fn audit_sink_rejects_corrupt_chain_tail() {
         error.to_string().contains("invalid event_hash"),
         "unexpected error: {error}"
     );
+}
+
+#[test]
+fn audit_sink_rejects_missing_mac_key() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("audit").join("http.jsonl");
+    let error = match AuditSink::open_with_options(
+        &path,
+        AuditSinkOptions::from_parts(None, AuditLogFsyncPolicy::Always, None),
+    ) {
+        Ok(_) => panic!("audit sink without MAC key should fail"),
+        Err(error) => error,
+    };
+    assert!(
+        error.to_string().contains("MAC key is required"),
+        "unexpected error: {error}"
+    );
+}
+
+fn test_audit_mac_key() -> super::config::AuditMacKey {
+    super::config::AuditMacKey::from_hex(
+        "test-audit-key",
+        "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+    )
+    .unwrap()
 }

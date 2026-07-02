@@ -6,9 +6,9 @@ use cortex_engine::{ClusterConfig, WriteBatch, WriteBatchOperation};
 use crate::authz;
 use crate::responses::{
     AqlQueryCacheStatsResponse, CellLookupResponse, CellResponse, CheckpointResponse,
-    ClusterNodeResponse, ClusterStatusResponse, CompactionMetricsResponse, CompactionResponse,
-    CompactorStatusResponse, HealthResponse, PutCellResponse, RouterError, StatsResponse,
-    ValidationResponse, WriteBatchOperationRequest, WriteBatchRequest, WriteBatchResponse,
+    CompactionMetricsResponse, CompactionResponse, CompactorStatusResponse, HealthResponse,
+    PutCellResponse, RouterError, StatsResponse, ValidationResponse, WriteBatchOperationRequest,
+    WriteBatchRequest, WriteBatchResponse,
 };
 
 use super::params::cell_id;
@@ -57,20 +57,7 @@ pub(super) fn try_route<A: DatabaseAccess>(
             )?),
             ("GET", "/v1/cluster/status") => {
                 let cluster = ClusterConfig::single_node();
-                let replication_factor = cluster.nodes.len();
-                let response = ClusterStatusResponse {
-                    local_node: cluster.local_node.0,
-                    nodes: cluster
-                        .nodes
-                        .iter()
-                        .map(|node| ClusterNodeResponse {
-                            id: node.id.0,
-                            address: node.address.clone(),
-                        })
-                        .collect(),
-                    replication_factor,
-                    distributed_enabled: replication_factor > 1,
-                };
+                let response = crate::cluster::status_response_for_config(&cluster);
                 Ok(serde_json::to_string(&response)?)
             }
             ("GET", "/v1/stats") => {

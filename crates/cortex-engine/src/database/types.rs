@@ -115,6 +115,7 @@ pub struct RetrievedCell {
     pub cell_id: CellId,
     pub payload: Vec<u8>,
     pub descriptor: CellDescriptor,
+    pub captured_access_decision: Option<CapturedAccessDecision>,
 }
 
 impl RetrievedCell {
@@ -124,12 +125,44 @@ impl RetrievedCell {
             cell_id,
             payload,
             descriptor,
+            captured_access_decision: None,
         }
     }
 
     pub(crate) fn metadata(&self) -> CellMetadata {
         CellMetadata::from_payload_with_descriptor(&self.payload, &self.descriptor)
     }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CapturedAccessDecision {
+    pub cell_id: CellId,
+    pub policy: String,
+    pub policy_version: String,
+    pub reason: String,
+    pub scope: String,
+    pub scope_id: u64,
+    pub agent_id: Option<u64>,
+    pub agent_view_digest: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct CapturedAccessDenialSet {
+    pub total_denied: usize,
+    pub truncated: bool,
+    pub denials: Vec<CapturedAccessDenial>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CapturedAccessDenial {
+    pub candidate: u32,
+    pub cell_id_hash: String,
+    pub policy: String,
+    pub policy_version: String,
+    pub reason: String,
+    pub agent_id: Option<u64>,
+    pub agent_view_digest: String,
+    pub evidence_digest: String,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

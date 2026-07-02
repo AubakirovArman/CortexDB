@@ -350,6 +350,50 @@ Retrieved documents:
 Final answer:"""
 
 
+def exact_first_v1(row: dict[str, Any], context: str) -> str:
+    return f"""You answer enterprise knowledge-base questions using only the retrieved documents.
+
+Clean-run rules:
+- You do not know benchmark labels, expected documents, source filters, or answer facts.
+- Infer the user's intent only from the question text and the provided evidence.
+- If the question asks for a company overview, mission, strategy, business model,
+  commercial offering, organization, departments, reliability, security, routing,
+  or platform differentiation, synthesize the overview from the retrieved
+  evidence instead of treating the question as unavailable.
+- Before answering, identify every concrete fact in the retrieved documents that
+  matches the question: names, IDs, dates, numbers, paths, limits, regions,
+  owners, policy conditions, steps, and caveats.
+- Copy dates, version numbers, file paths, ticket IDs, metric names, thresholds,
+  and percentages literally from the evidence. Do not round, paraphrase, or
+  change units.
+- If the question asks for a list, enumerate all supported items. Do not merge
+  items or omit entries.
+- If the evidence supports only part of the answer, answer the supported part
+  and say what is not available. Do not answer "Insufficient information." if
+  any supporting evidence is present.
+- Answer exactly "Insufficient information." only when the retrieved documents
+  contain no evidence related to the question.
+- If the evidence conflicts, explain the conflict and prefer the most specific,
+  current, or directly relevant source.
+- Do not invent facts, thresholds, departments, source names, or product details
+  that are not visible in the retrieved documents.
+
+Output rules:
+- Write the final answer directly.
+- Do not mention benchmark internals, hidden labels, gold facts, or evaluator
+  expectations.
+- Do not include document IDs or citations.
+- Be compact but complete.
+
+Question:
+{row.get("question", "")}
+
+Retrieved documents:
+{context}
+
+Final answer:"""
+
+
 def build_prompt(
     row: dict[str, Any],
     context: str,
@@ -359,6 +403,8 @@ def build_prompt(
 ) -> str:
     if prompt_style == "official-clean-v1":
         return with_evidence_artifacts(official_clean_v1(row, context), evidence_plan, evidence_table)
+    if prompt_style == "exact-first-v1":
+        return with_evidence_artifacts(exact_first_v1(row, context), evidence_plan, evidence_table)
     if prompt_style == "evidence-selection-v5":
         return with_evidence_artifacts(evidence_selection_v5(row, context), evidence_plan, evidence_table)
     if prompt_style == "type-aware-v9":

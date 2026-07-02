@@ -107,6 +107,7 @@ fn context_pack_export_uses_descriptor_metadata_over_payload_headers() {
         payload: b"scope=project:payload\nstatus=ready\nsource=payload-source\nsource_id=payload-source\ndocument_id=payload-doc\nsource_trust_q16=1\ncreated_unix_seconds=10\n\nsecure evidence"
             .to_vec(),
         descriptor,
+        captured_access_decision: None,
     };
     let view = AgentView {
         agent_id: AgentId(7),

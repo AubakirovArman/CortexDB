@@ -36,6 +36,35 @@ fn record_context_feedback_writes_durable_feedback_cell() {
 }
 
 #[test]
+fn feedback_cell_ids_preserve_max_documented_agent_slot() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    let low = db
+        .record_context_feedback(AgentId(7), feedback(CellId(42), true))
+        .unwrap();
+    let high = db
+        .record_context_feedback(AgentId(0x0fff_ffff), feedback(CellId(43), true))
+        .unwrap();
+
+    assert_eq!(encoded_agent_slot(low.cell_id), 7);
+    assert_eq!(encoded_agent_slot(high.cell_id), 0x0fff_ffff);
+}
+
+#[test]
+fn feedback_cell_ids_reject_agent_slot_overflow() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+
+    let error = db
+        .record_context_feedback(AgentId(0x1000_0007), feedback(CellId(42), true))
+        .unwrap_err();
+    assert!(matches!(
+        error,
+        cortex_engine::EngineError::StorageInvariant(_)
+    ));
+}
+
+#[test]
 fn feedback_cells_are_queryable_by_scope_and_type() {
     let dir = tempfile::tempdir().unwrap();
     let mut db = Database::open(dir.path()).unwrap();
@@ -249,4 +278,8 @@ fn view() -> AgentView {
         require_citations_by_default: false,
         private_scope: None,
     }
+}
+
+fn encoded_agent_slot(cell_id: CellId) -> u64 {
+    (cell_id.0 >> 32) & 0x0fff_ffff
 }

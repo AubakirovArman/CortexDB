@@ -1,5 +1,7 @@
 use crate::search::intent::{classify_enterprise_rag_question_type, EnterpriseRagQuestionType};
 
+use super::super::frozen_weights::{self, FrozenRoutePolicy};
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SearchQueryIntent {
     Lookup,
@@ -58,8 +60,8 @@ impl SearchRoutePolicy {
         if requested_budget == 0 {
             return 0;
         }
-        let adjusted =
-            u64::from(requested_budget).saturating_mul(u64::from(self.token_budget_q16)) / 65_535;
+        let adjusted = u64::from(requested_budget).saturating_mul(u64::from(self.token_budget_q16))
+            / frozen_weights::Q16_ONE_U64;
         u32::try_from(adjusted.max(1)).unwrap_or(u32::MAX)
     }
 }
@@ -98,94 +100,29 @@ pub fn routed_token_budget(query_text: &str, requested_budget: u32) -> u32 {
 }
 
 pub(super) fn policy_for_intent(intent: SearchQueryIntent) -> SearchRoutePolicy {
-    match intent {
-        SearchQueryIntent::Lookup => SearchRoutePolicy {
-            candidate_limit_multiplier: 2,
-            result_limit_cap: Some(5),
-            token_budget_q16: 32_768,
-            diversity_lambda_q16: 65_535,
-            rerank: true,
-            diversity: false,
-            allow_abstain: false,
-            lexical_weight_q16: 42_000,
-            semantic_weight_q16: 18_000,
-        },
-        SearchQueryIntent::Semantic => SearchRoutePolicy {
-            candidate_limit_multiplier: 5,
-            result_limit_cap: None,
-            token_budget_q16: 65_535,
-            diversity_lambda_q16: 49_152,
-            rerank: true,
-            diversity: true,
-            allow_abstain: false,
-            lexical_weight_q16: 18_000,
-            semantic_weight_q16: 42_000,
-        },
-        SearchQueryIntent::ProjectRelated => SearchRoutePolicy {
-            candidate_limit_multiplier: 6,
-            result_limit_cap: None,
-            token_budget_q16: 65_535,
-            diversity_lambda_q16: 52_428,
-            rerank: true,
-            diversity: true,
-            allow_abstain: false,
-            lexical_weight_q16: 28_000,
-            semantic_weight_q16: 34_000,
-        },
-        SearchQueryIntent::HighLevel => SearchRoutePolicy {
-            candidate_limit_multiplier: 8,
-            result_limit_cap: None,
-            token_budget_q16: 65_535,
-            diversity_lambda_q16: 45_875,
-            rerank: true,
-            diversity: true,
-            allow_abstain: false,
-            lexical_weight_q16: 24_000,
-            semantic_weight_q16: 36_000,
-        },
-        SearchQueryIntent::ConflictingInfo => SearchRoutePolicy {
-            candidate_limit_multiplier: 6,
-            result_limit_cap: None,
-            token_budget_q16: 65_535,
-            diversity_lambda_q16: 32_768,
-            rerank: true,
-            diversity: true,
-            allow_abstain: false,
-            lexical_weight_q16: 34_000,
-            semantic_weight_q16: 26_000,
-        },
-        SearchQueryIntent::Completeness => SearchRoutePolicy {
-            candidate_limit_multiplier: 8,
-            result_limit_cap: None,
-            token_budget_q16: 65_535,
-            diversity_lambda_q16: 36_864,
-            rerank: true,
-            diversity: true,
-            allow_abstain: false,
-            lexical_weight_q16: 30_000,
-            semantic_weight_q16: 30_000,
-        },
-        SearchQueryIntent::InfoNotFound => SearchRoutePolicy {
-            candidate_limit_multiplier: 3,
-            result_limit_cap: Some(3),
-            token_budget_q16: 24_576,
-            diversity_lambda_q16: 65_535,
-            rerank: true,
-            diversity: false,
-            allow_abstain: true,
-            lexical_weight_q16: 36_000,
-            semantic_weight_q16: 20_000,
-        },
-        SearchQueryIntent::Constrained => SearchRoutePolicy {
-            candidate_limit_multiplier: 4,
-            result_limit_cap: Some(6),
-            token_budget_q16: 49_152,
-            diversity_lambda_q16: 65_535,
-            rerank: true,
-            diversity: false,
-            allow_abstain: false,
-            lexical_weight_q16: 38_000,
-            semantic_weight_q16: 22_000,
-        },
+    let frozen = match intent {
+        SearchQueryIntent::Lookup => frozen_weights::LOOKUP_ROUTE_POLICY,
+        SearchQueryIntent::Semantic => frozen_weights::SEMANTIC_ROUTE_POLICY,
+        SearchQueryIntent::ProjectRelated => frozen_weights::PROJECT_RELATED_ROUTE_POLICY,
+        SearchQueryIntent::HighLevel => frozen_weights::HIGH_LEVEL_ROUTE_POLICY,
+        SearchQueryIntent::ConflictingInfo => frozen_weights::CONFLICTING_INFO_ROUTE_POLICY,
+        SearchQueryIntent::Completeness => frozen_weights::COMPLETENESS_ROUTE_POLICY,
+        SearchQueryIntent::InfoNotFound => frozen_weights::INFO_NOT_FOUND_ROUTE_POLICY,
+        SearchQueryIntent::Constrained => frozen_weights::CONSTRAINED_ROUTE_POLICY,
+    };
+    route_policy_from_frozen(frozen)
+}
+
+fn route_policy_from_frozen(frozen: FrozenRoutePolicy) -> SearchRoutePolicy {
+    SearchRoutePolicy {
+        candidate_limit_multiplier: frozen.candidate_limit_multiplier,
+        result_limit_cap: frozen.result_limit_cap,
+        token_budget_q16: frozen.token_budget_q16,
+        diversity_lambda_q16: frozen.diversity_lambda_q16,
+        rerank: frozen.rerank,
+        diversity: frozen.diversity,
+        allow_abstain: frozen.allow_abstain,
+        lexical_weight_q16: frozen.lexical_weight_q16,
+        semantic_weight_q16: frozen.semantic_weight_q16,
     }
 }

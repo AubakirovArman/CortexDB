@@ -1,0 +1,57 @@
+{
+  "schema_version": "cortexdb.receipt_kms_hsm_custody_evidence.v1",
+  "custody_mode": "kms",
+  "provider": "fixture-kms",
+  "provider_key_ref": "kms://test/receipt-key",
+  "signer_ref": "kms://test/receipt-key",
+  "key_id": "receipt-key.external",
+  "public_key_hex": "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8",
+  "signing_domain": "cortexdb.accountability_receipt.sign.v1",
+  "key_material_exportable": false,
+  "local_seed_material_present": false,
+  "runtime_binding": {
+    "mode": "external_command",
+    "local_seed_fallback": false,
+    "request_schema": "cortexdb.receipt_external_sign_request.v1",
+    "response_schema": "cortexdb.receipt_external_signature.v1"
+  },
+  "runtime_signing_probe": {
+    "canonical_header_hex": "636f7274657864622d6b6d732d68736d2d666978747572652d72756e74696d652d70726f62652d323032362d30362d3239",
+    "key_id": "receipt-key.external",
+    "probe_type": "receipt_external_signer_live_probe",
+    "public_key_hex": "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8",
+    "request_schema": "cortexdb.receipt_external_sign_request.v1",
+    "request_sha256_hex": "f4333a8547fc270042cb38f4ab54c8693325f9b109f4eb895ab8c22487694bf6",
+    "response_schema": "cortexdb.receipt_external_signature.v1",
+    "response_sha256_hex": "739ccd250ba1ab6e5600306ac8094ad4e5bce940d076408638a156dadcb2de8e",
+    "signature_hex": "9cc952a4a709c7b72a8c0bf9b2dadeda5c889dd36c2213ed702fc6902e2f0fae82430513f330a1d9d6153dfba04104851d5fb96ffaedc3ed522e89925e23ab05",
+    "signature_sha256_hex": "65eff1947abe3c6f364f89400b237dccde391a9d689a1ccf7cd9fd424b2536a9",
+    "signed_at": "2026-06-29T00:00:00Z",
+    "signer_ref": "kms://test/receipt-key",
+    "signing_domain": "cortexdb.accountability_receipt.sign.v1"
+  },
+  "operator_attestation": {
+    "attestation_id": "receipt-kms-hsm-fixture-2026-06-28",
+    "operator_id": "fixture-security-ops",
+    "issued_at": "2026-06-28T00:00:00Z",
+    "valid_until": "2027-06-28T00:00:00Z",
+    "controls": [
+      "kms_or_hsm_key_is_non_exportable",
+      "receipt_signer_uses_provider_key_ref",
+      "local_seed_disabled_for_production",
+      "public_key_bound_to_provider_key"
+    ]
+  },
+  "evidence_artifacts": [
+    {
+      "kind": "provider_key_policy",
+      "uri": "fixture://receipt-kms-hsm/provider-key-policy.json",
+      "sha256_hex": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "kind": "signer_deployment_config",
+      "uri": "fixture://receipt-kms-hsm/signer-deployment.json",
+      "sha256_hex": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    }
+  ]
+}

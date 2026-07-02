@@ -13,6 +13,8 @@ use super::types::{
     MIN_ANN_RECALL_Q16,
 };
 
+pub(super) const SPARSE_ALLOWED_EXACT_FALLBACK_MAX_CANDIDATES: usize = 64;
+
 pub fn search_persisted_ann(
     vectors: &BTreeMap<u32, Vec<i16>>,
     graph: &HnswGraphIndex,
@@ -70,6 +72,20 @@ pub fn search_persisted_ann_with_policy(
             graph_nodes,
             config,
             AnnFallbackReason::EmptyGraph,
+            policy,
+        );
+    }
+
+    if should_use_sparse_allowed_exact_fallback(available, graph_nodes, policy) {
+        return exact(
+            vectors,
+            query,
+            allowed,
+            limit,
+            available,
+            graph_nodes,
+            config,
+            AnnFallbackReason::SparseAllowedSet,
             policy,
         );
     }
@@ -237,6 +253,18 @@ pub fn search_persisted_ann_with_policy(
             policy,
         ),
     }
+}
+
+pub(super) fn should_use_sparse_allowed_exact_fallback(
+    available: usize,
+    graph_nodes: usize,
+    policy: AnnSearchPolicy,
+) -> bool {
+    policy.fallback
+        && policy.max_visited_candidates.is_some()
+        && available > 0
+        && available <= SPARSE_ALLOWED_EXACT_FALLBACK_MAX_CANDIDATES
+        && available.saturating_mul(4) <= graph_nodes
 }
 
 pub(super) fn search_hnsw(

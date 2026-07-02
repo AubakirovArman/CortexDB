@@ -140,7 +140,8 @@ impl Database {
     }
 
     fn next_memory_cell_id(&mut self, agent_id: AgentId) -> EngineResult<CellId> {
-        let agent_slot = crate::cell_ids::memory_agent_slot(agent_id);
+        let agent_slot =
+            crate::cell_ids::memory_agent_slot(agent_id).ok_or_else(memory_id_overflow)?;
         let observed_next = self.observed_next_memory_sequence(agent_slot)?;
         let sequence = self
             .manifest

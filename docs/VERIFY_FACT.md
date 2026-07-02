@@ -62,6 +62,7 @@ cortexdb verify ./db project:investments \
   ],
   "numeric_conflicts": [
     {
+      "kind": "numeric",
       "metric": "budget",
       "left": "1.2B KZT",
       "right": "1.4B KZT"
@@ -114,6 +115,10 @@ The Rust engine exposes the same deterministic contract through
 currency/unit/magnitude handling in one integer-only implementation and return
 structured `VerificationNumericConflict` entries for API, CLI, SDK, markdown,
 and audit exports.
+
+Each `numeric_conflicts[]` row includes `kind`: `numeric` for ordinary
+cross-evidence numeric disagreement, `temporal` for dated overlap classes, and
+`citation` when the same structured `source_ref` disagrees on the value.
 
 ## Evidence Match Kinds
 
@@ -294,18 +299,56 @@ Markdown is intended for human review. It includes:
 Audit text is deterministic line-based output for diffing, archiving, or
 attaching to external review tooling.
 
-## Limitations (Alpha)
+## Measured Conflict Coverage
 
-- **Unit parsing** is heuristic, not a full SI unit converter.
-- **Magnitude parsing** relies on explicit `B`/`M`/`K` suffixes or raw integers.
-- **Currency** must be explicit in the fact or in cell metadata.
-- **Temporal reasoning is validity-window based** — only explicit
-  `valid_from`/`valid_to` headers and explicit fact dates are interpreted.
-  Quarter names and natural-language relative dates are not parsed yet.
-- **Source trust is deterministic but simple** — `source_trust_q16` is
-  classified as `low`, `medium`, `high`, or `official`; missing values are
-  reported as `unknown` with the default q16. It is not a full trust/provenance
-  model.
+The DV7 CI-safe recall gate is `make verify-conflict-recall-check`. It runs a
+labeled corpus through `Database::verify_fact_aql` and writes
+`target/verification-quality/conflict-recall-report.json`. The report schema
+`cortexdb.verify_conflict_recall.report.v1` is then checked by
+`make docs-claims-check` so the numbers in this section stay tied to the
+measured report.
+
+Latest local measured report:
+
+- Case count: 180
+- Conflict cases: 150
+- must-NOT-conflict controls: 30
+- Conflict recall: 100.00% (`recall_q16=65535`; gate minimum
+  `recall_q16>=58981`, equivalent to recall >= 0.90)
+- Precision: 100.00% (`precision_q16=65535`)
+- False-conflict rate: 0.00% (`false_conflict_rate_q16=0`; gate maximum
+  `false_conflict_rate_q16<=3276`, equivalent to false-conflict <= 0.05)
+
+Supported conflict classes exercised by the measured gate:
+
+- **magnitude/numeric** conflicts over explicit `B`/`M`/`K` suffixes and raw
+  integer equivalents;
+- **unit-class time conversion** conflicts and agreements such as `60 min`,
+  `1h`, and `2 h`;
+- **currency-mismatch** conflicts when both sides declare incompatible
+  currencies;
+- **temporal same-date** conflicts when a dated fact overlaps an evidence
+  `valid_from`/`valid_to` window with a different value;
+- **citation same-source** conflicts when two structured `source_ref` entries
+  for the same document location disagree;
+- **format variants** such as `$1.2M`, `1.4 million USD`, and explicit
+  `currency=` body fields;
+- **must-NOT-conflict controls** for normalized equal values, equal same-source
+  citations, in-window temporal support, and equivalent formatted amounts.
+
+Scope notes:
+
+- Unit parsing is heuristic and limited to the parser aliases covered by the
+  gate; it is not a full SI converter.
+- Currency mismatch is detected, but there is no FX conversion.
+- Currency or unit values missing on one side are treated as incomparable
+  rather than guessed.
+- Temporal reasoning is validity-window based: explicit `valid_from` /
+  `valid_to` headers and explicit fact dates are interpreted. Quarter names and
+  natural-language relative dates are not parsed yet.
+- Source trust is deterministic but simple: `source_trust_q16` is classified as
+  `low`, `medium`, `high`, or `official`; missing values are reported as
+  `unknown` with the default q16. It is not a full trust/provenance model.
 
 ## Future (Verification v1)
 
@@ -328,9 +371,11 @@ public evidence set can be packed for an agent and verified deterministically:
 - the numeric mismatch guard is emitted for the conflicting cell;
 - private-scope evidence is excluded by the AgentView.
 
-This is still a deterministic alpha fixture, not a measured accuracy benchmark.
-Future Verification v1 work should add larger labelled datasets and metric-aware
-temporal reasoning.
+The ContextPack/VERIFY fixture is still a deterministic regression fixture. The
+measured conflict recall numbers above come from the DV7 labeled conflict
+benchmark, not from the single ContextPack quality fixture. Future Verification
+v1 work should add larger external labeled datasets and metric-aware temporal
+reasoning.
 
 Run the shared ContextPack/VERIFY quality gate directly with:
 
@@ -344,9 +389,17 @@ Run the focused labelled verification evaluation gate with:
 make verification-quality-check
 ```
 
-That gate executes `examples/eval/verification_cases.jsonl` through the engine
-and writes a confusion-matrix report to `target/verification-quality/report.json`.
-It also writes `target/verification-quality/dashboard.json` and
+That gate also runs the measured conflict coverage lane:
+
+```bash
+make verify-conflict-recall-check
+make docs-claims-check
+```
+
+The broader labelled status gate executes
+`examples/eval/verification_cases.jsonl` through the engine and writes a
+confusion-matrix report to `target/verification-quality/report.json`. It also
+writes `target/verification-quality/dashboard.json` and
 `target/verification-quality/dashboard.md` with false-positive/false-negative
 counts and per-domain quality tables for release review.
 Latest local evidence is tracked in

@@ -1,0 +1,104 @@
+{
+  "schema_version": "accountability_receipt.v1",
+  "header": {
+    "schema_version": "accountability_receipt.v1",
+    "hash_alg": "blake3-256",
+    "sig_alg": "ed25519",
+    "db_instance_id": "fixture-db",
+    "key_id": "fixture-key",
+    "created_unix_seconds": 0,
+    "access_root": "0000000000000000000000000000000000000000000000000000000000000000",
+    "provenance_root": "1111111111111111111111111111111111111111111111111111111111111111",
+    "cell_set_root": "2222222222222222222222222222222222222222222222222222222222222222",
+    "verification_root": "3333333333333333333333333333333333333333333333333333333333333333",
+    "budget_commitment": "4444444444444444444444444444444444444444444444444444444444444444",
+    "conflict_commitment": "5555555555555555555555555555555555555555555555555555555555555555",
+    "pack_root": "6666666666666666666666666666666666666666666666666666666666666666",
+    "determinism_hash": "7777777777777777777777777777777777777777777777777777777777777777",
+    "audit_chain_head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "signature": {
+      "key_id": "fixture-key",
+      "sig_alg": "ed25519",
+      "public_key_hex": "8888888888888888888888888888888888888888888888888888888888888888",
+      "signature_hex": "99999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"
+    }
+  },
+  "leaves": {
+    "access": [
+      {
+        "leaf_type": "admitted_cell",
+        "cell_id": 1,
+        "candidate": null,
+        "cell_id_hash": null,
+        "decision": "allowed",
+        "policy": "agent_view_readable_scope",
+        "policy_version": "agent_view_readable_scope.v1",
+        "reason": "cell candidate survived AQL permission filtering before ContextPack packing",
+        "scope_id": 1001,
+        "agent_id": 7,
+        "agent_view_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "evidence_digest": "abababababababababababababababababababababababababababababababab"
+      },
+      {
+        "leaf_type": "denied_candidate",
+        "cell_id": null,
+        "candidate": 2,
+        "cell_id_hash": "bcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbc",
+        "decision": "denied",
+        "policy": "agent_view_readable_scope",
+        "policy_version": "agent_view_readable_scope.v1",
+        "reason": "cell candidate was rejected by AQL agent access filtering before payload materialization",
+        "scope_id": null,
+        "agent_id": 7,
+        "agent_view_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "evidence_digest": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+      }
+    ],
+    "provenance": [
+      {
+        "cell_id": 1,
+        "cell_content_hash": "dededededededededededededededededededededededededededededededede",
+        "source_cell_id": 1,
+        "source_byte_start": 0,
+        "source_byte_end": 12,
+        "source_line_start": 1,
+        "source_line_end": 1,
+        "source_ref": "fixture:source",
+        "citation": "fixture:source#L1"
+      }
+    ],
+    "cell_set": [
+      {
+        "cell_id": 1,
+        "cell_content_hash": "dededededededededededededededededededededededededededededededede"
+      }
+    ],
+    "verification": [
+      {
+        "leaf_type": "verification_report",
+        "cell_id": null,
+        "status": "supported",
+        "confidence_q16": 65535,
+        "evidence_digest": null
+      }
+    ],
+    "budget": [
+      {
+        "token_budget_tokens": 1000,
+        "estimated_tokens": 42,
+        "truncated": false,
+        "cell_id": 1,
+        "cell_estimated_tokens": 42
+      }
+    ],
+    "conflict": [
+      {
+        "conflict_visibility_q16": 0,
+        "visible_conflict_count": 0,
+        "anomalies": [
+          "retrieval_incomplete"
+        ]
+      }
+    ]
+  }
+}

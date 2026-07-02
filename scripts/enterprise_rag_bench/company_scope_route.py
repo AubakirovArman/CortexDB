@@ -86,6 +86,8 @@ def main() -> int:
     parser.add_argument("--env-file", type=Path, default=Path(".env"))
     parser.add_argument("--dense-top-k", type=int, default=100)
     parser.add_argument("--top-k", type=int, default=8)
+    parser.add_argument("--high-level-min-docs", type=int, default=8,
+                        help="Replace lexical results with dense fallback for high-level questions with fewer than this many docs.")
     parser.add_argument("--query-cache", type=Path)
     parser.add_argument("--report", type=Path)
     args = parser.parse_args()
@@ -97,10 +99,15 @@ def main() -> int:
     for row in retrieval_rows:
         qid = str(row["question_id"])
         docs = [str(d) for d in row.get("document_ids", []) if str(d)]
-        if docs:
-            continue
         qtext = str(questions.get(qid, {}).get("question", ""))
-        if qtext and is_high_level_question(qtext):
+        if not qtext:
+            continue
+        is_high = is_high_level_question(qtext)
+        if not docs:
+            if is_high:
+                fallback_qids.append(qid)
+            continue
+        if is_high and len(docs) < args.high_level_min_docs:
             fallback_qids.append(qid)
 
     if not fallback_qids:
@@ -161,7 +168,7 @@ def main() -> int:
                     row["route"] = {
                         "policy": "company_scope_dense_fallback",
                         "source": "dense-only",
-                        "reason": "high_level_zero_doc",
+                        "reason": "high_level_low_doc",
                     }
                     changed += 1
             output_rows.append(row)

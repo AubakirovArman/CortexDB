@@ -16,6 +16,7 @@ export interface GuardResponse {
 }
 
 export interface NumericConflictResponse {
+  kind: string;
   metric: string;
   left: string;
   right: string;
@@ -32,4 +33,5 @@ export interface VerificationReportResponse {
   supporting: EvidenceResponse[];
   contradicting: EvidenceResponse[];
   numeric_conflicts: NumericConflictResponse[];
+  accountability_receipt?: Record<string, unknown> | null;
 }

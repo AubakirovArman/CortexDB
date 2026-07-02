@@ -1,6 +1,7 @@
 use cortex_aql::{AgentId, AgentView, BindError, MemoryType, PolicyError};
 use cortex_core::{CellId, CommitSeq};
 
+use crate::cell_ids::{agent_cell_id_slot, namespaced_agent_cell_id};
 use crate::database::{Database, RetrievedCell};
 use crate::error::{EngineError, EngineResult};
 use crate::query::scope_id;
@@ -153,7 +154,7 @@ impl Database {
     }
 
     fn next_session_cell_id(&self, agent_id: AgentId) -> EngineResult<CellId> {
-        let agent_bits = (agent_id.0 & 0x0fff_ffff) << 32;
+        let agent_slot = agent_cell_id_slot(agent_id).ok_or_else(session_id_overflow)?;
         let mut sequence = self
             .current_seq()
             .0
@@ -161,7 +162,8 @@ impl Database {
             .ok_or_else(session_id_overflow)?;
         let mut attempts = 0u64;
         loop {
-            let cell_id = CellId(SESSION_CELL_NAMESPACE | agent_bits | (sequence & 0xffff_ffff));
+            let cell_id = namespaced_agent_cell_id(SESSION_CELL_NAMESPACE, agent_slot, sequence)
+                .ok_or_else(session_id_overflow)?;
             if self.get_latest_cell_descriptor(cell_id).is_none() {
                 return Ok(cell_id);
             }

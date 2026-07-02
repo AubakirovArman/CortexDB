@@ -32,7 +32,7 @@ accidentally turn future research into a public product claim.
 | Repeatable real-domain ANN history | One local real-embedding run is not enough to promote real-domain ANN behavior. | Multiple stable local runs, packaged baselines, and no-regression history. |
 | SDK publication discipline | Public clients need version lock-step, deprecation policy, and package registry ownership. | Registry dry-runs or published package receipts plus changelog evidence. |
 | Product UI beta readiness | The dashboard must expose operator errors, role flows, and stable recovery paths clearly. | Dashboard product gate plus screenshot/e2e evidence. |
-| Consensus beta evidence | Raft-like primitives need sustained failover/rejoin evidence before beta wording. | Partition, failover SLO, lifecycle, and rejoin gates. |
+| Consensus beta evidence | Raft-like primitives need sustained failover/rejoin evidence before beta wording. | `consensus-release-lane-check` with N consecutive partition, failover SLO, rejoin, SCALE-1, SCALE-2, and SCALE-3 green runs. |
 
 ## Production Blockers
 
@@ -47,7 +47,7 @@ accidentally turn future research into a public product claim.
 
 | Track | Current boundary | Promotion condition |
 | --- | --- | --- |
-| Production distributed consensus | Research and local hardening only. | Sustained multi-process consensus evidence and operator lifecycle docs. |
+| Production distributed consensus | Release-lane CI evidence through `consensus-release-lane-check`; not production HA. | Sustained multi-process consensus evidence and operator lifecycle docs. |
 | Managed cloud | Design/feasibility only. | Real hosted control plane, tenant isolation, backups, upgrades, and incident handling. |
 | Enterprise RBAC/compliance | Design boundary only. | Dynamic policy store, external identity integration, audit review tooling, and compliance gates. |
 | Full HNSW without fallback | Future non-goal; guarded ANN keeps exact fallback available. | Recall/latency history strong enough to remove fallback for selected collections. |

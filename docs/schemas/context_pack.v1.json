@@ -55,6 +55,26 @@
       "items": {
         "$ref": "#/$defs/context_pack_anomaly"
       }
+    },
+    "accountability_receipt": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/accountability_receipt_reference"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "grounding_report": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/answer_grounding_report"
+        },
+        {
+          "type": "null"
+        }
+      ]
     }
   },
   "$defs": {
@@ -79,6 +99,119 @@
         "null"
       ],
       "minimum": 0
+    },
+    "accountability_receipt_reference": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "header",
+        "leaves"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "accountability_receipt.v1"
+        },
+        "header": {
+          "type": "object"
+        },
+        "leaves": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": true
+    },
+    "answer_grounding_report": {
+      "type": "object",
+      "required": [
+        "answer_supported",
+        "rejected",
+        "support_q16",
+        "supported_span_count",
+        "unsupported_span_count",
+        "spans"
+      ],
+      "properties": {
+        "answer_supported": {
+          "type": "boolean"
+        },
+        "rejected": {
+          "type": "boolean"
+        },
+        "support_q16": {
+          "$ref": "#/$defs/q16"
+        },
+        "supported_span_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unsupported_span_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "spans": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/answer_grounding_span"
+          }
+        }
+      }
+    },
+    "answer_grounding_span": {
+      "type": "object",
+      "required": [
+        "text",
+        "start_byte",
+        "end_byte",
+        "support_q16",
+        "supported",
+        "covered_terms",
+        "missing_terms",
+        "supported_by_cell_ids",
+        "citations"
+      ],
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "start_byte": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "end_byte": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "support_q16": {
+          "$ref": "#/$defs/q16"
+        },
+        "supported": {
+          "type": "boolean"
+        },
+        "covered_terms": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "missing_terms": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "supported_by_cell_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/u64"
+          }
+        },
+        "citations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
     },
     "context_pack_cell": {
       "type": "object",
@@ -173,6 +306,16 @@
         "policy": {
           "type": "string"
         },
+        "policy_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "reason": {
           "type": "string"
         },
@@ -186,6 +329,16 @@
           "anyOf": [
             {
               "$ref": "#/$defs/u64"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "agent_view_digest": {
+          "anyOf": [
+            {
+              "type": "string"
             },
             {
               "type": "null"
@@ -411,7 +564,8 @@
             "token_overload",
             "insufficient_context",
             "scope_mismatch",
-            "visible_conflict"
+            "visible_conflict",
+            "retrieval_incomplete"
           ]
         },
         "message": {

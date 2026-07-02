@@ -13,6 +13,7 @@ mod conditions;
 mod database;
 mod decomposition;
 mod evaluation;
+pub(crate) mod frozen_weights;
 mod hnsw;
 mod hnsw_no_fallback;
 mod hnsw_policy;
@@ -31,6 +32,7 @@ mod tokenizer;
 mod types;
 pub(crate) mod vector;
 mod vector_index;
+pub(crate) mod vector_similarity;
 
 pub use analyzer::{
     mean_reciprocal_rank_q16, Language, TextAnalyzer, TextAnalyzerConfig, TEXT_ANALYZER_VERSION,

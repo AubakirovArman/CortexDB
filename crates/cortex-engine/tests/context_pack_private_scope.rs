@@ -71,9 +71,20 @@ fn context_pack_records_access_decision_trail_per_cell() {
     assert_eq!(decision.cell_id, CellId(1));
     assert_eq!(decision.decision.as_str(), "allowed");
     assert_eq!(decision.policy, "agent_view_readable_scope");
+    assert_eq!(
+        decision.policy_version.as_deref(),
+        Some("agent_view_readable_scope.v1")
+    );
+    assert!(decision
+        .reason
+        .contains("survived AQL permission filtering"));
     assert_eq!(decision.scope, PUBLIC_SCOPE);
     assert_eq!(decision.scope_id, scope_id(PUBLIC_SCOPE).0);
     assert_eq!(decision.agent_id, Some(1));
+    assert_eq!(
+        decision.agent_view_digest.as_ref().map(String::len),
+        Some(64)
+    );
 }
 
 #[test]

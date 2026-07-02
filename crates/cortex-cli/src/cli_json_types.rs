@@ -150,6 +150,7 @@ pub struct VerificationEvidenceResponse {
 
 #[derive(Serialize)]
 pub struct NumericConflictResponse {
+    pub kind: String,
     pub metric: String,
     pub left: String,
     pub right: String,

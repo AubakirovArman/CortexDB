@@ -93,9 +93,11 @@ class ContextPackResponse:
     citations_required: bool
     cells: tuple[ContextPackCellResponse, ...]
     anomalies: tuple[ContextPackAnomalyResponse, ...]
+    grounding_report: "AnswerGroundingReportResponse | None" = None
 
     @classmethod
     def from_json(cls, value: dict[str, Any]) -> "ContextPackResponse":
+        grounding_value = value.get("grounding_report")
         return cls(
             schema_version=str(value["schema_version"]),
             token_budget_tokens=int(value["token_budget_tokens"]),
@@ -104,6 +106,9 @@ class ContextPackResponse:
             citations_required=bool(value["citations_required"]),
             cells=tuple(ContextPackCellResponse.from_json(row) for row in value["cells"]),
             anomalies=tuple(ContextPackAnomalyResponse.from_json(row) for row in value.get("anomalies", [])),
+            grounding_report=AnswerGroundingReportResponse.from_json(grounding_value)
+            if isinstance(grounding_value, dict)
+            else None,
         )
 
     def ground_answer(
@@ -137,6 +142,22 @@ class AnswerGroundingSpanResponse:
     supported_by_cell_ids: tuple[int, ...]
     citations: tuple[str, ...]
 
+    @classmethod
+    def from_json(cls, value: dict[str, Any]) -> "AnswerGroundingSpanResponse":
+        return cls(
+            text=str(value["text"]),
+            start_byte=int(value["start_byte"]),
+            end_byte=int(value["end_byte"]),
+            support_q16=int(value["support_q16"]),
+            supported=bool(value["supported"]),
+            covered_terms=tuple(str(item) for item in value.get("covered_terms", [])),
+            missing_terms=tuple(str(item) for item in value.get("missing_terms", [])),
+            supported_by_cell_ids=tuple(
+                int(item) for item in value.get("supported_by_cell_ids", [])
+            ),
+            citations=tuple(str(item) for item in value.get("citations", [])),
+        )
+
 
 @dataclass(frozen=True)
 class AnswerGroundingReportResponse:
@@ -146,6 +167,20 @@ class AnswerGroundingReportResponse:
     supported_span_count: int
     unsupported_span_count: int
     spans: tuple[AnswerGroundingSpanResponse, ...]
+
+    @classmethod
+    def from_json(cls, value: dict[str, Any]) -> "AnswerGroundingReportResponse":
+        return cls(
+            answer_supported=bool(value["answer_supported"]),
+            rejected=bool(value["rejected"]),
+            support_q16=int(value["support_q16"]),
+            supported_span_count=int(value["supported_span_count"]),
+            unsupported_span_count=int(value["unsupported_span_count"]),
+            spans=tuple(
+                AnswerGroundingSpanResponse.from_json(row)
+                for row in value.get("spans", [])
+            ),
+        )
 
 
 @dataclass(frozen=True)
@@ -160,4 +195,3 @@ class GroundedAnswerResponse:
     citations: tuple[str, ...]
     used_context_cell_ids: tuple[int, ...]
     rejected: bool
-

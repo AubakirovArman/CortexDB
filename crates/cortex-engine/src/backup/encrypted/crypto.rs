@@ -1,66 +1,85 @@
-use std::path::Path;
+use cortex_crypto::{
+    derive_argon2id_key, hex_lower, xchacha20poly1305_open, xchacha20poly1305_seal, AeadNonce,
+    AeadTag, KdfParams, Salt16, ARGON2ID_V1_PARAMS,
+};
 
-pub(super) const CIPHER_SUITE: &str = "cortexdb.xor-fnv64-stream.v1";
-pub(super) const KDF: &str = "cortexdb.fnv64-passphrase.v1";
-pub(super) const SCHEMA_VERSION: &str = "cortexdb.encrypted_backup.v1";
+use crate::error::{EngineError, EngineResult};
 
-const FNV_OFFSET: u64 = 0xcbf2_9ce4_8422_2325;
-const FNV_PRIME: u64 = 0x0000_0100_0000_01b3;
+pub(super) const CIPHER_SUITE: &str = "cortexdb.xchacha20poly1305-argon2id.v2";
+pub(super) const KDF: &str = "cortexdb.argon2id.v1";
+pub(super) const SCHEMA_VERSION: &str = "cortexdb.encrypted_backup.v2";
+pub(super) const LEGACY_SCHEMA_VERSION: &str = "cortexdb.encrypted_backup.v1";
 
-pub(super) fn apply_keystream(input: &[u8], passphrase: &str, nonce: u64) -> Vec<u8> {
-    let mut out = Vec::with_capacity(input.len());
-    for (index, byte) in input.iter().enumerate() {
-        let block = stream_word(passphrase, nonce, index as u64 / 8).to_le_bytes();
-        out.push(*byte ^ block[index % 8]);
-    }
-    out
+pub(super) struct SealedArchive {
+    pub(super) ciphertext: Vec<u8>,
+    pub(super) tag_hex: String,
 }
 
-pub(super) fn archive_nonce(
-    source: &Path,
-    archive_path: &Path,
-    file_count: usize,
-    plaintext_len: usize,
-) -> u64 {
-    let mut hash = FNV_OFFSET;
-    feed_hash(&mut hash, source.to_string_lossy().as_bytes());
-    feed_hash(&mut hash, archive_path.to_string_lossy().as_bytes());
-    feed_hash(&mut hash, &(file_count as u64).to_le_bytes());
-    feed_hash(&mut hash, &(plaintext_len as u64).to_le_bytes());
-    hash
+pub(super) fn kdf_params() -> KdfParams {
+    ARGON2ID_V1_PARAMS
 }
 
-pub(super) fn auth_tag(
+pub(super) fn generate_salt_hex() -> EngineResult<String> {
+    let salt = Salt16::random().map_err(to_storage_invariant)?;
+    Ok(hex_lower(salt.as_bytes()))
+}
+
+pub(super) fn generate_nonce_hex() -> EngineResult<String> {
+    let nonce = AeadNonce::random().map_err(to_storage_invariant)?;
+    Ok(hex_lower(nonce.as_bytes()))
+}
+
+pub(super) fn seal_archive(
     passphrase: &str,
-    nonce: u64,
+    salt_hex: &str,
+    nonce_hex: &str,
+    aad: &[u8],
     plaintext: &[u8],
+) -> EngineResult<SealedArchive> {
+    let salt = Salt16::new(decode_hex_array("encrypted backup salt", salt_hex)?);
+    let nonce = AeadNonce::new(decode_hex_array("encrypted backup nonce", nonce_hex)?);
+    let key = derive_argon2id_key(passphrase, &salt, kdf_params()).map_err(to_storage_invariant)?;
+    let sealed =
+        xchacha20poly1305_seal(&key, &nonce, aad, plaintext).map_err(to_storage_invariant)?;
+    Ok(SealedArchive {
+        ciphertext: sealed.ciphertext,
+        tag_hex: hex_lower(sealed.tag.as_bytes()),
+    })
+}
+
+pub(super) fn open_archive(
+    passphrase: &str,
+    salt_hex: &str,
+    nonce_hex: &str,
+    tag_hex: &str,
+    aad: &[u8],
     ciphertext: &[u8],
-) -> String {
-    let mut hash = FNV_OFFSET;
-    feed_hash(&mut hash, passphrase.as_bytes());
-    feed_hash(&mut hash, &nonce.to_le_bytes());
-    feed_hash(&mut hash, hash_hex(plaintext).as_bytes());
-    feed_hash(&mut hash, hash_hex(ciphertext).as_bytes());
-    format!("{hash:016x}")
+) -> EngineResult<Vec<u8>> {
+    let salt = Salt16::new(decode_hex_array("encrypted backup salt", salt_hex)?);
+    let nonce = AeadNonce::new(decode_hex_array("encrypted backup nonce", nonce_hex)?);
+    let tag = AeadTag::new(decode_hex_array("encrypted backup tag", tag_hex)?);
+    let key = derive_argon2id_key(passphrase, &salt, kdf_params()).map_err(to_storage_invariant)?;
+    xchacha20poly1305_open(&key, &nonce, aad, ciphertext, &tag).map_err(|_| {
+        EngineError::StorageInvariant(
+            "encrypted backup passphrase or authentication tag is invalid".to_owned(),
+        )
+    })
 }
 
-pub(super) fn hash_hex(bytes: &[u8]) -> String {
-    let mut hash = FNV_OFFSET;
-    feed_hash(&mut hash, bytes);
-    format!("{hash:016x}")
-}
-
-fn stream_word(passphrase: &str, nonce: u64, counter: u64) -> u64 {
-    let mut hash = FNV_OFFSET;
-    feed_hash(&mut hash, passphrase.as_bytes());
-    feed_hash(&mut hash, &nonce.to_le_bytes());
-    feed_hash(&mut hash, &counter.to_le_bytes());
-    hash
-}
-
-fn feed_hash(hash: &mut u64, bytes: &[u8]) {
-    for byte in bytes {
-        *hash ^= u64::from(*byte);
-        *hash = hash.wrapping_mul(FNV_PRIME);
+fn decode_hex_array<const N: usize>(name: &'static str, value: &str) -> EngineResult<[u8; N]> {
+    if value.len() != N * 2 {
+        return Err(EngineError::StorageInvariant(format!(
+            "{name} has invalid length"
+        )));
     }
+    let mut out = [0_u8; N];
+    for index in 0..N {
+        out[index] = u8::from_str_radix(&value[index * 2..index * 2 + 2], 16)
+            .map_err(|_| EngineError::StorageInvariant(format!("{name} is not hex")))?;
+    }
+    Ok(out)
+}
+
+fn to_storage_invariant(error: cortex_crypto::CryptoError) -> EngineError {
+    EngineError::StorageInvariant(format!("encrypted backup crypto failed: {error}"))
 }

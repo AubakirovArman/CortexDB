@@ -21,6 +21,37 @@ Any public compliance claim must name:
 
 If any of those five fields are missing, the claim must remain a non-goal.
 
+## Optional External Certification Evidence
+
+`make compliance-boundary-check` accepts operator-supplied external evidence
+using schema `cortexdb.compliance_certification_evidence.v1`. This evidence is
+not committed for production by default and must be supplied through
+`COMPLIANCE_CERTIFICATION_EVIDENCE`.
+
+The evidence must bind:
+
+1. a supported framework such as `soc2_type_ii` or `iso_27001`;
+2. an external reviewer, report reference, issue window, and assurance level;
+3. CortexDB receipt scope, including `accountability_receipt.v1`;
+4. reviewed controls for accountability receipts, audit-log immutability,
+   transparency-log operations, key-custody boundary, and operator
+   responsibility matrix;
+5. compliance immutability evidence for an external immutable store,
+   append-only export, retention policy, and tamper-evidence reference;
+6. at least two hashed evidence artifacts.
+
+Example invocation:
+
+```bash
+make compliance-boundary-check \
+  COMPLIANCE_CERTIFICATION_EVIDENCE=path/to/evidence.json \
+  COMPLIANCE_CERTIFICATION_EXPECTED_FRAMEWORK=soc2_type_ii
+```
+
+Passing with operator evidence only means the supplied evidence file validated
+against the gate. It does not make repository-default builds claim SOC 2, ISO
+27001, HIPAA, GDPR, or legal-grade certification.
+
 ## Current Local Evidence Controls
 
 | Control area | Current evidence | Boundary |

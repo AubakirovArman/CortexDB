@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import http.client
 import json
+import os
 import time
 import urllib.error
 import urllib.parse
@@ -52,7 +53,14 @@ def chat(
             "temperature": 0,
         }
         if not omit_thinking_field:
-            payload["thinking"] = {"type": "disabled"}
+            if os.environ.get("DEEPSEEK_THINKING") == "enabled":
+                payload["thinking"] = {"type": "enabled"}
+                payload["reasoning_effort"] = "high"
+                # DeepSeek's thinking tokens count against max_tokens; leave
+                # enough headroom for both the reasoning trace and the answer.
+                payload["max_tokens"] = max(payload.get("max_tokens", max_tokens), 8192)
+            else:
+                payload["thinking"] = {"type": "disabled"}
     data = json.dumps(payload).encode("utf-8")
     url = base_url.rstrip("/") + "/chat/completions"
     for attempt in range(retries + 1):

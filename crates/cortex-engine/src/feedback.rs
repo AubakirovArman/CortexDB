@@ -3,6 +3,7 @@ use std::collections::BTreeMap;
 use cortex_aql::AgentId;
 use cortex_core::{CellId, CommitSeq, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
 
+use crate::cell_ids::{agent_cell_id_slot, namespaced_agent_cell_id};
 use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
 
@@ -80,15 +81,14 @@ impl Database {
     }
 
     fn next_feedback_cell_id(&self, agent_id: AgentId) -> EngineResult<CellId> {
-        let agent_bits = (agent_id.0 & 0x0fff_ffff) << 32;
+        let agent_slot = agent_cell_id_slot(agent_id).ok_or_else(feedback_id_overflow)?;
         let sequence = self
             .current_seq()
             .0
             .checked_add(1)
             .ok_or_else(feedback_id_overflow)?;
-        Ok(CellId(
-            FEEDBACK_CELL_NAMESPACE | agent_bits | (sequence & 0xffff_ffff),
-        ))
+        namespaced_agent_cell_id(FEEDBACK_CELL_NAMESPACE, agent_slot, sequence)
+            .ok_or_else(feedback_id_overflow)
     }
 
     pub fn feedback_scores(&self) -> BTreeMap<CellId, i32> {

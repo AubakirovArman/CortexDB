@@ -23,12 +23,12 @@ GATE_MARKERS = {
             "replication_replay_apply",
         ],
         "markers": [
-            ("docs/DISTRIBUTED_CONSENSUS_DESIGN.md", "Consensus State"),
-            ("docs/DISTRIBUTED_CONSENSUS_DESIGN.md", "Replicated Log"),
-            ("docs/DISTRIBUTED_CONSENSUS_DESIGN.md", "Snapshot Install"),
-            ("docs/DISTRIBUTED_CONSENSUS_DESIGN.md", "Membership Changes"),
-            ("docs/CONSENSUS_SLO.md", "Consensus is still experimental"),
-            ("Makefile", "distributed-consensus-check"),
+            ("docs/archive/DISTRIBUTED_CONSENSUS_DESIGN.md", "Consensus State"),
+            ("docs/archive/DISTRIBUTED_CONSENSUS_DESIGN.md", "Replicated Log"),
+            ("docs/archive/DISTRIBUTED_CONSENSUS_DESIGN.md", "Snapshot Install"),
+            ("docs/archive/DISTRIBUTED_CONSENSUS_DESIGN.md", "Membership Changes"),
+            ("docs/archive/CONSENSUS_SLO.md", "Consensus is still experimental"),
+            ("mk/core-security-ops.mk", "distributed-consensus-check"),
             ("crates/cortex-engine/tests/replication_log.rs", "replication_log_recovers_consensus_state"),
             ("crates/cortex-engine/tests/replication_log_matching.rs", "append_entries_truncates_conflicting_suffix"),
             ("crates/cortex-engine/tests/replication_commit.rs", "current_term_commit_indirectly_commits_prior_term_prefix"),
@@ -46,9 +46,9 @@ GATE_MARKERS = {
         ],
         "make_test_suites": [],
         "markers": [
-            ("docs/CONSENSUS_SLO.md", "repeatable split-brain/rejoin repair soak"),
+            ("docs/archive/CONSENSUS_SLO.md", "repeatable split-brain/rejoin repair soak"),
             ("docs/FUTURE_NON_GOAL_EPICS.md", "make consensus-partition-soak-check"),
-            ("Makefile", "consensus-partition-soak-check"),
+            ("mk/core-security-ops.mk", "consensus-partition-soak-check"),
         ],
     },
     "failover-slo": {
@@ -60,10 +60,10 @@ GATE_MARKERS = {
         ],
         "make_test_suites": [],
         "markers": [
-            ("docs/CONSENSUS_SLO.md", "failover detection and leader replacement"),
-            ("docs/CONSENSUS_SLO.md", "Beta promotion requirement"),
+            ("docs/archive/CONSENSUS_SLO.md", "failover detection and leader replacement"),
+            ("docs/archive/CONSENSUS_SLO.md", "Beta promotion requirement"),
             ("docs/FUTURE_NON_GOAL_EPICS.md", "make consensus-failover-slo-check"),
-            ("Makefile", "consensus-failover-slo-check"),
+            ("mk/core-security-ops.mk", "consensus-failover-slo-check"),
         ],
     },
     "rejoin": {
@@ -80,9 +80,9 @@ GATE_MARKERS = {
         ],
         "make_test_suites": [],
         "markers": [
-            ("docs/CONSENSUS_SLO.md", "Rejoin repair"),
+            ("docs/archive/CONSENSUS_SLO.md", "Rejoin repair"),
             ("docs/FUTURE_NON_GOAL_EPICS.md", "make consensus-rejoin-check"),
-            ("Makefile", "consensus-rejoin-check"),
+            ("mk/core-security-ops.mk", "consensus-rejoin-check"),
         ],
     },
 }

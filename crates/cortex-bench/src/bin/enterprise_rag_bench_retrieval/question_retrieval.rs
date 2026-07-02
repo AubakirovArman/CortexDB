@@ -127,6 +127,7 @@ pub(crate) fn retrieve_aql_questions(
                         cell_id,
                         payload,
                         descriptor,
+                        captured_access_decision: None,
                     })
             })
             .collect::<Vec<_>>();

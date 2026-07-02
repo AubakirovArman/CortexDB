@@ -79,7 +79,7 @@ def validate(root: Path) -> dict[str, Any]:
     engine_pack = read_text(root / "crates/cortex-engine/src/context/pack/builder.rs")
     engine_tests = read_text(root / "crates/cortex-engine/tests/context_pack_explain_v2.rs")
     server_responses = read_text(root / "crates/cortex-server/src/responses/context.rs")
-    server_context = read_text(root / "crates/cortex-server/src/context.rs")
+    server_context = read_text(root / "crates/cortex-server/src/context/response.rs")
     openapi = read_text(root / "docs/openapi.yaml")
     docs = "\n".join(
         [

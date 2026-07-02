@@ -54,7 +54,7 @@ impl TemporalQueryRange {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct TemporalValidity {
     pub valid_from: Option<TemporalDate>,
     pub valid_to: Option<TemporalDate>,
@@ -77,6 +77,19 @@ impl TemporalValidity {
             }
         }
         None
+    }
+
+    pub fn overlaps_query(self, query: TemporalQueryRange) -> bool {
+        self.stale_reason(query).is_none()
+    }
+
+    pub fn overlaps(self, other: Self) -> bool {
+        let start = max_date(self.valid_from, other.valid_from);
+        let end = min_date(self.valid_to, other.valid_to);
+        match (start, end) {
+            (Some(start), Some(end)) => start <= end,
+            _ => true,
+        }
     }
 }
 
@@ -227,6 +240,24 @@ fn days_in_month(year: u16, month: u8) -> u8 {
         2 if is_leap_year(year) => 29,
         2 => 28,
         _ => 0,
+    }
+}
+
+fn max_date(left: Option<TemporalDate>, right: Option<TemporalDate>) -> Option<TemporalDate> {
+    match (left, right) {
+        (Some(left), Some(right)) => Some(left.max(right)),
+        (Some(left), None) => Some(left),
+        (None, Some(right)) => Some(right),
+        (None, None) => None,
+    }
+}
+
+fn min_date(left: Option<TemporalDate>, right: Option<TemporalDate>) -> Option<TemporalDate> {
+    match (left, right) {
+        (Some(left), Some(right)) => Some(left.min(right)),
+        (Some(left), None) => Some(left),
+        (None, Some(right)) => Some(right),
+        (None, None) => None,
     }
 }
 

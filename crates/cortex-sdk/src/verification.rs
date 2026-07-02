@@ -142,6 +142,7 @@ pub struct VerifyEvidenceConflict {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct VerifyNumericConflict {
+    pub kind: String,
     pub metric: String,
     pub left: String,
     pub right: String,
@@ -165,6 +166,7 @@ impl From<EvidenceResponse> for VerifyEvidenceConflict {
 impl From<NumericConflictResponse> for VerifyNumericConflict {
     fn from(value: NumericConflictResponse) -> Self {
         Self {
+            kind: value.kind,
             metric: value.metric,
             left: value.left,
             right: value.right,

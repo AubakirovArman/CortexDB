@@ -44,9 +44,9 @@ impl super::super::Database {
         );
         self.memory_lifecycle_store
             .apply_descriptor(cell_id, descriptor);
-        self.fact_claim_store.apply_record(
+        self.fact_claim_store.apply_records(
             cell_id,
-            FactClaimStore::record_from_payload(cell_id, payload, descriptor),
+            FactClaimStore::records_from_payload(cell_id, payload, descriptor),
         );
         self.conflict_index_store
             .apply_record(cell_id, payload, descriptor);

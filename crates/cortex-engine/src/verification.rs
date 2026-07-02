@@ -28,5 +28,6 @@ pub(crate) use temporal_index::TemporalFactStore;
 pub use temporal_index::{TemporalFactIndex, TemporalFactKey, TemporalFactRecord};
 pub use types::{
     VerificationEvidence, VerificationGuard, VerificationGuardCode, VerificationMatchKind,
-    VerificationNumericConflict, VerificationReport, VerificationStatus,
+    VerificationNumericConflict, VerificationNumericConflictKind, VerificationReport,
+    VerificationStatus,
 };

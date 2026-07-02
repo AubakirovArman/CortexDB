@@ -20,26 +20,43 @@ QUESTIONS_FILE="${QUESTIONS_FILE:-target/external-benchmarks/EnterpriseRAG-Bench
 RUN_LABEL="${RUN_LABEL:-dense-hybrid}"
 ANSWER_PROVIDER="${ANSWER_PROVIDER:-gemma}"
 JUDGE_PROVIDER="${JUDGE_PROVIDER:-gemma}"
+# DeepSeek-specific model/thinking selection. Exported so the answer/judge
+# sub-processes (and the official_clean.py profile helper) see the override.
+DEEPSEEK_MODEL="${DEEPSEEK_MODEL:-deepseek-v4-flash}"
+DEEPSEEK_THINKING="${DEEPSEEK_THINKING:-disabled}"
+if [ "$ANSWER_PROVIDER" = "deepseek" ] || [ "$JUDGE_PROVIDER" = "deepseek" ]; then
+  export DEEPSEEK_MODEL DEEPSEEK_THINKING
+fi
 CORPUS="${CORPUS:-target/enterprise-rag-bench/embeddings/corpus_bge_m3.jsonl}"
 DB="${DB:-target/enterprise-rag-bench/official-clean/50/cortexdb}"   # reused, fully-indexed corpus DB
-DENSE_TOP_K="${DENSE_TOP_K:-100}"
+DENSE_TOP_K="${DENSE_TOP_K:-200}"
 TOP_K="${TOP_K:-50}"
 DENSE_WEIGHT="${DENSE_WEIGHT:-1.0}"
 LEX_WEIGHT="${LEX_WEIGHT:-1.0}"
 TOP_K_CONTEXT="${TOP_K_CONTEXT:-8}"
-MAX_TOKENS="${MAX_TOKENS:-420}"
+MAX_TOKENS="${MAX_TOKENS:-1500}"
 ANSWER_WORKERS="${ANSWER_WORKERS:-4}"
 JUDGE_WORKERS="${JUDGE_WORKERS:-4}"
 
 # Answer-layer knobs (new: evidence-first prompt, slot plan, evidence table, guard mode).
 PROMPT_STYLE="${PROMPT_STYLE:-official-clean-v1}"
-CONTEXT_MODE="${CONTEXT_MODE:-question-window-digest-ranked}"
+CONTEXT_MODE="${CONTEXT_MODE:-full-doc}"
+MAX_CHARS_PER_DOC="${MAX_CHARS_PER_DOC:-8000}"
+# DeepSeek is much more literal than Gemma: the default digest+window snippet
+# often drops the exact sentence that contains the answer, so it falls back to
+# "Insufficient information." Full-doc is already the default above, but keep
+# the explicit override in case a user overrides CONTEXT_MODE externally.
+if [ "$ANSWER_PROVIDER" = "deepseek" ]; then
+  CONTEXT_MODE="${CONTEXT_MODE:-full-doc}"
+  MAX_CHARS_PER_DOC="${MAX_CHARS_PER_DOC:-8000}"
+fi
 GEMINI_THINKING_BUDGET="${GEMINI_THINKING_BUDGET:-0}"
 INCLUDE_EVIDENCE_PLAN="${INCLUDE_EVIDENCE_PLAN:-0}"
 INCLUDE_EVIDENCE_TABLE="${INCLUDE_EVIDENCE_TABLE:-0}"
 UNSUPPORTED_CLAIM_GUARD="${UNSUPPORTED_CLAIM_GUARD:-off}"
 SELF_CONSISTENCY_REPAIR="${SELF_CONSISTENCY_REPAIR:-0}"
-COMPANY_SCOPE_ROUTE="${COMPANY_SCOPE_ROUTE:-0}"
+COMPANY_SCOPE_ROUTE="${COMPANY_SCOPE_ROUTE:-1}"
+ORACLE_FREE_ABSTAIN="${ORACLE_FREE_ABSTAIN:-1}"
 
 BASE="target/enterprise-rag-bench/official-clean/${SIZE}/${RUN_LABEL}"
 ANSWER_FLAGS=(--prompt-style "$PROMPT_STYLE" --context-mode "$CONTEXT_MODE" --gemini-thinking-budget "$GEMINI_THINKING_BUDGET")
@@ -52,7 +69,7 @@ COMMON=(--size "$SIZE" --questions-file "$QUESTIONS_FILE" --split-name clean
         --judge-provider "$JUDGE_PROVIDER" --db-root "$DB" --reuse-db)
 
 rm -f "${DB}/db.lock" || true
-echo "### config SIZE=$SIZE RUN_LABEL=$RUN_LABEL fusion(lex=$LEX_WEIGHT,dense=$DENSE_WEIGHT) dense_top_k=$DENSE_TOP_K top_k=$TOP_K"
+echo "### config SIZE=$SIZE RUN_LABEL=$RUN_LABEL fusion(lex=$LEX_WEIGHT,dense=$DENSE_WEIGHT) dense_top_k=$DENSE_TOP_K top_k=$TOP_K oracle_free_abstain=$ORACLE_FREE_ABSTAIN company_scope=$COMPANY_SCOPE_ROUTE"
 
 echo "### STAGE 1/4: prepare + cached-lexical retrieve (top-$TOP_K)"
 python3 scripts/enterprise_rag_bench/run_official_clean_benchmark.py "${COMMON[@]}" \
@@ -79,9 +96,20 @@ if [ "$COMPANY_SCOPE_ROUTE" = 1 ]; then
     --report "$BASE/company_scope_report.json"
 fi
 
+if [ "$ORACLE_FREE_ABSTAIN" = 1 ]; then
+  echo "### STAGE 2c/4: oracle-free abstention post-process"
+  python3 scripts/enterprise_rag_bench/postprocess_retrieval_modes.py \
+    --questions-file "$BASE/questions.clean.jsonl" \
+    --retrieval-file "$BASE/retrieval.clean.jsonl" \
+    --output "$BASE/retrieval.clean.jsonl" \
+    --report "$BASE/abstain_postprocess_report.json" \
+    --policy-name oracle_free_abstain \
+    --oracle-free-abstain
+fi
+
 echo "### STAGE 3/4: ${ANSWER_PROVIDER} answers (prompt=${PROMPT_STYLE} context=${CONTEXT_MODE} plan=${INCLUDE_EVIDENCE_PLAN} table=${INCLUDE_EVIDENCE_TABLE} guard=${UNSUPPORTED_CLAIM_GUARD} repair=${SELF_CONSISTENCY_REPAIR})"
 python3 scripts/enterprise_rag_bench/run_official_clean_benchmark.py "${COMMON[@]}" \
-  --stage answer --top-k-context "$TOP_K_CONTEXT" --max-chars-per-doc 2200 \
+  --stage answer --top-k-context "$TOP_K_CONTEXT" --max-chars-per-doc "$MAX_CHARS_PER_DOC" \
   --max-tokens "$MAX_TOKENS" --answer-workers "$ANSWER_WORKERS" \
   "${ANSWER_FLAGS[@]}"
 

@@ -428,6 +428,7 @@ Verifies a specific factual claim against the available database knowledge using
     ],
     "numeric_conflicts": [
       {
+        "kind": "numeric",
         "metric": "budget",
         "left": "1.2B KZT",
         "right": "1.4B KZT"

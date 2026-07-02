@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use super::{tokenize, TextAnalyzer};
+use super::{frozen_weights, tokenize, TextAnalyzer};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SearchQueryUnderstanding {
@@ -52,13 +52,21 @@ pub(crate) fn weighted_query_terms_with_analyzer(
 ) -> BTreeMap<String, u32> {
     let mut terms = BTreeMap::new();
     for term in analyzer.tokenize(query) {
-        add_weighted_term(&mut terms, &term, 4);
+        add_weighted_term(&mut terms, &term, frozen_weights::QUERY_BASE_TERM_WEIGHT);
         for expansion in query_expansions(&term) {
-            add_weighted_term(&mut terms, expansion, 1);
+            add_weighted_term(
+                &mut terms,
+                expansion,
+                frozen_weights::QUERY_EXPANSION_WEIGHT,
+            );
         }
     }
     for expansion in phrase_query_expansions(query) {
-        add_weighted_term(&mut terms, expansion, 2);
+        add_weighted_term(
+            &mut terms,
+            expansion,
+            frozen_weights::QUERY_PHRASE_EXPANSION_WEIGHT,
+        );
     }
     for anchor in anchors {
         for term in &anchor.terms {
@@ -228,9 +236,13 @@ fn add_weighted_term(terms: &mut BTreeMap<String, u32>, term: &str, weight: u32)
 
 fn anchor_weight(kind: QueryAnchorKind) -> u32 {
     match kind {
-        QueryAnchorKind::TicketId | QueryAnchorKind::PullRequest | QueryAnchorKind::FilePath => 12,
-        QueryAnchorKind::QuotedPhrase => 8,
-        QueryAnchorKind::Version | QueryAnchorKind::Date | QueryAnchorKind::Number => 6,
+        QueryAnchorKind::TicketId | QueryAnchorKind::PullRequest | QueryAnchorKind::FilePath => {
+            frozen_weights::QUERY_ANCHOR_STRONG_WEIGHT
+        }
+        QueryAnchorKind::QuotedPhrase => frozen_weights::QUERY_ANCHOR_PHRASE_WEIGHT,
+        QueryAnchorKind::Version | QueryAnchorKind::Date | QueryAnchorKind::Number => {
+            frozen_weights::QUERY_ANCHOR_NUMERIC_WEIGHT
+        }
     }
 }
 

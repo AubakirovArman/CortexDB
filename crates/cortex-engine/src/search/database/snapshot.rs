@@ -1,6 +1,7 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use cortex_aql::AgentView;
+use cortex_core::CellId;
 
 use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
@@ -25,7 +26,17 @@ impl Database {
         view: &AgentView,
         policy: Option<AnnSearchPolicy>,
     ) -> EngineResult<DatabaseSearchOutcome> {
-        if let Some(results) = self.search_persisted_query(query, view, policy)? {
+        self.search_cells_with_report_with_policy_and_allowed_cells(query, view, policy, None)
+    }
+
+    pub(crate) fn search_cells_with_report_with_policy_and_allowed_cells(
+        &self,
+        query: SearchQuery<'_>,
+        view: &AgentView,
+        policy: Option<AnnSearchPolicy>,
+        allowed_cells: Option<&BTreeSet<CellId>>,
+    ) -> EngineResult<DatabaseSearchOutcome> {
+        if let Some(results) = self.search_persisted_query(query, view, policy, allowed_cells)? {
             return Ok(results);
         }
         trace_search(&format!(
@@ -38,7 +49,7 @@ impl Database {
         let mut traces = BTreeMap::<u32, SearchViewTrace>::new();
         let mut vector_candidates = 0usize;
         for (index, record) in self
-            .snapshot_search_records(view, query)?
+            .snapshot_search_records(view, query, allowed_cells)?
             .into_iter()
             .enumerate()
         {
@@ -130,14 +141,22 @@ impl Database {
         &self,
         view: &AgentView,
         query: SearchQuery<'_>,
+        allowed_cells: Option<&BTreeSet<CellId>>,
     ) -> EngineResult<Vec<super::live_store::LiveSearchCandidate>> {
         if self.payload_residency != PayloadResidency::Lazy {
-            return Ok(self.live_search_store.visible_records(view, query.vector));
+            let mut records = self.live_search_store.visible_records(view, query.vector);
+            if let Some(allowed_cells) = allowed_cells {
+                records.retain(|record| allowed_cells.contains(&record.cell_id));
+            }
+            return Ok(records);
         }
 
         let txn = self.read_txn();
         let mut records = Vec::new();
         for version in self.memtable.visible_iter(txn) {
+            if allowed_cells.is_some_and(|allowed| !allowed.contains(&version.cell_id)) {
+                continue;
+            }
             let payload = self.payload_for_version(version)?;
             let record = super::LiveSearchStore::candidate_from_payload(
                 version.cell_id,

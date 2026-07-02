@@ -11,7 +11,7 @@ use clap::{error::ErrorKind, CommandFactory, Parser};
 
 use crate::cli_ops as ops;
 
-use super::args::{AgentCommand, AgentScopeAccessArg, Cli, Command};
+use super::args::{AgentCommand, AgentScopeAccessArg, Cli, Command, ReceiptKeyCommand};
 use paths::resolve_path;
 
 #[derive(Clone, Copy)]
@@ -101,11 +101,13 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             summary,
             redaction_check,
             verify_chain,
+            mac_key_file,
         } => {
             let audit_verify_alias = path == "verify";
             let actual_path = if audit_verify_alias {
                 verify_path.as_deref().ok_or_else(|| {
-                    "usage: cortexdb audit verify <audit.jsonl> [--redaction-check]".to_owned()
+                    "usage: cortexdb audit verify <audit.jsonl> [--redaction-check] [--mac-key-file <path>]"
+                        .to_owned()
                 })?
             } else {
                 if verify_path.is_some() {
@@ -127,6 +129,7 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
                 summary_only: summary || audit_verify_alias,
                 redaction_check,
                 verify_chain: verify_chain || audit_verify_alias,
+                mac_key_file,
             })
         }
         Command::AuditExportSiem {
@@ -134,7 +137,38 @@ pub fn run(args: Vec<String>) -> Result<String, String> {
             output_path,
             redaction_check,
             verify_chain,
-        } => audit::export_siem(ctx, input_path, output_path, redaction_check, verify_chain),
+            mac_key_file,
+        } => audit::export_siem(
+            ctx,
+            input_path,
+            output_path,
+            redaction_check,
+            verify_chain,
+            mac_key_file,
+        ),
+        Command::ReceiptKey { command } => match command {
+            ReceiptKeyCommand::Generate(input) => crate::cli_receipt_key::generate(
+                input.key_file,
+                input.key_id,
+                input.public_key_file,
+            ),
+            ReceiptKeyCommand::ExportPublic {
+                key_file,
+                public_key_file,
+            } => crate::cli_receipt_key::export_public(key_file, public_key_file),
+            ReceiptKeyCommand::Rotate(input) => crate::cli_receipt_key::rotate(
+                input.current_key_file,
+                input.next_key_file,
+                input.trust_file,
+                input.new_key_id,
+                input.reanchor_file,
+                input.audit_chain_head,
+                input.audit_sequence,
+            ),
+            ReceiptKeyCommand::VerifyReanchor(input) => {
+                crate::cli_receipt_key::verify_reanchor(input.reanchor_file, input.trust_file)
+            }
+        },
         Command::AuthReview {
             policy_store,
             tokens_file,

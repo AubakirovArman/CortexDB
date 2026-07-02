@@ -15,6 +15,7 @@ fn app_state_for_metrics() -> AppState {
         root: PathBuf::new(),
         dbs: Arc::new(Mutex::new(BTreeMap::new())),
         options: Arc::new(ServerOptions::default()),
+        cluster_ingress_monitor: None,
         audit_sink: None,
         request_count: Arc::new(AtomicU64::new(0)),
         request_rejected: Arc::new(AtomicU64::new(0)),

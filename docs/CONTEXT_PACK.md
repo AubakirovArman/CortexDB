@@ -78,7 +78,12 @@ Implemented in `cortex-engine`:
   `supported`/`unsupported` spans, matched/missing terms, supporting `cell_id`s,
   citations, and an optional `rejected` flag when callers enable
   `reject_unsupported`. This is a post-answer guard; it does not read benchmark
-  gold labels or judge answers with an LLM.
+  gold labels or judge answers with an LLM. Callers that need the grounding
+  evidence to be part of the attested ContextPack output can attach it with
+  `ContextPack::with_grounding_report` or compute and attach it with
+  `ContextPack::with_grounded_answer`; when present, `grounding_report`
+  is included in the canonical ContextPack bytes and therefore in the
+  determinism/receipt hash surface.
 - Access-decision trail: every AQL-built ContextPack cell records the readable
   scope decision that allowed it into the pack (`cell_id`, `scope`, `scope_id`,
   `agent_id`, `decision`, `policy`, and `reason`). HTTP JSON responses attach
@@ -86,7 +91,8 @@ Implemented in `cortex-engine`:
   enterprise audit tooling can answer why a user saw a specific fact without
   exposing bearer tokens.
 
-Public JSON responses include:
+Public JSON exports include the optional `grounding_report` field. HTTP typed
+responses may omit it when no grounding evidence is attached.
 
 ```json
 {
@@ -106,7 +112,8 @@ Public JSON responses include:
       "message": "context answerability score 0/65535 is below the required threshold",
       "why_excluded": "covered_terms=[]; missing_terms=[budget]"
     }
-  ]
+  ],
+  "grounding_report": null
 }
 ```
 
@@ -118,6 +125,16 @@ types stay aligned with the same required fields. Until `context_pack.v2`, v1 is
 additive-only: existing required fields, enum meanings, and `schema_version`
 cannot be removed or renamed; new optional fields may be added only when schema,
 OpenAPI, SDK, snapshots, and docs move together.
+
+`context_pack.v1` also reserves additive optional top-level fields for
+`grounding_report` and `accountability_receipt`. `grounding_report` uses the
+same deterministic `AnswerGroundingReport` shape as `/v1/inference` grounding
+responses and is hashed when present. The receipt schema is frozen in
+[`docs/schemas/accountability_receipt.v1.json`](schemas/accountability_receipt.v1.json)
+and guarded by `make accountability-receipt-schema-check`. Runtime JSON receipt
+emission is enabled when `CORTEXDB_RECEIPT_SIGNING_KEY_FILE` or
+`CORTEXDB_RECEIPT_SIGNING_KEY_HEX` is configured; without a configured signing
+key the field remains absent.
 
 For selected cells, `cells[].access_decision` is the per-cell RBAC trail. A
 typical HTTP response includes:

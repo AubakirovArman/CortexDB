@@ -2,9 +2,9 @@ use std::cmp::Reverse;
 use std::collections::BTreeMap;
 
 use super::{
-    rerank, routed_candidate_limit, routed_result_limit, Bm25Index, HybridRrfWeights,
-    ScoredCandidate, SearchMode, SearchQuery, SearchRerankInput, SearchReranker, SearchResult,
-    TextAnalyzerConfig, VectorIndex, WeightedScoreReranker,
+    frozen_weights, rerank, routed_candidate_limit, routed_result_limit, Bm25Index,
+    HybridRrfWeights, ScoredCandidate, SearchMode, SearchQuery, SearchRerankInput, SearchReranker,
+    SearchResult, TextAnalyzerConfig, VectorIndex, WeightedScoreReranker,
 };
 
 #[derive(Clone, Debug, Default)]
@@ -129,8 +129,14 @@ impl SearchIndexes {
                 ..query
             });
         };
-        let lexical = self.lexical.search(query.text, query.limit.max(32));
-        let vector = self.vector.search_dot(vector, query.limit.max(32));
+        let lexical = self.lexical.search(
+            query.text,
+            query.limit.max(frozen_weights::RERANK_MIN_CANDIDATE_LIMIT),
+        );
+        let vector = self.vector.search_dot(
+            vector,
+            query.limit.max(frozen_weights::RERANK_MIN_CANDIDATE_LIMIT),
+        );
         let mut results = BTreeMap::<u32, SearchResult>::new();
         apply_rrf(&mut results, lexical, true, weights.lexical_q16);
         apply_rrf(&mut results, vector, false, weights.vector_q16);
@@ -149,7 +155,8 @@ fn rerank_base_mode(mode: SearchMode) -> SearchMode {
 }
 
 fn rerank_candidate_limit(query: SearchQuery<'_>) -> usize {
-    routed_candidate_limit(query.text, query.limit).max(query.limit.max(32))
+    routed_candidate_limit(query.text, query.limit)
+        .max(query.limit.max(frozen_weights::RERANK_MIN_CANDIDATE_LIMIT))
 }
 
 fn rerank_result_limit(query: SearchQuery<'_>) -> usize {
@@ -203,8 +210,10 @@ fn apply_rrf(
     weight_q16: u32,
 ) {
     for (rank, candidate) in ranked.into_iter().enumerate() {
-        let rrf =
-            (1_000_000 / (60 + rank as u64 + 1)).saturating_mul(u64::from(weight_q16)) / 65_535;
+        let rrf = (frozen_weights::RRF_SCORE_SCALE
+            / (frozen_weights::RRF_RANK_CONSTANT + rank as u64 + 1))
+            .saturating_mul(u64::from(weight_q16))
+            / frozen_weights::Q16_ONE_U64;
         let result = results.entry(candidate.cell_id).or_insert(SearchResult {
             cell_id: candidate.cell_id,
             score: 0,

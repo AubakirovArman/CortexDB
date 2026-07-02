@@ -1,8 +1,9 @@
 use cortex_core::CellId;
 use cortex_engine::{
     Magnitude, NumericValue, SourceTrustCategory, VerificationEvidence, VerificationGuard,
-    VerificationGuardCode, VerificationMatchKind, VerificationNumericConflict, VerificationReport,
-    VerificationReportExportFormat, VerificationStatus,
+    VerificationGuardCode, VerificationMatchKind, VerificationNumericConflict,
+    VerificationNumericConflictKind, VerificationReport, VerificationReportExportFormat,
+    VerificationStatus,
 };
 
 #[test]
@@ -61,6 +62,7 @@ fn verification_markdown_export_includes_table_evidence_guards_and_limitations()
 fn numeric_conflict() -> VerificationNumericConflict {
     VerificationNumericConflict {
         cell_id: CellId(2),
+        kind: VerificationNumericConflictKind::Numeric,
         metric: "budget".to_owned(),
         left: "1.2B KZT".to_owned(),
         right: "1.4B KZT".to_owned(),

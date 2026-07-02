@@ -1,6 +1,6 @@
 use serde_json::json;
 
-use crate::context::ContextPack;
+use crate::context::{AnswerGroundingReport, AnswerGroundingSpan, ContextPack};
 use crate::query::metadata::SourceRef;
 
 pub(super) fn to_json(pack: &ContextPack) -> String {
@@ -26,10 +26,12 @@ pub(super) fn to_json(pack: &ContextPack) -> String {
                     "cell_id": decision.cell_id.0,
                     "decision": decision.decision.as_str(),
                     "policy": &decision.policy,
+                    "policy_version": &decision.policy_version,
                     "reason": &decision.reason,
                     "scope": &decision.scope,
                     "scope_id": decision.scope_id,
                     "agent_id": decision.agent_id,
+                    "agent_view_digest": &decision.agent_view_digest,
                 })),
                 "explain": cell.explain.as_ref().map(|explain| json!({
                     "score": explain.score,
@@ -76,6 +78,7 @@ pub(super) fn to_json(pack: &ContextPack) -> String {
         "visible_conflict_count": pack.visible_conflict_count,
         "cells": cells,
         "anomalies": anomalies,
+        "grounding_report": pack.grounding_report.as_ref().map(grounding_report_json),
     })
     .to_string()
 }
@@ -90,5 +93,30 @@ fn source_ref_json(source_ref: &SourceRef) -> serde_json::Value {
         "cell_range": &source_ref.cell_range,
         "json_path": &source_ref.json_path,
         "confidence_q16": source_ref.confidence_q16,
+    })
+}
+
+fn grounding_report_json(report: &AnswerGroundingReport) -> serde_json::Value {
+    json!({
+        "answer_supported": report.answer_supported,
+        "rejected": report.rejected,
+        "support_q16": report.support_q16,
+        "supported_span_count": report.supported_span_count,
+        "unsupported_span_count": report.unsupported_span_count,
+        "spans": report.spans.iter().map(grounding_span_json).collect::<Vec<_>>(),
+    })
+}
+
+fn grounding_span_json(span: &AnswerGroundingSpan) -> serde_json::Value {
+    json!({
+        "text": &span.text,
+        "start_byte": span.start_byte,
+        "end_byte": span.end_byte,
+        "support_q16": span.support_q16,
+        "supported": span.supported,
+        "covered_terms": &span.covered_terms,
+        "missing_terms": &span.missing_terms,
+        "supported_by_cell_ids": span.supported_by_cell_ids.iter().map(|cell_id| cell_id.0).collect::<Vec<_>>(),
+        "citations": &span.citations,
     })
 }

@@ -11,6 +11,8 @@ use super::hnsw::{DistanceMetric, HnswIndex};
 use std::collections::{BTreeMap, BTreeSet};
 
 #[cfg(test)]
+mod sparse_scope_tests;
+#[cfg(test)]
 mod tests;
 
 pub use evaluation::{evaluate_persisted_ann, evaluate_persisted_ann_with_policy};

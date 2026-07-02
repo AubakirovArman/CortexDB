@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 
 use cortex_aql::{AgentId, AgentView, BrainId, MemoryType, RetrievalMode, Q16_ZERO};
 use cortex_engine::verification::VerificationStatus;
-use cortex_engine::{scope_id, Database};
+use cortex_engine::{scope_id, Database, EngineError};
 
 #[test]
 fn remember_allocates_unique_manifest_backed_ids_under_concurrent_calls() {
@@ -40,6 +40,46 @@ fn remember_allocates_unique_manifest_backed_ids_under_concurrent_calls() {
         .find(|cursor| cursor.agent_slot == 7)
         .unwrap();
     assert_eq!(cursor.next_sequence, 32);
+}
+
+#[test]
+fn remember_preserves_max_documented_agent_slot() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    let mut view = agent_view();
+    view.agent_id = AgentId(0x0fff_ffff);
+
+    let remembered = db
+        .remember_aql(
+            r#"REMEMBER "high agent slot" IN SCOPE project:investments AS TYPE decision;"#,
+            &view,
+        )
+        .unwrap();
+
+    assert_eq!(encoded_agent_slot(remembered.cell_id), view.agent_id.0);
+    let cursor = db
+        .manifest()
+        .memory_cell_cursors
+        .iter()
+        .find(|cursor| cursor.agent_slot == view.agent_id.0)
+        .unwrap();
+    assert_eq!(cursor.next_sequence, 1);
+}
+
+#[test]
+fn remember_rejects_agent_slot_overflow() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    let mut view = agent_view();
+    view.agent_id = AgentId(0x1000_0007);
+
+    let error = db
+        .remember_aql(
+            r#"REMEMBER "overflow agent slot" IN SCOPE project:investments AS TYPE decision;"#,
+            &view,
+        )
+        .unwrap_err();
+    assert!(matches!(error, EngineError::StorageInvariant(_)));
 }
 
 #[test]
@@ -93,4 +133,8 @@ fn agent_view() -> AgentView {
         require_citations_by_default: false,
         private_scope: None,
     }
+}
+
+fn encoded_agent_slot(cell_id: cortex_core::CellId) -> u64 {
+    (cell_id.0 >> 32) & 0x0fff_ffff
 }

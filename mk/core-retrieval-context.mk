@@ -32,13 +32,27 @@ context-pack-quality-check:
 	$(MAKE) context-pack-prompt-export-check
 	$(MAKE) context-pack-answerability-check
 	$(MAKE) context-pack-conflict-visibility-check
+	$(MAKE) ann-budget-disclosure-check
 	$(MAKE) context-pack-private-scope-check
+	$(MAKE) scope-leak-bench-check
 	$(MAKE) context-pack-token-estimator-check
 	$(MAKE) context-pack-large-cell-policy-check
 	$(MAKE) context-pack-span-packing-check
 	$(MAKE) context-pack-value-per-token-check
 	python3 scripts/context_pack_quality_check.py --fixture "$(CONTEXT_PACK_QUALITY_FIXTURE)" --report "$(CONTEXT_PACK_QUALITY_REPORT)"
 	$(MAKE) context-pack-quality-v3-check
+
+.PHONY: conflict-normalization-check
+conflict-normalization-check:
+	cargo test -p cortex-engine numeric
+	cargo test -p cortex-engine --test conflict_normalization
+	$(MAKE) context-pack-conflict-visibility-check
+	python3 scripts/conflict_normalization_check.py --root "." --report "$(CONFLICT_NORMALIZATION_REPORT)"
+
+.PHONY: ann-budget-disclosure-check
+ann-budget-disclosure-check:
+	cargo test -p cortex-engine --test ann_budget_disclosure --all-features
+	python3 scripts/ann_budget_disclosure_check.py --root "." --report "$(ANN_BUDGET_DISCLOSURE_REPORT)"
 
 .PHONY: context-pack-value-per-token-check
 context-pack-value-per-token-check:
@@ -63,6 +77,45 @@ context-pack-token-estimator-check:
 context-pack-private-scope-check:
 	cargo test -p cortex-engine --test context_pack_private_scope
 	python3 scripts/context_pack_private_scope_check.py --root "." --report "$(CONTEXT_PACK_PRIVATE_SCOPE_REPORT)"
+
+.PHONY: scope-leak-bench-check
+scope-leak-bench-check:
+	cargo test -p cortex-engine --test scope_leak_bench --all-features
+	python3 scripts/scope_leak_bench_check.py --root "." --report "$(SCOPE_LEAK_BENCH_REPORT)"
+
+.PHONY: segment-pruning-parity-boundary-check
+segment-pruning-parity-boundary-check:
+	python3 scripts/segment_pruning_parity_boundary_check.py --root "." --report "$(SEGMENT_PRUNING_PARITY_BOUNDARY_REPORT)"
+
+.PHONY: ann-scope-parity-check
+ann-scope-parity-check:
+	cargo test -p cortex-engine search::database::tests::persisted_search_bound_plan_allowed_set_filters_status_and_where --all-features
+	python3 scripts/ann_scope_parity_check.py --root "." --report "$(ANN_SCOPE_PARITY_REPORT)"
+
+.PHONY: ann-sparse-scope-recall-check
+ann-sparse-scope-recall-check:
+	cargo test -p cortex-engine sparse_allowed_set_routes_to_exact_before_hnsw_budget --all-features
+	python3 scripts/ann_sparse_scope_recall_check.py --root "." --report "$(ANN_SPARSE_SCOPE_RECALL_REPORT)"
+
+.PHONY: fail-closed-invariant-model-check
+fail-closed-invariant-model-check:
+	cargo test -p cortex-aql --test fail_closed_invariant_model
+	cargo test -p cortex-engine fail_closed_invariant_model_tests::persisted_ann_and_lexical_paths_respect_fail_closed_model --all-features
+	cargo test -p cortex-engine --test fail_closed_invariant_model --all-features -- --nocapture
+	python3 scripts/fail_closed_invariant_model_check.py --root "." --report "$(FAIL_CLOSED_INVARIANT_MODEL_REPORT)"
+
+.PHONY: fail-closed-end-to-end-check
+fail-closed-end-to-end-check:
+	$(MAKE) hnsw-cosine-correctness-check
+	$(MAKE) ann-scope-parity-check
+	$(MAKE) ann-sparse-scope-recall-check
+	$(MAKE) ann-budget-disclosure-check
+	$(MAKE) context-access-decision-capture-check
+	$(MAKE) scope-leak-bench-check
+	$(MAKE) fail-closed-invariant-model-check
+	$(MAKE) context-pack-private-scope-check
+	$(MAKE) engine-determinism-check
+	python3 scripts/fail_closed_end_to_end_check.py --root "." --report "$(FAIL_CLOSED_END_TO_END_REPORT)"
 
 .PHONY: context-pack-conflict-visibility-check
 context-pack-conflict-visibility-check:
@@ -89,6 +142,13 @@ context-pack-quality-v3-check:
 	python3 scripts/context_pack_quality_v3_check.py --seed-fixture "$(CONTEXT_PACK_QUALITY_FIXTURE)" --datasets "$(CONTEXT_PACK_QUALITY_V3_DATASETS)" --thresholds "$(CONTEXT_PACK_QUALITY_V3_THRESHOLDS)" --report "$(CONTEXT_PACK_QUALITY_V3_REPORT)"
 
 verification-quality-check:
+	$(MAKE) verify-numeric-normalization-check
+	$(MAKE) verify-multivalue-extraction-check
+	$(MAKE) verify-temporal-conflict-check
+	$(MAKE) verify-citation-conflict-check
+	$(MAKE) verify-determinism-check
+	$(MAKE) verify-conflict-recall-check
+	$(MAKE) verify-docs-claims-check
 	cargo test -p cortex-engine --test verification_tests
 	cargo test -p cortex-engine --test verification_graph_tests
 	cargo test -p cortex-engine --test verification_guards
@@ -97,6 +157,53 @@ verification-quality-check:
 	python3 scripts/verification_quality_check.py --fixture "$(VERIFICATION_QUALITY_FIXTURE)" --report "$(VERIFICATION_QUALITY_REPORT)"
 	python3 scripts/verification_quality_dashboard_self_test.py
 	python3 scripts/verification_quality_dashboard.py --report "$(VERIFICATION_QUALITY_REPORT)" --dashboard-json "$(VERIFICATION_QUALITY_DASHBOARD_JSON)" --dashboard-md "$(VERIFICATION_QUALITY_DASHBOARD_MD)"
+
+.PHONY: verify-numeric-normalization-check
+verify-numeric-normalization-check:
+	cargo test -p cortex-engine numeric --all-features
+	python3 scripts/verify_numeric_normalization_check.py --root "." --report "$(VERIFY_NUMERIC_NORMALIZATION_REPORT)"
+
+.PHONY: verify-multivalue-extraction-check
+verify-multivalue-extraction-check:
+	cargo test -p cortex-engine numeric --all-features
+	cargo test -p cortex-engine --test verification_guards verify_fact_detects_conflict_from_multivalue_evidence_body --all-features
+	cargo test -p cortex-engine --test verification_conflict_numeric --all-features
+	python3 scripts/verify_multivalue_extraction_check.py --root "." --report "$(VERIFY_MULTIVALUE_EXTRACTION_REPORT)"
+
+.PHONY: verify-temporal-conflict-check
+verify-temporal-conflict-check:
+	cargo test -p cortex-engine numeric --all-features
+	cargo test -p cortex-engine --test verification_guards dated_verify_fact_still_reports_numeric_conflict --all-features
+	cargo test -p cortex-engine --test verification_guards stale_evidence_does_not_create_numeric_contradiction --all-features
+	cargo test -p cortex-engine --test verification_conflict_numeric temporal_numeric_conflict_index_respects_overlapping_windows --all-features
+	python3 scripts/verify_temporal_conflict_check.py --root "." --report "$(VERIFY_TEMPORAL_CONFLICT_REPORT)"
+
+.PHONY: verify-citation-conflict-check
+verify-citation-conflict-check:
+	cargo test -p cortex-engine --test verification_guards verify_fact_reports_citation_numeric_conflict_kind --all-features
+	cargo test -p cortex-engine --test verification_conflict_numeric citation_numeric_conflict_index_tracks_same_source_disagreement --all-features
+	cargo test -p cortex-engine --test verification_conflict_numeric same_source_equal_value_is_not_citation_conflict --all-features
+	python3 scripts/verify_citation_conflict_check.py --root "." --report "$(VERIFY_CITATION_CONFLICT_REPORT)"
+
+.PHONY: verify-determinism-check
+verify-determinism-check:
+	cargo test -p cortex-engine --test determinism verification_canonical_conflict_bytes_are_repeatable_and_clock_free --all-features
+	cargo test -p cortex-engine canonical --all-features
+	python3 scripts/verify_determinism_check.py --root "." --report "$(VERIFY_DETERMINISM_REPORT)"
+
+.PHONY: verify-conflict-recall-check
+verify-conflict-recall-check:
+	CORTEXDB_VERIFY_CONFLICT_RECALL_REPORT="$(CURDIR)/$(VERIFY_CONFLICT_RECALL_REPORT)" cargo test -p cortex-engine --test verification_conflict_recall --all-features
+	python3 scripts/verify_conflict_recall_check.py --root "." --report "$(CURDIR)/$(VERIFY_CONFLICT_RECALL_REPORT)"
+
+.PHONY: verify-docs-claims-check
+verify-docs-claims-check:
+	python3 scripts/verify_docs_claims_check.py --root "." --recall-report "$(CURDIR)/$(VERIFY_CONFLICT_RECALL_REPORT)" --report "$(CURDIR)/$(VERIFY_DOCS_CLAIMS_REPORT)"
+
+.PHONY: docs-claims-check
+docs-claims-check:
+	$(MAKE) verify-conflict-recall-check
+	$(MAKE) verify-docs-claims-check
 
 ingestion-jobs-v2-check:
 	cargo test -p cortex-engine --test ingestion_job_tests

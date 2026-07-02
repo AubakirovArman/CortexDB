@@ -24,9 +24,15 @@ pub struct GuardResponse {
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct NumericConflictResponse {
+    #[serde(default = "default_numeric_conflict_kind")]
+    pub kind: String,
     pub metric: String,
     pub left: String,
     pub right: String,
+}
+
+fn default_numeric_conflict_kind() -> String {
+    "numeric".to_owned()
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -42,4 +48,6 @@ pub struct VerificationReportResponse {
     pub supporting: Vec<EvidenceResponse>,
     pub contradicting: Vec<EvidenceResponse>,
     pub numeric_conflicts: Vec<NumericConflictResponse>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub accountability_receipt: Option<serde_json::Value>,
 }

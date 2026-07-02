@@ -88,6 +88,7 @@ fn verification_report_helpers_surface_result_and_conflicts() {
         "supporting": [],
         "contradicting": [],
         "numeric_conflicts": [{
+            "kind": "numeric",
             "metric": "budget",
             "left": "1.2B KZT",
             "right": "1.4B KZT"
@@ -114,6 +115,8 @@ fn verification_report_helpers_surface_result_and_conflicts() {
     assert!(matches!(
         &conflicts[1],
         VerifyConflict::Numeric(conflict)
-            if conflict.metric == "budget" && conflict.left == "1.2B KZT"
+            if conflict.kind == "numeric"
+                && conflict.metric == "budget"
+                && conflict.left == "1.2B KZT"
     ));
 }

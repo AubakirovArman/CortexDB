@@ -9,6 +9,16 @@ The OpenAPI 3.1 contract lives in [`docs/openapi.yaml`](openapi.yaml).
 The stable error taxonomy is frozen in
 [`docs/API_ERROR_TAXONOMY.md`](archive/API_ERROR_TAXONOMY.md).
 
+ContextPack v1 is additive-only until `context_pack.v2`. Its optional
+`grounding_report` field reuses the deterministic answer-grounding response
+shape and is included in canonical ContextPack bytes when present. Its optional
+`accountability_receipt` field points at `accountability_receipt.v1`, whose
+frozen schema lives in
+[`docs/schemas/accountability_receipt.v1.json`](schemas/accountability_receipt.v1.json).
+The schema is guarded by `make accountability-receipt-schema-check`; runtime
+JSON receipt emission is enabled when receipt signing key custody is configured.
+Without a configured signing key, `accountability_receipt` remains absent.
+
 All database endpoints accept optional query parameter `tenant=<realm>`.
 Omitting it or sending `tenant=default` targets the root database. Other values
 target per-tenant database realms and are supported by the dashboard and SDKs.
@@ -778,7 +788,8 @@ cannot be removed or renamed without a new `schema_version`.
       }
     }
   ],
-  "anomalies": []
+  "anomalies": [],
+  "grounding_report": null
 }
 ```
 
@@ -1027,6 +1038,7 @@ Mixed evidence with numeric conflict:
   ],
   "numeric_conflicts": [
     {
+      "kind": "numeric",
       "metric": "budget",
       "left": "1.2B KZT",
       "right": "1400000000 KZT"

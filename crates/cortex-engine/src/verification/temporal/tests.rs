@@ -54,3 +54,23 @@ fn temporal_validity_reports_expired_and_not_yet_valid() {
         Some(TemporalStaleReason::NotYetValid { .. })
     ));
 }
+
+#[test]
+fn temporal_validity_detects_overlapping_windows() {
+    let first_half = TemporalValidity {
+        valid_from: parse_temporal_date("2025-01-01"),
+        valid_to: parse_temporal_date("2025-06-30"),
+    };
+    let overlap = TemporalValidity {
+        valid_from: parse_temporal_date("2025-06-01"),
+        valid_to: parse_temporal_date("2025-12-31"),
+    };
+    let superseded = TemporalValidity {
+        valid_from: parse_temporal_date("2025-07-01"),
+        valid_to: parse_temporal_date("2025-12-31"),
+    };
+
+    assert!(first_half.overlaps(overlap));
+    assert!(!first_half.overlaps(superseded));
+    assert!(TemporalValidity::default().overlaps(superseded));
+}

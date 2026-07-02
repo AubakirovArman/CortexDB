@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, AtomicU64};
 use std::sync::{Arc, Mutex};
 
+use crate::cluster::ClusterIngressMonitor;
 use crate::config::ServerOptions;
 use crate::rate_limit::{GlobalRateLimit, PrincipalRateLimits, TenantQueueLimits};
 use crate::{actor, audit, metrics};
@@ -29,6 +30,7 @@ pub struct AppState {
     pub(crate) root: PathBuf,
     pub(crate) dbs: Arc<Mutex<BTreeMap<String, Arc<actor::DatabaseActor>>>>,
     pub(crate) options: Arc<ServerOptions>,
+    pub(crate) cluster_ingress_monitor: Option<Arc<ClusterIngressMonitor>>,
     pub(crate) audit_sink: Option<Arc<audit::AuditSink>>,
     pub(crate) request_count: Arc<AtomicU64>,
     pub(crate) request_rejected: Arc<AtomicU64>,

@@ -1,0 +1,288 @@
+use std::collections::BTreeSet;
+use std::io::{Read, Write};
+use std::net::{SocketAddr, TcpListener, TcpStream};
+use std::time::Duration;
+
+use cortex_engine::{
+    ClusterConfig, ClusterNode, ElectionState, EngineFeatureFlags, NodeId, ReplicationPeerServer,
+    ReplicationPeerState, Term,
+};
+
+use crate::{handle_http_with_options, ReceiptSigningKey, ServerOptions};
+
+const RECEIPT_SEED: &str = "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f";
+
+#[test]
+fn discovery_skips_unhealthy_stale_leader_and_uses_current_local_leader() {
+    let node_one_dir = tempfile::tempdir().unwrap();
+    let node_one_http = bind_loopback_addr();
+    let node_two_http = bind_loopback_addr();
+    let node_one_raft = start_status_peer(NodeId(1), NodeId(2));
+    let node_two_raft = start_status_peer(NodeId(2), NodeId(1));
+    let node_one_options = cluster_options(
+        NodeId(1),
+        node_one_raft,
+        node_one_http,
+        node_two_raft,
+        node_two_http,
+    );
+
+    let seeded = handle_http_with_options(
+        node_one_dir.path(),
+        concat!(
+            "POST /v1/cell?cell_id=7 HTTP/1.1\r\n\r\n",
+            "scope=project:investments\nstatus=ready\nsource=current-local-leader\n",
+            "source_url=https://example.test/current-local-leader\n",
+            "health aware leader discovery budget approval"
+        ),
+        &node_one_options,
+    );
+    assert!(seeded.contains(r#""seq":1"#), "seed failed: {seeded}");
+
+    let node_one_root = node_one_dir.path().to_owned();
+    let node_one_server_options = node_one_options.clone();
+    std::thread::spawn(move || {
+        let _ = crate::serve_with_options(
+            &node_one_root,
+            &node_one_http.to_string(),
+            node_one_server_options,
+        );
+    });
+    let health = request_full(
+        node_one_http,
+        "GET /v1/health HTTP/1.1\r\nConnection: close\r\n\r\n",
+    );
+    assert!(health.contains("200 OK"), "local health failed: {health}");
+
+    let body = context_query();
+    let request = format!(
+        "POST /v1/context?scope=project:investments HTTP/1.1\r\n\
+         Host: node-one\r\n\
+         Content-Type: text/plain\r\n\
+         Connection: close\r\n\
+         Content-Length: {}\r\n\r\n{}",
+        body.len(),
+        body
+    );
+    let response = request_full(node_one_http, &request);
+    assert!(
+        response.contains("200 OK"),
+        "health-aware route failed: {response}"
+    );
+    let value = response_body_json(&response);
+    assert_eq!(value["cells"][0]["cell_id"], 7);
+    assert_eq!(value["cells"][0]["citation"], "current-local-leader");
+    assert_eq!(
+        value["accountability_receipt"]["header"]["key_id"],
+        "raft-ingress-health-routing-test"
+    );
+}
+
+#[test]
+fn production_monitor_uses_cached_leader_after_status_peer_exits() {
+    let node_one_dir = tempfile::tempdir().unwrap();
+    let node_two_dir = tempfile::tempdir().unwrap();
+    let node_one_http = bind_loopback_addr();
+    let node_two_http = bind_loopback_addr();
+    let node_one_raft = start_status_peer_n(NodeId(1), NodeId(2), 1);
+    let node_two_raft = bind_loopback_addr();
+    let node_one_options = cluster_options(
+        NodeId(1),
+        node_one_raft,
+        node_one_http,
+        node_two_raft,
+        node_two_http,
+    );
+    let mut node_two_options = cluster_options(
+        NodeId(2),
+        node_one_raft,
+        node_one_http,
+        node_two_raft,
+        node_two_http,
+    );
+    node_two_options.cluster_ingress_leader = Some(NodeId(2));
+
+    let seeded = handle_http_with_options(
+        node_two_dir.path(),
+        concat!(
+            "POST /v1/cell?cell_id=11 HTTP/1.1\r\n\r\n",
+            "scope=project:investments\nstatus=ready\nsource=cached-monitor-leader\n",
+            "source_url=https://example.test/cached-monitor-leader\n",
+            "cached lifecycle monitor budget approval"
+        ),
+        &node_two_options,
+    );
+    assert!(seeded.contains(r#""seq":1"#), "seed failed: {seeded}");
+
+    let node_two_root = node_two_dir.path().to_owned();
+    std::thread::spawn(move || {
+        let _ =
+            crate::serve_with_options(&node_two_root, &node_two_http.to_string(), node_two_options);
+    });
+    let health = request_full(
+        node_two_http,
+        "GET /v1/health HTTP/1.1\r\nConnection: close\r\n\r\n",
+    );
+    assert!(health.contains("200 OK"), "leader health failed: {health}");
+
+    let node_one_root = node_one_dir.path().to_owned();
+    std::thread::spawn(move || {
+        let _ =
+            crate::serve_with_options(&node_one_root, &node_one_http.to_string(), node_one_options);
+    });
+    let health = request_full(
+        node_one_http,
+        "GET /v1/health HTTP/1.1\r\nConnection: close\r\n\r\n",
+    );
+    assert!(
+        health.contains("200 OK"),
+        "node one health failed: {health}"
+    );
+
+    let _ = try_status_probe(node_one_raft);
+    let body = r#"RETRIEVE CONTEXT FOR TASK "cached lifecycle monitor budget approval" IN BRAIN investment_projects
+WHERE status = "ready" LIMIT 10 CANDIDATES;"#;
+    let request = format!(
+        "POST /v1/context?scope=project:investments HTTP/1.1\r\n\
+         Host: node-one\r\n\
+         Content-Type: text/plain\r\n\
+         Connection: close\r\n\
+         Content-Length: {}\r\n\r\n{}",
+        body.len(),
+        body
+    );
+    let response = request_full(node_one_http, &request);
+    assert!(
+        response.contains("200 OK"),
+        "cached monitor route failed: {response}"
+    );
+    let value = response_body_json(&response);
+    assert_eq!(value["cells"][0]["cell_id"], 11);
+    assert_eq!(value["cells"][0]["citation"], "cached-monitor-leader");
+}
+
+fn cluster_options(
+    local_node: NodeId,
+    node_one_raft: SocketAddr,
+    node_one_http: SocketAddr,
+    node_two_raft: SocketAddr,
+    node_two_http: SocketAddr,
+) -> ServerOptions {
+    let mut options = ServerOptions {
+        cluster_config: Some(ClusterConfig {
+            local_node,
+            nodes: vec![
+                ClusterNode {
+                    id: NodeId(1),
+                    address: node_one_raft.to_string(),
+                    ingress_address: Some(node_one_http.to_string()),
+                },
+                ClusterNode {
+                    id: NodeId(2),
+                    address: node_two_raft.to_string(),
+                    ingress_address: Some(node_two_http.to_string()),
+                },
+            ],
+            replication_factor: 2,
+        }),
+        receipt_signing_key: Some(
+            ReceiptSigningKey::from_seed_hex("raft-ingress-health-routing-test", RECEIPT_SEED)
+                .unwrap(),
+        ),
+        db_instance_id: Some(format!("dbi_{:064x}", local_node.0)),
+        ..ServerOptions::default()
+    };
+    options.engine_database_options.feature_flags =
+        EngineFeatureFlags::production_safe().with_experimental_replication(true);
+    options
+}
+
+fn start_status_peer(local_node: NodeId, leader: NodeId) -> SocketAddr {
+    start_status_peer_n(local_node, leader, 4)
+}
+
+fn start_status_peer_n(local_node: NodeId, leader: NodeId, requests: usize) -> SocketAddr {
+    let voters = BTreeSet::from([NodeId(1), NodeId(2)]);
+    let mut election = ElectionState::new(local_node, voters);
+    assert!(election.accept_leader(Term(2), leader));
+    let server = ReplicationPeerServer::bind(
+        "127.0.0.1:0",
+        ReplicationPeerState {
+            election,
+            log: Vec::new(),
+            snapshot: Vec::new(),
+        },
+        None,
+    )
+    .unwrap();
+    let addr = server.local_addr().unwrap();
+    std::thread::spawn(move || server.serve_n(requests).unwrap());
+    addr
+}
+
+fn context_query() -> &'static str {
+    r#"RETRIEVE CONTEXT FOR TASK "health aware leader discovery budget approval" IN BRAIN investment_projects
+WHERE status = "ready" LIMIT 10 CANDIDATES;"#
+}
+
+fn bind_loopback_addr() -> SocketAddr {
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let addr = listener.local_addr().unwrap();
+    drop(listener);
+    addr
+}
+
+fn request_full(addr: SocketAddr, request: &str) -> String {
+    let mut stream = connect_with_retry(addr);
+    stream
+        .set_read_timeout(Some(Duration::from_secs(3)))
+        .unwrap();
+    stream.write_all(request.as_bytes()).unwrap();
+    let mut response = Vec::new();
+    let mut buffer = [0_u8; 4096];
+    loop {
+        match stream.read(&mut buffer) {
+            Ok(0) => break,
+            Ok(bytes) => response.extend_from_slice(&buffer[..bytes]),
+            Err(error)
+                if matches!(
+                    error.kind(),
+                    std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut
+                ) =>
+            {
+                break;
+            }
+            Err(error) => panic!("failed to read response: {error}"),
+        }
+    }
+    String::from_utf8_lossy(&response).into_owned()
+}
+
+fn response_body_json(response: &str) -> serde_json::Value {
+    let (_, body) = response.split_once("\r\n\r\n").unwrap();
+    serde_json::from_str(body).unwrap()
+}
+
+fn try_status_probe(addr: SocketAddr) -> std::io::Result<()> {
+    let mut stream = TcpStream::connect_timeout(&addr, Duration::from_millis(100))?;
+    stream.set_read_timeout(Some(Duration::from_millis(100)))?;
+    stream.set_write_timeout(Some(Duration::from_millis(100)))?;
+    stream.write_all(b"STATUS\n")?;
+    let mut response = String::new();
+    let _ = stream.read_to_string(&mut response);
+    Ok(())
+}
+
+fn connect_with_retry(addr: SocketAddr) -> TcpStream {
+    let mut last_error = None;
+    for _ in 0..40 {
+        match TcpStream::connect(addr) {
+            Ok(stream) => return stream,
+            Err(error) => {
+                last_error = Some(error);
+                std::thread::sleep(Duration::from_millis(25));
+            }
+        }
+    }
+    panic!("failed to connect to test server: {last_error:?}");
+}

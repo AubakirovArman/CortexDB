@@ -405,12 +405,13 @@ Audit events are emitted through `tracing` with target `cortexdb_audit`. They
 include route category, method, path, tenant, `request_id`, status code, stable
 error code, duration, and authenticated principal metadata when available:
 `principal_id`, `auth_role`, and `auth_agent_id`. File-backed audit records also
-include local chain metadata: `chain_id`, `sequence`, `prev_hash`, and
-`event_hash`. File-backed records include `scope_decision` with only
-`allowed`, `denied`, or `not_applicable`; raw scope labels are not logged.
-Request bodies, query strings, and bearer tokens are intentionally not logged.
-Current route categories include `read`, `write`, `delete`, `aql`, `search`,
-`context`, `verify`, `ingest`, `memory`, `admin`, `metrics`, and `health`.
+include local chain metadata: `chain_id`, `sequence`, `prev_hash`,
+`event_hash`, `mac_key_id`, and `event_mac`. File-backed records include
+`scope_decision` with only `allowed`, `denied`, or `not_applicable`; raw scope
+labels are not logged. Request bodies, query strings, bearer tokens, and audit
+MAC key material are intentionally not logged. Current route categories include
+`read`, `write`, `delete`, `aql`, `search`, `context`, `verify`, `ingest`,
+`memory`, `admin`, `metrics`, and `health`.
 
 Every HTTP response includes `x-request-id`. Clients may supply a safe
 `x-request-id` header to correlate their logs with CortexDB audit records. If
@@ -424,6 +425,8 @@ To persist route-level audit events to a local JSONL file, set:
 export CORTEXDB_AUDIT_LOG_FILE="./audit/http.jsonl"
 export CORTEXDB_AUDIT_LOG_ROTATE_BYTES=104857600
 export CORTEXDB_AUDIT_LOG_FSYNC=always
+export CORTEXDB_AUDIT_MAC_KEY_ID="local-audit-key-2026q2"
+export CORTEXDB_AUDIT_MAC_KEY_HEX="000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"
 cargo run -p cortex-server -- ./data 127.0.0.1:8181
 ```
 
@@ -431,6 +434,10 @@ cargo run -p cortex-server -- ./data 127.0.0.1:8181
 directories if needed, appends one JSON object per response, flushes the file,
 and uses the configured fsync policy after each event. `always` calls
 `sync_data()` per event; `flush` and `flush-only` flush without `sync_data()`.
+`CORTEXDB_AUDIT_MAC_KEY_HEX` is required for file-backed audit records and must
+be a 32-byte hex value; `CORTEXDB_AUDIT_MAC_KEY_ID` labels the key in the JSONL
+record and defaults to `local-audit-key` when omitted. Store the key outside
+the audit log and do not pass it as a command-line argument.
 `CORTEXDB_AUDIT_LOG_ROTATE_BYTES` rotates the active JSONL file after the
 configured byte limit; rotated files are local JSONL segments with independent
 chain verification. File sink failures after startup are reported through
@@ -442,38 +449,146 @@ Review a persisted audit file with the CLI instead of hand-parsing JSONL:
 
 ```bash
 cortexdb audit ./audit/http.jsonl --summary --redaction-check
-cortexdb audit ./audit/http.jsonl --summary --redaction-check --verify-chain
-cortexdb audit verify ./audit/http.jsonl
+cortexdb audit ./audit/http.jsonl --summary --redaction-check --verify-chain --mac-key-file ./audit/audit-mac.key
+cortexdb audit verify ./audit/http.jsonl --mac-key-file ./audit/audit-mac.key
 cortexdb audit ./audit/http.jsonl --route /v1/cell --status 403
 cortexdb audit ./audit/http.jsonl --action write --tenant-filter tenant-alpha
 cortexdb --json audit ./audit/http.jsonl --summary --redaction-check
-cortexdb audit-export-siem ./audit/http.jsonl ./audit/siem.jsonl --redaction-check --verify-chain
+cortexdb audit-export-siem ./audit/http.jsonl ./audit/siem.jsonl --redaction-check --verify-chain --mac-key-file ./audit/audit-mac.key
 ```
 
 The audit viewer supports filters by route, status, action, and tenant. The
 summary output includes counts by action, status, tenant, and route. The
 `--redaction-check` flag fails if records contain query strings or body-like
 fields, which keeps route-level audit review separate from request payloads.
-The `--verify-chain` flag validates local sequence continuity and chained event
-hashes, detecting line deletion, reordering, and edited route metadata in
-chain-v1 audit files. LLM inference audit decisions also include safe decision
-metadata such as provider, model, outcome, citation count, and guardrail reason
-in the event hash; prompts, request bodies, bearer tokens, and secrets remain
-excluded. This is a local tamper-evidence foundation, not a
-compliance-certified audit ledger. `cortexdb audit verify <audit.jsonl>` is the
-short fail-closed alias for `cortexdb audit <audit.jsonl> --summary
---verify-chain`. If the configured file sink ends with a malformed chained
-record, server startup fails instead of silently resetting the chain; rotate or
-repair the audit file explicitly.
+The `--verify-chain` flag validates local sequence continuity, chained
+SHA-256 event hashes, and HMAC-SHA-256 `event_mac` values for
+`cortexdb.audit.v2` records when `--mac-key-file` is supplied. Without the MAC
+key, keyed v2 records fail chain verification; legacy v1 hash-chain records
+remain readable as compatibility records. LLM inference audit decisions also
+include safe decision metadata such as provider, model, outcome, citation
+count, and guardrail reason in the hashed/MACed event surface. When configured
+receipt emission returns an `accountability_receipt.v1`, HTTP audit records
+commit the receipt hash in `accountability_receipt_hash`; prompts, request
+bodies, bearer tokens, and secrets remain excluded. This is a local
+tamper-evidence foundation, not a compliance-certified audit ledger.
+`cortexdb audit verify <audit.jsonl>` is the short fail-closed alias for
+`cortexdb audit <audit.jsonl> --summary --verify-chain`. If the configured file
+sink ends with a malformed chained record, server startup fails instead of
+silently resetting the chain; rotate or repair the audit file explicitly.
 
 `audit-export-siem` writes normalized JSONL records with schema
 `cortexdb.siem.audit.v1`. It preserves route metadata, principal metadata,
-request IDs, status, duration, and audit-chain fields, but does not add request
-bodies, query strings, or bearer tokens. Use `--redaction-check` and
-`--verify-chain` before exporting to fail closed on unsafe local audit input.
+request IDs, status, duration, audit-chain fields, `mac_key_id`, and
+`event_mac`, but does not add request bodies, query strings, bearer tokens, or
+MAC key material. Use `--redaction-check`, `--verify-chain`, and
+`--mac-key-file` before exporting v2 audit logs to fail closed on unsafe local
+audit input.
 The local export, retention, and redaction boundary is defined in
 [`AUDIT_EXPORT_RETENTION_POLICY.md`](archive/AUDIT_EXPORT_RETENTION_POLICY.md) and
 validated by `make audit-export-retention-check`.
+
+## Receipt Signing Key Custody
+
+The current receipt-key surface provides Ed25519 node key custody for
+configured `accountability_receipt.v1` JSON emission. When
+`CORTEXDB_RECEIPT_SIGNING_KEY_FILE` or `CORTEXDB_RECEIPT_SIGNING_KEY_HEX` is
+configured, JSON ContextPack and verification responses include signed receipt
+objects. Without a configured receipt signing key, the additive
+`accountability_receipt` field remains absent. When a configured JSON response
+does include a receipt, file-backed audit v2 records commit the receipt hash in
+`accountability_receipt_hash` so the local audit chain/MAC covers the returned
+receipt without storing the receipt body.
+
+Configured receipt emission also binds receipt header `db_instance_id` to a
+durable local database-instance identity. Server startup creates or reads
+`cortexdb.database_instance_identity.json` in the database root using
+`cortexdb.database_instance_identity.v1`; this value is reused across tenants
+for the same local database instance and is not derived from the request tenant.
+If receipt signing is configured but the identity file is invalid, startup and
+receipt emission fail closed.
+
+Generate a local receipt signing key and export its public key:
+
+```bash
+cortexdb receipt-key generate ./keys/receipt-key.json --key-id local-receipt-key-2026q2 --public-key-file ./keys/receipt-key.public.json
+cortexdb receipt-key export-public ./keys/receipt-key.json ./keys/receipt-key.public.json
+```
+
+Rotate to a new key id, keep a dual-trust manifest for historical
+verification, and write a receipt/audit re-anchor record:
+
+```bash
+cortexdb receipt-key rotate ./keys/receipt-key.json ./keys/receipt-key-next.json ./keys/receipt-trust.json --new-key-id local-receipt-key-2026q3 --reanchor-file ./keys/receipt-reanchor.json --audit-chain-head 0000000000000000000000000000000000000000000000000000000000000000 --audit-sequence 0
+cortexdb receipt-key verify-reanchor ./keys/receipt-reanchor.json --trust-file ./keys/receipt-trust.json
+```
+
+The private key file uses `cortexdb.receipt_signing_key.v1`, the public file
+uses `cortexdb.receipt_public_key.v1`, and the rotation manifest uses
+`cortexdb.receipt_trust.v1`. The re-anchor record uses
+`cortexdb.receipt_audit_reanchor.v1` and is signed by both previous and current
+receipt keys over the old/new public keys, trust manifest hash, audit chain
+head, and audit sequence. CLI output intentionally prints key ids and file paths
+only, not `signing_seed_hex`.
+
+For server-side custody preflight, prefer a key file:
+
+```bash
+export CORTEXDB_RECEIPT_SIGNING_KEY_FILE="./keys/receipt-key.json"
+cargo run -p cortex-server -- ./data 127.0.0.1:8181
+```
+
+For short-lived local test environments, the server can also parse
+`CORTEXDB_RECEIPT_SIGNING_KEY_ID` plus `CORTEXDB_RECEIPT_SIGNING_KEY_HEX`.
+Do not pass receipt signing seeds as command-line arguments, and do not store
+private key JSON beside public audit logs or exported ContextPacks.
+
+For non-local custody, the server can call an external receipt signer command
+instead of loading `signing_seed_hex`:
+
+```bash
+export CORTEXDB_RECEIPT_EXTERNAL_SIGNER_COMMAND="./bin/receipt-signer"
+export CORTEXDB_RECEIPT_EXTERNAL_SIGNER_KEY_ID="receipt-key-2026q3"
+export CORTEXDB_RECEIPT_EXTERNAL_SIGNER_PUBLIC_KEY_HEX="<64 hex chars>"
+export CORTEXDB_RECEIPT_EXTERNAL_SIGNER_REF="kms://operator-owned/receipt-key-2026q3"
+cargo run -p cortex-server -- ./data 127.0.0.1:8181
+```
+
+The command receives JSON schema
+`cortexdb.receipt_external_sign_request.v1` on stdin and returns
+`cortexdb.receipt_external_signature.v1` on stdout. The server verifies the
+returned Ed25519 signature against the configured public key and fails closed
+if the command is unavailable, returns a mismatched key id/public key, or emits
+an invalid signature. This external command path is not by itself a KMS/HSM
+custody claim.
+
+Production-grade KMS/HSM custody requires an operator evidence file with schema
+`cortexdb.receipt_kms_hsm_custody_evidence.v1`. The evidence must bind
+`key_id`, `public_key_hex`, `signer_ref`, provider key reference, signing domain
+`cortexdb.accountability_receipt.sign.v1`, non-exportable key policy, disabled
+local-seed fallback, a `runtime_signing_probe` signed by the same runtime public
+key over `cortexdb.accountability_receipt.sign.v1 || 0x00 ||
+canonical_header_hex bytes`, a signature-verified `production_origin_proof`,
+and at least two hashed custody artifacts. The custody gate accepts it only when
+the expected runtime binding and expected key-attestor trust-anchor binding are
+passed explicitly:
+
+```bash
+make receipt-kms-hsm-custody-check \
+  RECEIPT_KMS_HSM_CUSTODY_EVIDENCE="./evidence/receipt-kms-hsm.json" \
+  RECEIPT_KMS_HSM_EXPECTED_KEY_ID="receipt-key-2026q3" \
+  RECEIPT_KMS_HSM_EXPECTED_PUBLIC_KEY_HEX="<64 hex chars>" \
+  RECEIPT_KMS_HSM_EXPECTED_SIGNER_REF="kms://operator-owned/receipt-key-2026q3" \
+  RECEIPT_PRODUCTION_ORIGIN_EXPECTED_KEY_ATTESTOR_KEY_ID="root-key-attestor-2026" \
+  RECEIPT_PRODUCTION_ORIGIN_EXPECTED_KEY_ATTESTOR_PUBLIC_KEY_HEX="<64 hex chars>" \
+  RECEIPT_PRODUCTION_ORIGIN_EXPECTED_KEY_ATTESTOR_REF="https://trust.example/attestors/root-key-attestor" \
+  RECEIPT_PRODUCTION_ORIGIN_EXPECTED_KEY_ATTESTOR_PUBLIC_KEY_REF="https://trust.example/keys/root-key-attestor.pub"
+```
+
+Without this evidence, the `receipt-kms-hsm-custody-check` report continues to
+show `kms_hsm_custody=false`. Operator-shaped evidence with a valid runtime
+signing probe but without `production_origin_proof` is not sufficient for a
+KMS/HSM custody claim.
 
 ## RBAC Roadmap
 

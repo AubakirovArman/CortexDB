@@ -154,6 +154,19 @@ fn tcp_replication_transport_sends_append_entries() {
 }
 
 #[test]
+fn replication_status_frame_reports_known_leader_without_log_mutation() {
+    let mut state = follower_state();
+    assert!(state.accept_leader(Term(2), NodeId(1)));
+    let mut log = Vec::new();
+
+    let response =
+        cortex_engine::handle_replication_frame(&mut state, &mut log, "STATUS\n").unwrap();
+
+    assert_eq!(response, "STATUS_RESP 2 2 follower 1\n");
+    assert!(log.is_empty());
+}
+
+#[test]
 fn replication_peer_server_accepts_authenticated_snapshot_chunk() {
     let server = ReplicationPeerServer::bind(
         "127.0.0.1:0",

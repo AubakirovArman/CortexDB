@@ -70,6 +70,7 @@ expression: resp
   ],
   "numeric_conflicts": [
     {
+      "kind": "numeric",
       "metric": "budget",
       "left": "1.2B KZT",
       "right": "1.4B KZT"

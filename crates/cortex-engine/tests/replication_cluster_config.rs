@@ -51,6 +51,25 @@ fn cluster_config_store_load_roundtrips_operator_topology() {
 }
 
 #[test]
+fn cluster_config_roundtrips_optional_ingress_addresses() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut cluster = two_node_cluster();
+    cluster.nodes[0].ingress_address = Some("127.0.0.1:8101".to_owned());
+    let path = cluster
+        .replication_paths(dir.path())
+        .unwrap()
+        .cluster_config_path();
+
+    cluster.store(&path).unwrap();
+    let loaded = ClusterConfig::load(&path).unwrap();
+
+    assert_eq!(loaded, cluster);
+    assert_eq!(loaded.nodes[0].address, "127.0.0.1:9101");
+    assert_eq!(loaded.nodes[0].ingress_address(), "127.0.0.1:8101");
+    assert_eq!(loaded.nodes[1].ingress_address(), "127.0.0.1:9102");
+}
+
+#[test]
 fn cluster_config_load_rejects_bad_magic_and_invalid_topology() {
     let dir = tempfile::tempdir().unwrap();
     let bad_magic = dir.path().join("bad-magic.conf");
@@ -75,6 +94,7 @@ fn cluster_config_store_rejects_invalid_topology_without_writing_file() {
         nodes: vec![ClusterNode {
             id: NodeId(1),
             address: String::new(),
+            ingress_address: None,
         }],
         replication_factor: 1,
     };
@@ -90,6 +110,7 @@ fn cluster_config_rejects_missing_local_node() {
         nodes: vec![ClusterNode {
             id: NodeId(1),
             address: "127.0.0.1:9101".to_owned(),
+            ingress_address: None,
         }],
         replication_factor: 1,
     };
@@ -108,10 +129,12 @@ fn cluster_config_rejects_duplicate_or_invalid_nodes() {
             ClusterNode {
                 id: NodeId(1),
                 address: "127.0.0.1:9101".to_owned(),
+                ingress_address: None,
             },
             ClusterNode {
                 id: NodeId(1),
                 address: "127.0.0.1:9102".to_owned(),
+                ingress_address: None,
             },
         ],
         replication_factor: 2,
@@ -139,10 +162,12 @@ fn two_node_cluster() -> ClusterConfig {
             ClusterNode {
                 id: NodeId(1),
                 address: "127.0.0.1:9101".to_owned(),
+                ingress_address: None,
             },
             ClusterNode {
                 id: NodeId(2),
                 address: "127.0.0.1:9102".to_owned(),
+                ingress_address: None,
             },
         ],
         replication_factor: 2,

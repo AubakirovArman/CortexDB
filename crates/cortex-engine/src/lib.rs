@@ -24,10 +24,15 @@
 //!     Ok(())
 //! }
 //! ```
+mod access_capture;
+#[doc(hidden)]
+pub mod accountability;
 pub mod agent_transaction;
 pub mod agent_views;
 pub mod backup;
 pub mod bundle;
+#[doc(hidden)]
+pub mod canonical;
 mod cell_ids;
 pub mod checkpoint;
 mod cleanup;
@@ -37,6 +42,8 @@ mod config;
 pub mod context;
 pub mod database;
 mod database_files;
+#[doc(hidden)]
+pub mod determinism_hash;
 pub mod distributed;
 pub mod embedding_pipeline;
 pub mod error;
@@ -93,9 +100,9 @@ pub use context::{
     AnswerGroundingSpan, ContextAccessDecision, ContextAccessDecisionOutcome, ContextCellExplain,
     ContextCellExplainOutcome, ContextExplain, ContextLargeCellPolicy, ContextPack,
     ContextPackAnomaly, ContextPackAnomalyCode, ContextPackCell, ContextPackExportFormat,
-    ContextPackOptions, ContextPackWithTools, ContextPipelineCellTrace, ContextPipelineStageTrace,
-    ContextPipelineTrace, ContextPipelineVerificationTrace, ContextScoreComponent,
-    ContextScoreComponentTrace, ContextSpanProvenance, ContextTokenProfile,
+    ContextPackOptions, ContextPackReceiptEvidence, ContextPackWithTools, ContextPipelineCellTrace,
+    ContextPipelineStageTrace, ContextPipelineTrace, ContextPipelineVerificationTrace,
+    ContextScoreComponent, ContextScoreComponentTrace, ContextSpanProvenance, ContextTokenProfile,
     SourceFreshnessCategory, DEFAULT_CITATION_OVERHEAD_TOKENS, DEFAULT_GROUNDING_THRESHOLD_Q16,
 };
 pub use database::{
@@ -202,5 +209,6 @@ pub use verification::{
     NumericValue, TemporalDate, TemporalFactIndex, TemporalFactKey, TemporalFactRecord,
     TemporalQueryRange, TemporalStaleReason, TemporalValidity, VerificationEvidence,
     VerificationGuard, VerificationGuardCode, VerificationMatchKind, VerificationNumericConflict,
-    VerificationReport, VerificationReportExportFormat, VerificationStatus,
+    VerificationNumericConflictKind, VerificationReport, VerificationReportExportFormat,
+    VerificationStatus,
 };

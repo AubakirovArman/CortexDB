@@ -17,7 +17,9 @@ use crate::quota::{
     request_allowed_by_principal_quota, request_allowed_by_rate_limit,
     request_body_allowed_by_principal_quota,
 };
-use crate::request_audit::{audit_http_response, RequestAudit};
+use crate::request_audit::{
+    audit_http_response, audit_http_response_with_receipt_hash, RequestAudit,
+};
 use crate::request_id::{request_id_from_headers, with_request_id, RequestIdSource};
 use crate::responses::ErrorCode;
 use crate::state::AppState;
@@ -61,23 +63,30 @@ pub(crate) async fn axum_handler(State(state): State<AppState>, req: Request) ->
         .headers()
         .get("authorization")
         .or_else(|| req.headers().get("Authorization"))
-        .and_then(|h| h.to_str().ok());
-    let auth_decision = match auth::authorize_request(&state.options, auth_header, &method, &path) {
-        Ok(decision) => decision,
-        Err(error) => {
-            let status =
-                StatusCode::from_u16(error.status_code()).unwrap_or(StatusCode::UNAUTHORIZED);
-            audit_http_response(&state, &audit_event, status, Some(error.code()));
-            return with_request_id(
-                (
-                    status,
-                    Json(error_response(error.code(), error.to_string())),
-                )
-                    .into_response(),
-                &request_id,
-            );
-        }
-    };
+        .and_then(|h| h.to_str().ok())
+        .map(str::to_owned);
+    let content_type = req
+        .headers()
+        .get(header::CONTENT_TYPE)
+        .and_then(|h| h.to_str().ok())
+        .map(str::to_owned);
+    let auth_decision =
+        match auth::authorize_request(&state.options, auth_header.as_deref(), &method, &path) {
+            Ok(decision) => decision,
+            Err(error) => {
+                let status =
+                    StatusCode::from_u16(error.status_code()).unwrap_or(StatusCode::UNAUTHORIZED);
+                audit_http_response(&state, &audit_event, status, Some(error.code()));
+                return with_request_id(
+                    (
+                        status,
+                        Json(error_response(error.code(), error.to_string())),
+                    )
+                        .into_response(),
+                    &request_id,
+                );
+            }
+        };
 
     audit_event.principal_id = auth_decision.principal_id.clone();
     audit_event.auth_role = auth_decision.role.map(auth::AuthRole::as_str);
@@ -220,6 +229,87 @@ pub(crate) async fn axum_handler(State(state): State<AppState>, req: Request) ->
     ) {
         return response;
     }
+    if method == "GET" && path == "/v1/cluster/status" {
+        audit_http_response(&state, &audit_event, StatusCode::OK, None);
+        return with_request_id(
+            (
+                StatusCode::OK,
+                Json(crate::cluster::status_response(&state.options)),
+            )
+                .into_response(),
+            &request_id,
+        );
+    }
+    if let Some(decision) = crate::cluster::context_ingress_decision_with_monitor(
+        &state.options,
+        state.cluster_ingress_monitor.as_deref(),
+        &method,
+        &path,
+    ) {
+        match decision {
+            crate::cluster::ContextIngressDecision::Local => {}
+            crate::cluster::ContextIngressDecision::Forward(target) => {
+                let method_clone = method.clone();
+                let target_path = target_for_timeout.clone();
+                let body_clone = body_bytes.clone();
+                let auth_clone = auth_header.clone();
+                let content_type_clone = content_type.clone();
+                let request_id_clone = request_id.clone();
+                let forward_result = tokio::task::spawn_blocking(move || {
+                    crate::cluster::forward_http_request(
+                        &target,
+                        &method_clone,
+                        &target_path,
+                        &body_clone,
+                        auth_clone.as_deref(),
+                        content_type_clone.as_deref(),
+                        Some(&request_id_clone),
+                    )
+                })
+                .await
+                .unwrap_or_else(|error| {
+                    Err(format!("live Raft ingress forwarding task failed: {error}"))
+                });
+                match forward_result {
+                    Ok(response) => {
+                        let status = StatusCode::from_u16(response.status_code)
+                            .unwrap_or(StatusCode::BAD_GATEWAY);
+                        let receipt_hash =
+                            crate::receipt::accountability_receipt_audit_hash_from_response_body(
+                                &response.body,
+                            );
+                        audit_http_response_with_receipt_hash(
+                            &state,
+                            &audit_event,
+                            status,
+                            None,
+                            receipt_hash.as_deref(),
+                        );
+                        return with_request_id(
+                            forwarded_body_response(status, response.body),
+                            &request_id,
+                        );
+                    }
+                    Err(message) => {
+                        return live_raft_ingress_unavailable_response(
+                            &state,
+                            &audit_event,
+                            &request_id,
+                            message,
+                        );
+                    }
+                }
+            }
+            crate::cluster::ContextIngressDecision::Unavailable(message) => {
+                return live_raft_ingress_unavailable_response(
+                    &state,
+                    &audit_event,
+                    &request_id,
+                    message,
+                );
+            }
+        }
+    }
 
     database_route::handle_database_route(
         &state,
@@ -233,6 +323,37 @@ pub(crate) async fn axum_handler(State(state): State<AppState>, req: Request) ->
         &auth_decision,
     )
     .await
+}
+
+fn forwarded_body_response(status: StatusCode, body: String) -> Response {
+    if let Ok(json_val) = serde_json::from_str::<serde_json::Value>(&body) {
+        (status, Json(json_val)).into_response()
+    } else {
+        (status, [(header::CONTENT_TYPE, "text/plain")], body).into_response()
+    }
+}
+
+fn live_raft_ingress_unavailable_response(
+    state: &AppState,
+    audit_event: &RequestAudit<'_>,
+    request_id: &str,
+    message: String,
+) -> Response {
+    state.request_rejected.fetch_add(1, Ordering::Relaxed);
+    audit_http_response(
+        state,
+        audit_event,
+        StatusCode::SERVICE_UNAVAILABLE,
+        Some(ErrorCode::ServiceUnavailable),
+    );
+    with_request_id(
+        (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(error_response(ErrorCode::ServiceUnavailable, message)),
+        )
+            .into_response(),
+        request_id,
+    )
 }
 
 fn dashboard_response(

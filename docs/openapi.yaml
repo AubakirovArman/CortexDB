@@ -2893,6 +2893,14 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ContextPackAnomalyResponse'
+        grounding_report:
+          anyOf:
+          - $ref: '#/components/schemas/AnswerGroundingReportResponse'
+          - type: 'null'
+        accountability_receipt:
+          type: object
+          additionalProperties: true
+          nullable: true
     ContextPackCellResponse:
       type: object
       required:
@@ -2954,6 +2962,10 @@ components:
           - not_recorded
         policy:
           type: string
+        policy_version:
+          anyOf:
+          - type: string
+          - type: 'null'
         reason:
           type: string
         scope:
@@ -2965,6 +2977,10 @@ components:
           anyOf:
           - type: integer
             format: uint64
+          - type: 'null'
+        agent_view_digest:
+          anyOf:
+          - type: string
           - type: 'null'
         principal_id:
           type: string
@@ -3144,6 +3160,7 @@ components:
           - scope_mismatch
           - insufficient_context
           - visible_conflict
+          - retrieval_incomplete
         message:
           type: string
         why_excluded:
@@ -3638,13 +3655,24 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/NumericConflictResponse'
+        accountability_receipt:
+          type: object
+          additionalProperties: true
+          nullable: true
     NumericConflictResponse:
       type: object
       required:
+      - kind
       - metric
       - left
       - right
       properties:
+        kind:
+          type: string
+          enum:
+          - numeric
+          - temporal
+          - citation
         metric:
           type: string
         left:

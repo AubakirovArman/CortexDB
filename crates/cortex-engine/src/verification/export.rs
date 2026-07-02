@@ -159,6 +159,10 @@ impl VerificationReport {
                 conflict.cell_id.0
             ));
             lines.push(format!(
+                "numeric_conflict.{index}.kind={}",
+                conflict.kind.as_str()
+            ));
+            lines.push(format!(
                 "numeric_conflict.{index}.metric={}",
                 escape_value(&conflict.metric)
             ));
@@ -198,8 +202,9 @@ fn push_numeric_conflicts(lines: &mut Vec<String>, conflicts: &[VerificationNume
     }
     for conflict in conflicts {
         lines.push(format!(
-            "- cell_id=`{}` metric=`{}` left=`{}` right=`{}`",
+            "- cell_id=`{}` kind=`{}` metric=`{}` left=`{}` right=`{}`",
             conflict.cell_id.0,
+            conflict.kind.as_str(),
             escape_inline(&conflict.metric),
             escape_inline(&conflict.left),
             escape_inline(&conflict.right)

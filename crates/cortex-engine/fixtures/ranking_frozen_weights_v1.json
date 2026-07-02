@@ -1,0 +1,76 @@
+{
+  "schema_version": "cortexdb.ranking_frozen_weights.v1",
+  "version": "ranking-frozen-weights-v1",
+  "q16_one": 65535,
+  "q16_scale": 65536,
+  "context_pack": {
+    "redundancy_penalty_weight": 10000
+  },
+  "value_per_token": {
+    "coverage_value": 100000,
+    "matched_term_value": 10000,
+    "citation_value": 5000,
+    "redundancy_value": 20000
+  },
+  "query_terms": {
+    "base_term_weight": 4,
+    "expansion_weight": 1,
+    "phrase_expansion_weight": 2,
+    "anchor_strong_weight": 12,
+    "anchor_phrase_weight": 8,
+    "anchor_numeric_weight": 6
+  },
+  "rrf": {
+    "rank_constant": 60,
+    "score_scale": 1000000,
+    "lexical_heavy_q16": 45000,
+    "vector_heavy_q16": 20000,
+    "balanced_lexical_q16": 32768,
+    "min_candidate_limit": 32
+  },
+  "reranker_default": {
+    "lexical_weight": 2,
+    "vector_weight": 2,
+    "anchor_payload_bonus": 25000,
+    "source_hint_payload_bonus": 10000,
+    "scope_mapping_metadata_bonus": 1,
+    "condition_payload_bonus": 1,
+    "no_evidence_overlap_score_q16": 16384,
+    "requirement_payload_bonus": 2500,
+    "term_payload_bonus": 1000,
+    "evidence_overlap_threshold": 2,
+    "evidence_anchor_points": 2,
+    "evidence_source_points": 2,
+    "evidence_condition_points": 2,
+    "evidence_requirement_points": 2,
+    "evidence_term_points": 1
+  },
+  "calibration": {
+    "basic": [3, 2, 25000, 10000, 1, 1, 12000, 45000],
+    "semantic": [1, 4, 18000, 10000, 1, 1, 20000, 20000],
+    "project_related": [1, 4, 30000, 10000, 2, 1, 16384, 24000],
+    "constrained": [4, 1, 28000, 10000, 1, 3, 10000, 45000],
+    "conflicting_info": [3, 2, 25000, 14000, 1, 1, 16384, 38000],
+    "completeness": [1, 4, 22000, 10000, 1, 1, 22000, 28000],
+    "high_level": [1, 4, 25000, 18000, 1, 1, 24000, 20000],
+    "info_not_found": [2, 2, 25000, 10000, 1, 1, 8000, 32768]
+  },
+  "metadata_rerank": {
+    "scale": 1024,
+    "conflicting_info": [18000, 24000],
+    "constrained_temporal": [12000, 22000],
+    "temporal": [8000, 18000],
+    "info_not_found": [4000, 2000],
+    "default": [3000, 3000]
+  },
+  "route_policies": {
+    "lookup": [2, 5, 32768, 65535, 42000, 18000],
+    "semantic": [5, null, 65535, 49152, 18000, 42000],
+    "project_related": [6, null, 65535, 52428, 28000, 34000],
+    "high_level": [8, null, 65535, 45875, 24000, 36000],
+    "conflicting_info": [6, null, 65535, 32768, 34000, 26000],
+    "completeness": [8, null, 65535, 36864, 30000, 30000],
+    "info_not_found": [3, 3, 24576, 65535, 36000, 20000],
+    "constrained": [4, 6, 49152, 65535, 38000, 22000]
+  }
+}

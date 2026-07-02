@@ -1,4 +1,5 @@
 mod backup;
+mod cluster_ingress;
 mod record;
 mod response;
 

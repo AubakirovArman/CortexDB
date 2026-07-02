@@ -101,11 +101,34 @@ action, and tenant filters plus an automated redaction check. Records follow
 
 ```bash
 cortexdb audit ./audit/http.jsonl --summary --redaction-check
-cortexdb audit verify ./audit/http.jsonl
+cortexdb audit verify ./audit/http.jsonl --mac-key-file ./audit/audit-mac.key
 cortexdb audit ./audit/http.jsonl --route /v1/cell --status 403
 cortexdb audit ./audit/http.jsonl --action write --tenant-filter tenant-alpha
 cortexdb --json audit ./audit/http.jsonl --summary --redaction-check
 ```
+
+Current server-written audit files use `cortexdb.audit.v2` and require the
+matching HMAC-SHA-256 key file for `--verify-chain` / `audit verify`.
+
+#### `receipt-key generate|export-public|rotate|verify-reanchor`
+Manage Ed25519 receipt signing keys for configured `accountability_receipt.v1`
+JSON emission. Key generation writes a private
+`cortexdb.receipt_signing_key.v1` JSON file and can also write a public
+`cortexdb.receipt_public_key.v1` file. Rotation writes a new private key and a
+`cortexdb.receipt_trust.v1` manifest containing the current and previous public
+keys for a dual-trust window. With `--reanchor-file`, rotation also writes a
+dual-signed `cortexdb.receipt_audit_reanchor.v1` record that binds the old key,
+new key, trust manifest hash, and audit chain head/sequence.
+
+```bash
+cortexdb receipt-key generate ./keys/receipt-key.json --key-id local-receipt-key-2026q2 --public-key-file ./keys/receipt-key.public.json
+cortexdb receipt-key export-public ./keys/receipt-key.json ./keys/receipt-key.public.json
+cortexdb receipt-key rotate ./keys/receipt-key.json ./keys/receipt-key-next.json ./keys/receipt-trust.json --new-key-id local-receipt-key-2026q3 --reanchor-file ./keys/receipt-reanchor.json --audit-chain-head 0000000000000000000000000000000000000000000000000000000000000000 --audit-sequence 0
+cortexdb receipt-key verify-reanchor ./keys/receipt-reanchor.json --trust-file ./keys/receipt-trust.json
+```
+
+The CLI never accepts a signing seed as an argument and does not print
+`signing_seed_hex` in command output.
 
 #### `backup <path> <backup_path>`
 Create a validated offline-copy backup. The command opens the source database,
@@ -126,9 +149,10 @@ cortexdb backup-verify ./db.backup
 ```
 
 #### `backup-encrypted <path> <archive_path>`
-Create a passphrase-protected single-file backup archive. For secret inputs,
-command-line secrets are visible in process listings, so direct passphrase
-arguments are rejected.
+Create a passphrase-protected single-file backup archive. Current archives use
+`cortexdb.encrypted_backup.v2` with XChaCha20-Poly1305 and an Argon2id-derived
+key. For secret inputs, command-line secrets are visible in process listings,
+so direct passphrase arguments are rejected.
 Set `CORTEXDB_BACKUP_PASSPHRASE` or pass `--passphrase-env <VAR>`.
 
 ```bash

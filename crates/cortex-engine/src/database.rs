@@ -36,5 +36,8 @@ mod write;
 pub(crate) use crate::retrieval_rank::{
     expand_parent_context, rank_retrieved_cells, suppress_duplicate_content,
 };
-pub use types::{CheckpointStats, Database, PinnedReadTxn, RetrievedCell};
+pub use types::{
+    CapturedAccessDecision, CapturedAccessDenial, CapturedAccessDenialSet, CheckpointStats,
+    Database, PinnedReadTxn, RetrievedCell,
+};
 pub use {candidates::CandidateResolver, payload_cache::PayloadCacheStats};

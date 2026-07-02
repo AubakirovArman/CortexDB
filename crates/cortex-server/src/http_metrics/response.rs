@@ -10,6 +10,7 @@ use crate::responses::MetricsResponse;
 use crate::state::AppState;
 
 use super::backup::backup_latest_age_seconds;
+use super::cluster_ingress::cluster_ingress_prometheus_metrics;
 
 pub(crate) fn metrics_response(
     state: &AppState,
@@ -24,6 +25,7 @@ pub(crate) fn metrics_response(
         let ann_search_requests = state.ann_search_requests.load(Ordering::Relaxed);
         let request_id_client_provided = state.request_id_client_provided.load(Ordering::Relaxed);
         let request_id_generated = state.request_id_generated.load(Ordering::Relaxed);
+        let cluster_ingress = cluster_ingress_prometheus_metrics(state);
         let extra = format!(
                         "# HELP cortexdb_actor_queue_depth Current actor command queue depth.\n\
                          # TYPE cortexdb_actor_queue_depth gauge\n\
@@ -118,6 +120,21 @@ pub(crate) fn metrics_response(
                          # HELP cortexdb_principal_quota_queue_rejected Total per-principal actor queue permits rejected.\n\
                          # TYPE cortexdb_principal_quota_queue_rejected counter\n\
                          cortexdb_principal_quota_queue_rejected {}\n\
+# HELP cortexdb_cluster_ingress_configured Cached Raft ingress monitor configured flag.\n\
+# TYPE cortexdb_cluster_ingress_configured gauge\n\
+cortexdb_cluster_ingress_configured {}\n\
+# HELP cortexdb_cluster_ingress_cached_leader_id Cached Raft ingress leader node id, or 0 when unavailable.\n\
+# TYPE cortexdb_cluster_ingress_cached_leader_id gauge\n\
+cortexdb_cluster_ingress_cached_leader_id {}\n\
+# HELP cortexdb_cluster_ingress_max_in_flight_per_node Cached Raft ingress in-flight limit per selected leader.\n\
+# TYPE cortexdb_cluster_ingress_max_in_flight_per_node gauge\n\
+cortexdb_cluster_ingress_max_in_flight_per_node {}\n\
+# HELP cortexdb_cluster_ingress_in_flight Current cached Raft ingress routes in flight for the selected leader.\n\
+# TYPE cortexdb_cluster_ingress_in_flight gauge\n\
+cortexdb_cluster_ingress_in_flight {}\n\
+# HELP cortexdb_cluster_ingress_available_permits Remaining cached Raft ingress permits for the selected leader.\n\
+# TYPE cortexdb_cluster_ingress_available_permits gauge\n\
+cortexdb_cluster_ingress_available_permits {}\n\
 # HELP cortexdb_compactions_triggered_total Total background compaction passes triggered.\n\
 # TYPE cortexdb_compactions_triggered_total counter\n\
 cortexdb_compactions_triggered_total {}\n\
@@ -189,6 +206,11 @@ cortexdb_compaction_input_bytes_total {}\n\
                         state
                             .principal_quota_queue_rejected
                             .load(Ordering::Relaxed),
+                        cluster_ingress.configured,
+                        cluster_ingress.cached_leader_id,
+                        cluster_ingress.max_in_flight_per_node,
+                        cluster_ingress.in_flight,
+                        cluster_ingress.available_permits,
                         state.compactions_triggered.load(Ordering::Relaxed),
                         state.compactions_completed.load(Ordering::Relaxed),
                         state.compaction_duration_ms_total.load(Ordering::Relaxed),

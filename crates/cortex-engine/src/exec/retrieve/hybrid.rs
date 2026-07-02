@@ -4,7 +4,9 @@ use std::time::Instant;
 
 use cortex_aql::BoundRetrievePlan;
 
-use super::{bitmap_first_candidates, CandidateSource};
+use super::{
+    bitmap_first_candidates, capture_access_denials, merge_access_denials, CandidateSource,
+};
 use crate::database::{CandidateResolver, Database};
 use crate::error::EngineResult;
 use crate::exec::pack::ExplainCollector;
@@ -19,11 +21,17 @@ pub(super) fn hybrid_candidates<P: CandidateResolver>(
     provider: &P,
     collector: &mut ExplainCollector,
 ) -> EngineResult<CandidateSource> {
-    let bitmap_candidates = bitmap_first_candidates(plan, provider, collector)?;
+    let bitmap_batch = bitmap_first_candidates(plan, provider, collector)?;
+    let mut captured_access_denials = bitmap_batch.captured_access_denials;
+    let bitmap_candidates = bitmap_batch.candidates;
 
-    let mut permission_filter = PermissionFilter::new(provider, bitmap_candidates);
+    let mut permission_filter = PermissionFilter::new(provider, bitmap_candidates.clone());
     let permission_candidates = drain(&mut permission_filter);
     collector.push(permission_filter.trace());
+    merge_access_denials(
+        &mut captured_access_denials,
+        capture_access_denials(provider, &bitmap_candidates, &permission_candidates),
+    );
 
     let mut lexical_scan = LexicalScan::passthrough(ranked_lexical_candidates(
         plan,
@@ -62,6 +70,7 @@ pub(super) fn hybrid_candidates<P: CandidateResolver>(
     Ok(CandidateSource {
         candidates,
         permission_applied: true,
+        captured_access_denials,
     })
 }
 

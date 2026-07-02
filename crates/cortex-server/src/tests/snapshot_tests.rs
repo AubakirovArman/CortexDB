@@ -135,6 +135,11 @@ fn metrics_prometheus_output_contains_contract_series() {
         "cortexdb_backup_latest_age_seconds",
         "cortexdb_principal_quota_requests_allowed",
         "cortexdb_principal_quota_queue_rejected",
+        "cortexdb_cluster_ingress_configured",
+        "cortexdb_cluster_ingress_cached_leader_id",
+        "cortexdb_cluster_ingress_max_in_flight_per_node",
+        "cortexdb_cluster_ingress_in_flight",
+        "cortexdb_cluster_ingress_available_permits",
     ] {
         assert!(response.contains(metric), "missing metric {metric}");
     }

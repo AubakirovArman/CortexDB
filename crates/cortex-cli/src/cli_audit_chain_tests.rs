@@ -119,6 +119,8 @@ fn chained_record(sequence: u64, prev_hash: &str, llm: Option<LlmAuditFields>) -
         sequence: Some(sequence),
         prev_hash: Some(prev_hash.to_owned()),
         event_hash: None,
+        mac_key_id: None,
+        event_mac: None,
         principal_id: Some("principal-a".to_owned()),
         auth_role: Some("data".to_owned()),
         auth_agent_id: Some(7),
@@ -136,6 +138,7 @@ fn chained_record(sequence: u64, prev_hash: &str, llm: Option<LlmAuditFields>) -
         error_code: String::new(),
         duration_ms: 1,
         unix_time_ms: sequence as u128,
+        accountability_receipt_hash: None,
         llm,
     };
     record.event_hash = Some(cli_audit_chain::event_hash_for_record(&record));

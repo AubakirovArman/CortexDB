@@ -21,7 +21,7 @@ use crate::context::{
     ContextPackAnomalyCode, ContextPackCell, ContextPackOptions,
 };
 use crate::database::RetrievedCell;
-use crate::search::tokenize;
+use crate::search::{frozen_weights, tokenize};
 use crate::source_trust::SourceTrust;
 
 pub(crate) struct ContextPackBuilder<'a> {
@@ -31,6 +31,7 @@ pub(crate) struct ContextPackBuilder<'a> {
     query: &'a str,
     feedback_scores: &'a BTreeMap<CellId, i32>,
     access_view: Option<&'a AgentView>,
+    initial_anomalies: Vec<ContextPackAnomaly>,
 }
 
 impl<'a> ContextPackBuilder<'a> {
@@ -49,7 +50,16 @@ impl<'a> ContextPackBuilder<'a> {
             query,
             feedback_scores,
             access_view,
+            initial_anomalies: Vec::new(),
         }
+    }
+
+    pub(crate) fn with_initial_anomalies(
+        mut self,
+        initial_anomalies: Vec<ContextPackAnomaly>,
+    ) -> Self {
+        self.initial_anomalies = initial_anomalies;
+        self
     }
 
     pub(crate) fn build_from_retrieved(self, cells: Vec<RetrievedCell>) -> ContextPack {
@@ -64,11 +74,12 @@ impl<'a> ContextPackBuilder<'a> {
             query,
             feedback_scores,
             access_view,
+            initial_anomalies,
         } = self;
         let mut pack_cells = Vec::new();
         let mut estimated_tokens = 0u32;
         let mut truncated = false;
-        let mut anomalies = Vec::new();
+        let mut anomalies = initial_anomalies;
         let query_terms = extract_query_terms(query);
         let base_bm25_scores = context_base_bm25_scores(&cells, query);
         let source_freshness_range = SourceFreshnessRange::from_cells(&cells);
@@ -85,7 +96,12 @@ impl<'a> ContextPackBuilder<'a> {
         for cell in cells {
             let metadata = cell.metadata();
             let citation = metadata.citation().map(str::to_owned);
-            let access_decision = context_access_decision(cell.cell_id, &metadata, access_view);
+            let access_decision = context_access_decision(
+                cell.cell_id,
+                &metadata,
+                cell.captured_access_decision.as_ref(),
+                access_view,
+            );
             let cell_body_terms = tokenize(&metadata.body_text)
                 .into_iter()
                 .collect::<BTreeSet<_>>();
@@ -212,7 +228,9 @@ impl<'a> ContextPackBuilder<'a> {
                     max_jaccard_similarity_q16 = jaccard;
                 }
             }
-            let redundancy_penalty = (max_jaccard_similarity_q16 * 10_000) / 65536;
+            let redundancy_penalty = (max_jaccard_similarity_q16
+                * frozen_weights::CONTEXT_REDUNDANCY_PENALTY_WEIGHT)
+                / frozen_weights::Q16_SCALE_U32;
 
             let base_score = base_bm25
                 .saturating_add(source_trust_bonus)
@@ -276,6 +294,7 @@ impl<'a> ContextPackBuilder<'a> {
             conflict_visibility_q16: conflict_visibility.conflict_visibility_q16,
             visible_conflict_count: conflict_visibility.visible_conflict_count,
             anomalies,
+            grounding_report: None,
         }
     }
 }

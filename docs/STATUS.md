@@ -42,7 +42,7 @@ lives in [`PROJECT_STATUS.md`](PROJECT_STATUS.md).
 | Operations | beta | Backup/restore, metrics, docs gates, dashboard checks, release gates. | [`BETA_RELEASE.md`](archive/BETA_RELEASE.md), [`OBSERVABILITY_EVIDENCE.md`](archive/OBSERVABILITY_EVIDENCE.md) |
 | F-block research | prototype | Tiered storage v2, agent transactions, learned ranking, semantic compression, value-per-token planning, multi-agent consistency, formal invariants. | [`PROJECT_STATUS.md`](PROJECT_STATUS.md), [`DATABASE_GRADE_EXECUTION_PLAN.md`](DATABASE_GRADE_EXECUTION_PLAN.md) |
 | Distributed replication | frozen | `EPIC-F02`; no HA product claim until unfreeze criteria are met. | [`DATABASE_GRADE_EXECUTION_PLAN.md`](DATABASE_GRADE_EXECUTION_PLAN.md), [`FUTURE_NON_GOAL_EPICS.md`](FUTURE_NON_GOAL_EPICS.md) |
-| Consensus / multi-node transactions | frozen | `EPIC-F03`; no production consensus claim. | [`DATABASE_GRADE_EXECUTION_PLAN.md`](DATABASE_GRADE_EXECUTION_PLAN.md), [`FUTURE_NON_GOAL_EPICS.md`](FUTURE_NON_GOAL_EPICS.md) |
+| Consensus / multi-node transactions | release-gated evidence | `consensus-release-lane-check` runs the partition/failover/rejoin plus SCALE-1/SCALE-2/SCALE-3 gates from `release-check`; no production HA claim. | [`DATABASE_GRADE_EXECUTION_PLAN.md`](DATABASE_GRADE_EXECUTION_PLAN.md), [`FUTURE_NON_GOAL_EPICS.md`](FUTURE_NON_GOAL_EPICS.md) |
 | Managed cloud | frozen | `EPIC-F09`; local prerequisite gates only, no hosted service. | [`DATABASE_GRADE_EXECUTION_PLAN.md`](DATABASE_GRADE_EXECUTION_PLAN.md), [`COMMUNITY_ROADMAP.md`](COMMUNITY_ROADMAP.md) |
 
 ## Benchmark Status

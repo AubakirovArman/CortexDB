@@ -7,8 +7,11 @@ use cortex_core::{CellDescriptor, CellId};
 use crate::plan::PolicyRewrite;
 use crate::query::{scope_id, CellMetadata};
 use crate::source_trust::SourceTrust;
-use crate::verification::numeric::fact_claim::{FactClaimStore, NumericFactRecord};
+use crate::verification::numeric::fact_claim::{
+    citation_source_key, same_source_ref, FactClaimStore, NumericFactRecord,
+};
 use crate::verification::numeric::{format_scaled_value, normalized_numeric_equal};
+use crate::verification::VerificationNumericConflictKind;
 
 use super::{
     conflict_facets_from_metadata, contradiction_facts, contradiction_relation_record,
@@ -16,13 +19,14 @@ use super::{
 };
 use crate::source_trust::SourceTrustCategory;
 use crate::typed_body::RelationBody;
+use crate::verification::temporal::TemporalValidity;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub(crate) struct ConflictIndexStore {
     inline_records: BTreeMap<CellId, Vec<StoredConflictRecord>>,
     relation_records: BTreeMap<CellId, StoredRelationRecord>,
     facets_by_cell: BTreeMap<CellId, StoredConflictFacets>,
-    numeric_facts: BTreeMap<CellId, NumericFactRecord>,
+    numeric_facts: BTreeMap<CellId, Vec<NumericFactRecord>>,
     numeric_records: Vec<StoredConflictRecord>,
 }
 
@@ -125,8 +129,12 @@ impl ConflictIndexStore {
             self.relation_records.insert(cell_id, relation);
         }
 
-        if let Some(record) = FactClaimStore::record_from_payload(cell_id, payload, descriptor) {
-            self.numeric_facts.insert(cell_id, record);
+        let mut numeric_records = Vec::new();
+        for record in FactClaimStore::records_from_payload(cell_id, payload, descriptor) {
+            numeric_records.push(record);
+        }
+        if !numeric_records.is_empty() {
+            self.numeric_facts.insert(cell_id, numeric_records);
         }
         if rebuild_numeric {
             self.rebuild_numeric_records();
@@ -190,7 +198,7 @@ impl ConflictIndexStore {
         let mut records = Vec::new();
         let mut seen_pairs = BTreeSet::new();
         let mut groups = BTreeMap::<NumericConflictGroupKey, Vec<&NumericFactRecord>>::new();
-        for fact in self.numeric_facts.values() {
+        for fact in self.numeric_facts.values().flatten() {
             groups
                 .entry(NumericConflictGroupKey::from_record(fact))
                 .or_default()
@@ -199,6 +207,12 @@ impl ConflictIndexStore {
         for facts in groups.values() {
             for (left_index, left) in facts.iter().enumerate() {
                 for right in facts.iter().skip(left_index + 1) {
+                    if left.cell_id == right.cell_id {
+                        continue;
+                    }
+                    if !temporal_windows_overlap(left.temporal_validity, right.temporal_validity) {
+                        continue;
+                    }
                     if normalized_numeric_equal(&left.value, &right.value)
                         || !left.value.conflicts_with(&right.value)
                     {
@@ -206,7 +220,8 @@ impl ConflictIndexStore {
                     }
                     let pair = ordered_pair(left.cell_id, right.cell_id);
                     if seen_pairs.insert(pair) {
-                        records.push(numeric_conflict_record(left, right));
+                        let kind = numeric_conflict_record_kind(left, right);
+                        records.push(numeric_conflict_record(left, right, kind));
                     }
                 }
             }
@@ -265,6 +280,7 @@ fn relation_record(
 fn numeric_conflict_record(
     left: &NumericFactRecord,
     right: &NumericFactRecord,
+    kind: VerificationNumericConflictKind,
 ) -> StoredConflictRecord {
     let (left, right) = if left.cell_id <= right.cell_id {
         (left, right)
@@ -273,8 +289,20 @@ fn numeric_conflict_record(
     };
     let project = left.project.clone().or_else(|| right.project.clone());
     let source = left.source.clone().or_else(|| right.source.clone());
+    let prefix = match kind {
+        VerificationNumericConflictKind::Citation => "citation conflict: ",
+        VerificationNumericConflictKind::Temporal => "temporal conflict: ",
+        VerificationNumericConflictKind::Numeric => "",
+    };
+    let suffix = match kind {
+        VerificationNumericConflictKind::Citation => citation_source_key(left)
+            .map(|_| " from same source_ref")
+            .unwrap_or(""),
+        VerificationNumericConflictKind::Temporal => " over overlapping validity window",
+        VerificationNumericConflictKind::Numeric => "",
+    };
     let fact = format!(
-        "{}{}{} conflicts: {} vs {}",
+        "{prefix}{}{}{} conflicts: {} vs {}{suffix}",
         project.as_deref().unwrap_or(""),
         project.as_ref().map(|_| " ").unwrap_or(""),
         left.metric,
@@ -297,12 +325,29 @@ fn numeric_conflict_record(
     }
 }
 
+fn numeric_conflict_record_kind(
+    left: &NumericFactRecord,
+    right: &NumericFactRecord,
+) -> VerificationNumericConflictKind {
+    if same_source_ref(left, right) {
+        VerificationNumericConflictKind::Citation
+    } else if !left.temporal_validity.is_empty() || !right.temporal_validity.is_empty() {
+        VerificationNumericConflictKind::Temporal
+    } else {
+        VerificationNumericConflictKind::Numeric
+    }
+}
+
 fn display_numeric_value(record: &NumericFactRecord) -> String {
     format_scaled_value(
         record.value.scaled_value,
         record.value.currency.as_deref(),
         record.value.unit.as_deref(),
     )
+}
+
+fn temporal_windows_overlap(left: TemporalValidity, right: TemporalValidity) -> bool {
+    left.overlaps(right)
 }
 
 fn normalized_opt(value: &Option<String>) -> Option<String> {

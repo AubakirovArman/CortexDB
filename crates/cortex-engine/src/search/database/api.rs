@@ -1,10 +1,11 @@
-use cortex_aql::AgentView;
+use cortex_aql::{AgentView, BoundRetrievePlan};
 
 use crate::database::Database;
 use crate::error::EngineResult;
 
 use super::super::ann::AnnSearchPolicy;
 use super::super::{SearchMode, SearchQuery, SearchReranker};
+use super::allowed::allowed_cells_from_bound_retrieve_plan;
 use super::ranking::{
     rerank_database_results, search_rerank_candidate_limit, search_rerank_result_limit,
 };
@@ -124,6 +125,22 @@ impl Database {
         view: &AgentView,
     ) -> EngineResult<DatabaseSearchOutcome> {
         self.search_cells_with_report_with_policy(query, view, None)
+    }
+
+    #[doc(hidden)]
+    pub fn search_cells_with_bound_retrieve_plan(
+        &self,
+        query: SearchQuery<'_>,
+        view: &AgentView,
+        plan: &BoundRetrievePlan,
+    ) -> EngineResult<DatabaseSearchOutcome> {
+        let allowed_cells = allowed_cells_from_bound_retrieve_plan(self, view, plan)?;
+        self.search_cells_with_report_with_policy_and_allowed_cells(
+            query,
+            view,
+            None,
+            Some(&allowed_cells),
+        )
     }
 
     pub fn search_diagnostics(&self, query: &str) -> EngineResult<String> {

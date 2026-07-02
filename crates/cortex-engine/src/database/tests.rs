@@ -204,6 +204,62 @@ fn operator_executor_matches_direct_retrieve_pipeline_and_reports_trace() {
 }
 
 #[test]
+fn retrieve_execution_report_captures_permission_denials_without_forbidden_payload() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(1),
+        b"scope=default\ntitle=alpha shared\n\nallowed alpha body".to_vec(),
+    )
+    .unwrap();
+    db.put_cell(
+        CellId(2),
+        b"scope=default\ntitle=alpha shared\n\nsecret-denied-payload-marker".to_vec(),
+    )
+    .unwrap();
+
+    let view = test_view([RetrievalMode::Balanced]);
+    let (cached, index) = db
+        .bind_aql_cached(
+            r#"RETRIEVE CONTEXT FOR TASK "alpha shared" IN BRAIN default LIMIT 10 CANDIDATES;"#,
+            &view,
+        )
+        .unwrap();
+    let BoundPlan::Retrieve(plan) = cached.bound_plan else {
+        panic!("expected retrieve plan");
+    };
+    let allowed_candidates = BTreeSet::from([index
+        .cell_to_candidate
+        .get(&CellId(1))
+        .copied()
+        .expect("allowed cell candidate")]);
+    let provider =
+        EngineAqlProvider::new_with_allowed_candidates(index, &view, &allowed_candidates);
+
+    let report = db
+        .retrieve_cells_with_execution_trace(&plan, &provider)
+        .unwrap();
+
+    assert_eq!(report.cells.len(), 1);
+    assert_eq!(report.cells[0].cell_id, CellId(1));
+    assert_eq!(report.captured_access_denials.total_denied, 1);
+    assert!(!report.captured_access_denials.truncated);
+    assert_eq!(report.captured_access_denials.denials.len(), 1);
+    let denial = &report.captured_access_denials.denials[0];
+    assert_eq!(denial.policy_version, "agent_view_readable_scope.v1");
+    assert_eq!(denial.agent_id, Some(view.agent_id.0));
+    assert_eq!(denial.cell_id_hash.len(), 64);
+    assert_eq!(denial.evidence_digest.len(), 64);
+    assert!(denial
+        .reason
+        .contains("rejected by AQL agent access filtering"));
+    let denial_debug = format!("{:?}", report.captured_access_denials);
+    assert!(!denial_debug.contains("secret-denied-payload-marker"));
+    assert!(!denial_debug.contains("scope=default"));
+    assert!(!denial_debug.contains("CellId(2)"));
+}
+
+#[test]
 fn retrieve_aql_suppresses_duplicate_content_hashes() {
     let dir = tempfile::tempdir().unwrap();
     let mut db = Database::open(dir.path()).unwrap();

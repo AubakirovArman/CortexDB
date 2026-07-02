@@ -19,4 +19,4 @@ pub(crate) use paths::{
     bitmap_path, hnsw_path, lexical_path, manifest_path, segment_path, segments_path, vector_path,
 };
 pub(crate) use profiles::{ensure_checkpoint_profiles, manifest_hnsw_profile};
-pub(crate) use types::PersistedIndexCache;
+pub(crate) use types::{PersistedIndexCache, PersistedIndexState};

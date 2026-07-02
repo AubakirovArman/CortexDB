@@ -20,6 +20,10 @@ pub struct AuditRecord {
     #[serde(default)]
     pub event_hash: Option<String>,
     #[serde(default)]
+    pub mac_key_id: Option<String>,
+    #[serde(default)]
+    pub event_mac: Option<String>,
+    #[serde(default)]
     pub principal_id: Option<String>,
     #[serde(default)]
     pub auth_role: Option<String>,
@@ -36,6 +40,8 @@ pub struct AuditRecord {
     pub error_code: String,
     pub duration_ms: u64,
     pub unix_time_ms: u128,
+    #[serde(default)]
+    pub accountability_receipt_hash: Option<String>,
     #[serde(default)]
     pub llm: Option<LlmAuditFields>,
 }
@@ -92,6 +98,7 @@ pub struct AuditReviewOptions<'a> {
     pub summary_only: bool,
     pub redaction_check: bool,
     pub verify_chain: bool,
+    pub mac_key: Option<&'a cortex_crypto::MacKey>,
     pub json: bool,
 }
 
@@ -122,7 +129,12 @@ pub fn review(options: AuditReviewOptions<'_>) -> Result<String, String> {
                 index + 1
             )
         })?;
-        if !cli_audit_chain::verify_record(&record, expected_sequence, &previous_hash) {
+        if !cli_audit_chain::verify_record(
+            &record,
+            expected_sequence,
+            &previous_hash,
+            options.mac_key,
+        ) {
             chain_violations += 1;
         }
         if let Some(hash) = &record.event_hash {

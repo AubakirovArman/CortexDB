@@ -28,6 +28,8 @@ struct SiemAuditEvent<'a> {
     audit_sequence: Option<u64>,
     audit_prev_hash: &'a str,
     audit_event_hash: &'a str,
+    audit_mac_key_id: &'a str,
+    audit_event_mac: &'a str,
 }
 
 #[derive(Debug, Serialize)]
@@ -45,6 +47,7 @@ pub(crate) fn export_jsonl(
     output_path: &str,
     redaction_check: bool,
     verify_chain: bool,
+    mac_key: Option<&cortex_crypto::MacKey>,
     json: bool,
 ) -> Result<String, String> {
     review(AuditReviewOptions {
@@ -56,6 +59,7 @@ pub(crate) fn export_jsonl(
         summary_only: true,
         redaction_check,
         verify_chain,
+        mac_key,
         json: false,
     })?;
 
@@ -136,6 +140,8 @@ fn siem_event(record: &AuditRecord) -> SiemAuditEvent<'_> {
         audit_sequence: record.sequence,
         audit_prev_hash: record.prev_hash.as_deref().unwrap_or(""),
         audit_event_hash: record.event_hash.as_deref().unwrap_or(""),
+        audit_mac_key_id: record.mac_key_id.as_deref().unwrap_or(""),
+        audit_event_mac: record.event_mac.as_deref().unwrap_or(""),
     }
 }
 

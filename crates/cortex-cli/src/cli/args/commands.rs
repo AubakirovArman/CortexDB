@@ -7,7 +7,7 @@ pub(in crate::cli) use formats::{
 };
 pub(in crate::cli) use inputs::{ScopedAqlArgs, ScopedVectorArgs, VectorSearchPolicyArgs};
 pub(in crate::cli) use subcommands::{
-    AgentCommand, AgentScopeAccessArg, UpgradeCommand, VectorCommand,
+    AgentCommand, AgentScopeAccessArg, ReceiptKeyCommand, UpgradeCommand, VectorCommand,
 };
 #[derive(Subcommand, Debug)]
 pub(in crate::cli) enum Command {
@@ -144,6 +144,8 @@ pub(in crate::cli) enum Command {
         redaction_check: bool,
         #[arg(long = "verify-chain")]
         verify_chain: bool,
+        #[arg(long = "mac-key-file")]
+        mac_key_file: Option<String>,
     },
     #[command(about = "Export normalized SIEM audit JSONL")]
     AuditExportSiem {
@@ -153,6 +155,13 @@ pub(in crate::cli) enum Command {
         redaction_check: bool,
         #[arg(long = "verify-chain")]
         verify_chain: bool,
+        #[arg(long = "mac-key-file")]
+        mac_key_file: Option<String>,
+    },
+    #[command(about = "Manage accountability receipt signing keys")]
+    ReceiptKey {
+        #[command(subcommand)]
+        command: ReceiptKeyCommand,
     },
     #[command(about = "Review auth policy and token configuration")]
     AuthReview {

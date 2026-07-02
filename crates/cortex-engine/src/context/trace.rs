@@ -198,6 +198,7 @@ mod tests {
             conflict_visibility_q16: 65_535,
             visible_conflict_count: 0,
             anomalies: Vec::new(),
+            grounding_report: None,
         };
         let verification = VerificationReport {
             fact: "budget approved".to_owned(),

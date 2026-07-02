@@ -98,6 +98,137 @@ fn numeric_conflict_index_tracks_write_patch_tombstone_and_lazy_reopen() {
     assert_eq!(records[0].source_cell_id, Some(CellId(2)));
 }
 
+#[test]
+fn temporal_numeric_conflict_index_respects_overlapping_windows() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(11),
+        numeric_temporal_fact_payload(
+            "project:investments",
+            "ifc",
+            "Mirny",
+            "budget",
+            "1.2B KZT",
+            Some("2025-01-01"),
+            Some("2025-06-30"),
+        ),
+    )
+    .unwrap();
+    db.put_cell(
+        CellId(12),
+        numeric_temporal_fact_payload(
+            "project:investments",
+            "world_bank",
+            "Mirny",
+            "budget",
+            "1.4B KZT",
+            Some("2025-06-01"),
+            Some("2025-12-31"),
+        ),
+    )
+    .unwrap();
+
+    let records = db.conflicts_for_metric("budget", &view("project:investments"));
+    assert_eq!(records.len(), 1);
+    assert_eq!(records[0].cell_id, CellId(11));
+    assert_eq!(records[0].source_cell_id, Some(CellId(12)));
+    assert!(records[0].fact.contains("temporal conflict"));
+    assert!(records[0].fact.contains("overlapping validity window"));
+
+    db.patch_cell(
+        CellId(12),
+        numeric_temporal_fact_payload(
+            "project:investments",
+            "world_bank",
+            "Mirny",
+            "budget",
+            "1.4B KZT",
+            Some("2025-07-01"),
+            Some("2025-12-31"),
+        ),
+    )
+    .unwrap();
+    assert!(db
+        .conflicts_for_metric("budget", &view("project:investments"))
+        .is_empty());
+}
+
+#[test]
+fn citation_numeric_conflict_index_tracks_same_source_disagreement() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(21),
+        numeric_source_ref_fact_payload(
+            "project:investments",
+            "ifc:solar-budget",
+            "report-q1.pdf",
+            3,
+            "Solar Plant",
+            "budget",
+            "1.2B KZT",
+        ),
+    )
+    .unwrap();
+    db.put_cell(
+        CellId(22),
+        numeric_source_ref_fact_payload(
+            "project:investments",
+            "ifc:solar-budget",
+            "report-q1.pdf",
+            3,
+            "Solar Plant",
+            "budget",
+            "1.4B KZT",
+        ),
+    )
+    .unwrap();
+
+    let records = db.conflicts_for_metric("budget", &view("project:investments"));
+    assert_eq!(records.len(), 1);
+    assert_eq!(records[0].cell_id, CellId(21));
+    assert_eq!(records[0].source_cell_id, Some(CellId(22)));
+    assert!(records[0].fact.contains("citation conflict"));
+    assert!(records[0].fact.contains("same source_ref"));
+}
+
+#[test]
+fn same_source_equal_value_is_not_citation_conflict() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    db.put_cell(
+        CellId(31),
+        numeric_source_ref_fact_payload(
+            "project:investments",
+            "ifc:solar-budget",
+            "report-q1.pdf",
+            3,
+            "Solar Plant",
+            "budget",
+            "1.2B KZT",
+        ),
+    )
+    .unwrap();
+    db.put_cell(
+        CellId(32),
+        numeric_source_ref_fact_payload(
+            "project:investments",
+            "ifc:solar-budget",
+            "report-q1.pdf",
+            3,
+            "Solar Plant",
+            "budget",
+            "1.2B KZT",
+        ),
+    )
+    .unwrap();
+
+    assert!(db
+        .conflicts_for_metric("budget", &view("project:investments"))
+        .is_empty());
+}
+
 fn numeric_fact_payload(
     scope: &str,
     source: &str,
@@ -109,6 +240,45 @@ fn numeric_fact_payload(
         "scope={scope}\nstatus=verified\ntype=fact\nsource={source}\nsource_trust_q16=50000\n\nproject={project}\nmetric={metric}\nvalue={value}\n{project} {metric} is {value}"
     )
     .into_bytes()
+}
+
+fn numeric_source_ref_fact_payload(
+    scope: &str,
+    source_id: &str,
+    document_id: &str,
+    page: u32,
+    project: &str,
+    metric: &str,
+    value: &str,
+) -> Vec<u8> {
+    format!(
+        "scope={scope}\nstatus=verified\ntype=fact\nsource_id={source_id}\ndocument_id={document_id}\npage={page}\nsource_trust_q16=50000\n\nproject={project}\nmetric={metric}\nvalue={value}\n{project} {metric} is {value}"
+    )
+    .into_bytes()
+}
+
+fn numeric_temporal_fact_payload(
+    scope: &str,
+    source: &str,
+    project: &str,
+    metric: &str,
+    value: &str,
+    valid_from: Option<&str>,
+    valid_to: Option<&str>,
+) -> Vec<u8> {
+    let mut payload = format!(
+        "scope={scope}\nstatus=verified\ntype=fact\nsource={source}\nsource_trust_q16=50000\n"
+    );
+    if let Some(valid_from) = valid_from {
+        payload.push_str(&format!("valid_from={valid_from}\n"));
+    }
+    if let Some(valid_to) = valid_to {
+        payload.push_str(&format!("valid_to={valid_to}\n"));
+    }
+    payload.push_str(&format!(
+        "\nproject={project}\nmetric={metric}\nvalue={value}\n{project} {metric} is {value}"
+    ));
+    payload.into_bytes()
 }
 
 fn view(scope: &str) -> AgentView {

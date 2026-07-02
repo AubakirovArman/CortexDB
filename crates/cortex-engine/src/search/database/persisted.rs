@@ -1,9 +1,9 @@
 use cortex_aql::AgentView;
+use cortex_core::CellId;
 
 use crate::database::Database;
 use crate::error::EngineResult;
 
-use super::super::access::allowed_candidates;
 use super::super::ann::{
     search_persisted_ann, search_persisted_ann_with_policy, AnnSearchOutcome, AnnSearchPolicy,
 };
@@ -11,6 +11,7 @@ use super::super::persisted::{
     search_persisted_lexical, search_persisted_vectors, PersistedLexicalSearchIndex,
 };
 use super::super::{SearchMode, SearchQuery};
+use super::allowed::persisted_allowed_candidates;
 use super::ann_reports::{
     persisted_exact_fallback_report, persisted_graph_is_stale,
     persisted_hnsw_fault_fallback_report, persisted_hnsw_stale_fallback_report,
@@ -30,6 +31,7 @@ impl Database {
         query: SearchQuery<'_>,
         view: &AgentView,
         policy: Option<AnnSearchPolicy>,
+        allowed_cells: Option<&std::collections::BTreeSet<CellId>>,
     ) -> EngineResult<Option<DatabaseSearchOutcome>> {
         if self.manifest().live_segments.is_empty() {
             trace_search("persisted search skipped: no live segments");
@@ -50,7 +52,7 @@ impl Database {
             query.mode, query.limit
         ));
         let state = self.persisted_index_state_cached()?;
-        let allowed = allowed_candidates(&state.bitmap, view);
+        let allowed = persisted_allowed_candidates(&state, view, allowed_cells);
         let expanded_query_text = self.corpus_synonym_expanded_query_text(query.text)?;
         let lexical_query_text = expanded_query_text.as_deref().unwrap_or(query.text);
         let analyzer = self.text_analyzer();
@@ -284,11 +286,7 @@ impl Database {
         let results = self.expand_high_level_anchor_context(results, view, query);
         let results = self.expand_project_related_context(results, view, query);
         let results = self.expand_search_parent_context(results, view, query.limit);
-        trace_search(&format!(
-            "persisted search done mode={:?} results={}",
-            query.mode,
-            results.len()
-        ));
+        trace_search(&format!("persisted done {}", results.len()));
         Ok(Some(DatabaseSearchOutcome {
             results,
             ann_report,

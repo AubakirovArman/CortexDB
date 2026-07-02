@@ -1,0 +1,141 @@
+{
+  "schema_version": "cortexdb.accountability_receipt_verify_input.v1",
+  "pack": {
+    "anomalies": [],
+    "answerability_q16": 65535,
+    "cells": [
+      {
+        "cell_id": 1,
+        "citation": "fixture:source#L1",
+        "estimated_tokens": 42
+      }
+    ],
+    "citations_required": true,
+    "conflict_visibility_q16": 32768,
+    "estimated_tokens": 42,
+    "schema_version": "context_pack.canonical.v1",
+    "token_budget_tokens": 1000,
+    "truncated": false,
+    "visible_conflict_count": 1
+  },
+  "determinism_input": {
+    "agent_view_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "bitmap_program_digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "context_options_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "frozen_weights": {
+      "artifact_hash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "version": "fixture.weights.v1"
+    },
+    "query": "RETRIEVE CONTEXT WHERE scope = fixture",
+    "schema_version": "cortexdb.determinism_hash.input.v1"
+  },
+  "receipt": {
+    "schema_version": "accountability_receipt.v1",
+    "header": {
+      "schema_version": "accountability_receipt.v1",
+      "hash_alg": "blake3-256",
+      "sig_alg": "ed25519",
+      "db_instance_id": "fixture-db",
+      "key_id": "receipt-key-ar7-fixture",
+      "created_unix_seconds": 0,
+      "access_root": "a6f5061dd163f76249d345b1227dff8c4fb1c5f3b5f78632c65b55dcbbd61c2b",
+      "provenance_root": "eab382ae8b15e0ca22a74286537b9dd474ca003acdce31c4a66361307829ebfb",
+      "cell_set_root": "7deda8aa52a59673cbb8f5caa685806c4e765a2190d9c9808be71f56ba4f5523",
+      "verification_root": "59ea51039e5011a6831f96a1d7479ec6c2a2197a0945c8b3d8aad762e74da3ea",
+      "budget_commitment": "7f270c0d746d57e712717f98ad594a93eae57c6802cf227854537c81f30407a5",
+      "conflict_commitment": "cd0b153ac2ece08c77ea188f895a9691435bce80959cea64e46080bbc59101d8",
+      "pack_root": "2bb73179913f9bff42a7da1756eb33d091b5651602efbf971c572b0c934b14b0",
+      "determinism_hash": "6840641b835f17a3e44348d88920afdebd4ff26d5721c7aca842923c405e3498",
+      "audit_chain_head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "signature": {
+        "key_id": "receipt-key-ar7-fixture",
+        "sig_alg": "ed25519",
+        "public_key_hex": "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8",
+        "signature_hex": "9ea9895eaf953c4aa7c11908323f83165f611ba4b9da7a1e74a8e208bf44e048afbcfc8242987050b80f63d83e80fc86bafb49a6d6e62a14087944cdcf07eb02"
+      }
+    },
+    "leaves": {
+      "access": [
+        {
+          "agent_id": 7,
+          "agent_view_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "candidate": null,
+          "cell_id": 1,
+          "cell_id_hash": null,
+          "decision": "allowed",
+          "evidence_digest": "749a0f03c826b610d4b34f7bb9196ec709e6109b5d813ed4dccf80f55f93e4a0",
+          "leaf_type": "admitted_cell",
+          "policy": "agent_view_readable_scope",
+          "policy_version": "agent_view_readable_scope.v1",
+          "reason": "fixture admitted cell",
+          "scope_id": 1001
+        }
+      ],
+      "provenance": [
+        {
+          "cell_content_hash": "dededededededededededededededededededededededededededededededede",
+          "cell_id": 1,
+          "citation": "fixture:source#L1",
+          "source_byte_end": 12,
+          "source_byte_start": 0,
+          "source_cell_id": 1,
+          "source_line_end": 1,
+          "source_line_start": 1,
+          "source_ref": "fixture:source"
+        }
+      ],
+      "cell_set": [
+        {
+          "cell_content_hash": "dededededededededededededededededededededededededededededededede",
+          "cell_id": 1
+        }
+      ],
+      "verification": [
+        {
+          "cell_id": 1,
+          "confidence_q16": 65535,
+          "evidence_digest": "9432915389c2270d4b61fd1382fd3f32eb81064f12a30655c972aa1168fe16ea",
+          "leaf_type": "verification_evidence",
+          "status": "supported"
+        }
+      ],
+      "budget": [
+        {
+          "cell_estimated_tokens": null,
+          "cell_id": null,
+          "estimated_tokens": 42,
+          "token_budget_tokens": 1000,
+          "truncated": false
+        },
+        {
+          "cell_estimated_tokens": 42,
+          "cell_id": 1,
+          "estimated_tokens": 42,
+          "token_budget_tokens": 1000,
+          "truncated": false
+        }
+      ],
+      "conflict": [
+        {
+          "anomalies": [
+            "retrieval_incomplete",
+            "visible_conflict"
+          ],
+          "conflict_visibility_q16": 32768,
+          "visible_conflict_count": 1
+        }
+      ]
+    }
+  },
+  "public_key": {
+    "key_id": "receipt-key-ar7-fixture",
+    "public_key_hex": "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8"
+  },
+  "admitted_cells": [
+    {
+      "cell_id": 1,
+      "cell_content_hash": "dededededededededededededededededededededededededededededededede",
+      "raw_content_hex": "666978747572652074657874"
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 use std::cmp::Reverse;
 
+use super::super::frozen_weights;
 use super::super::{
     analyze_search_query, condition_payload_bonus, covered_requirement_ids,
     decompose_enterprise_rag_question, extract_query_conditions, map_query_to_scope,
@@ -7,8 +8,6 @@ use super::super::{
 };
 use super::calibration::rerank_calibration_profile;
 use super::types::{SearchRerankInput, SearchReranker, WeightedScoreReranker};
-
-const REQUIREMENT_PAYLOAD_BONUS: u64 = 2_500;
 
 impl WeightedScoreReranker {
     pub fn calibrated_for_query(self, query_text: &str) -> Self {
@@ -67,7 +66,7 @@ fn payload_signal_bonus(input: SearchRerankInput<'_>, reranker: &WeightedScoreRe
         bonus = bonus.saturating_add(
             u64::try_from(covered.len())
                 .unwrap_or(u64::MAX)
-                .saturating_mul(REQUIREMENT_PAYLOAD_BONUS),
+                .saturating_mul(frozen_weights::RERANK_REQUIREMENT_PAYLOAD_BONUS),
         );
         let conditions = extract_query_conditions(input.query_text);
         bonus = bonus.saturating_add(
@@ -76,7 +75,7 @@ fn payload_signal_bonus(input: SearchRerankInput<'_>, reranker: &WeightedScoreRe
         );
         for term in tokenize(input.query_text) {
             if payload.contains(&term) {
-                bonus = bonus.saturating_add(1_000);
+                bonus = bonus.saturating_add(frozen_weights::RERANK_TERM_PAYLOAD_BONUS);
             }
         }
     };
@@ -101,11 +100,11 @@ fn apply_evidence_overlap_gate(
     if has_evidence_overlap(input.query_text, payload) {
         return score;
     }
-    score.saturating_mul(u64::from(no_overlap_score_q16)) / 65_535
+    score.saturating_mul(u64::from(no_overlap_score_q16)) / frozen_weights::Q16_ONE_U64
 }
 
 fn has_evidence_overlap(query_text: &str, payload: &[u8]) -> bool {
-    evidence_overlap_score(query_text, payload) >= 2
+    evidence_overlap_score(query_text, payload) >= frozen_weights::EVIDENCE_OVERLAP_THRESHOLD
 }
 
 pub(super) fn evidence_overlap_score(query_text: &str, payload: &[u8]) -> u32 {
@@ -114,7 +113,7 @@ pub(super) fn evidence_overlap_score(query_text: &str, payload: &[u8]) -> u32 {
     let mut score = 0u32;
     for anchor in analyzed.anchors {
         if anchor.terms.iter().any(|term| payload.contains(term)) {
-            score = score.saturating_add(2);
+            score = score.saturating_add(frozen_weights::EVIDENCE_ANCHOR_POINTS);
         }
     }
     if analyzed
@@ -122,11 +121,11 @@ pub(super) fn evidence_overlap_score(query_text: &str, payload: &[u8]) -> u32 {
         .iter()
         .any(|source| payload.contains(source))
     {
-        score = score.saturating_add(2);
+        score = score.saturating_add(frozen_weights::EVIDENCE_SOURCE_POINTS);
     }
     let conditions = extract_query_conditions(query_text);
     if condition_payload_bonus(&conditions, payload.as_bytes()) > 0 {
-        score = score.saturating_add(2);
+        score = score.saturating_add(frozen_weights::EVIDENCE_CONDITION_POINTS);
     }
     let decomposition = decompose_enterprise_rag_question(query_text);
     let covered_requirements = covered_requirement_ids(&decomposition, &payload);
@@ -134,12 +133,12 @@ pub(super) fn evidence_overlap_score(query_text: &str, payload: &[u8]) -> u32 {
         score = score.saturating_add(
             u32::try_from(covered_requirements.len())
                 .unwrap_or(u32::MAX)
-                .saturating_mul(2),
+                .saturating_mul(frozen_weights::EVIDENCE_REQUIREMENT_POINTS),
         );
     }
     for term in evidence_terms(query_text) {
         if payload.contains(&term) {
-            score = score.saturating_add(1);
+            score = score.saturating_add(frozen_weights::EVIDENCE_TERM_POINTS);
         }
     }
     score

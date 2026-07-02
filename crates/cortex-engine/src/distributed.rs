@@ -15,6 +15,7 @@ pub struct NodeId(pub u64);
 pub struct ClusterNode {
     pub id: NodeId,
     pub address: String,
+    pub ingress_address: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -43,6 +44,7 @@ impl ClusterConfig {
             nodes: vec![ClusterNode {
                 id: NodeId(1),
                 address: "127.0.0.1:0".to_owned(),
+                ingress_address: None,
             }],
             replication_factor: 1,
         }
@@ -80,6 +82,13 @@ impl ClusterConfig {
             if node.id.0 == 0 || node.address.trim().is_empty() || !seen.insert(node.id) {
                 return Err(EngineError::InvalidOperation);
             }
+            if node
+                .ingress_address
+                .as_deref()
+                .is_some_and(|address| address.trim() != address || address.is_empty())
+            {
+                return Err(EngineError::InvalidOperation);
+            }
         }
         Ok(())
     }
@@ -96,6 +105,12 @@ impl ClusterConfig {
 
     pub fn load(path: impl AsRef<Path>) -> EngineResult<Self> {
         decode_cluster_config(&fs::read_to_string(path)?)
+    }
+}
+
+impl ClusterNode {
+    pub fn ingress_address(&self) -> &str {
+        self.ingress_address.as_deref().unwrap_or(&self.address)
     }
 }
 
@@ -147,7 +162,14 @@ fn encode_cluster_config(config: &ClusterConfig) -> String {
         config.local_node.0, config.replication_factor
     );
     for node in &config.nodes {
-        out.push_str(&format!("node {} {}\n", node.id.0, node.address));
+        if let Some(ingress_address) = node.ingress_address.as_deref() {
+            out.push_str(&format!(
+                "node {} {} {}\n",
+                node.id.0, node.address, ingress_address
+            ));
+        } else {
+            out.push_str(&format!("node {} {}\n", node.id.0, node.address));
+        }
     }
     out
 }
@@ -168,13 +190,16 @@ fn decode_cluster_config(input: &str) -> EngineResult<ClusterConfig> {
         let body = line
             .strip_prefix("node ")
             .ok_or(EngineError::InvalidOperation)?;
-        let (id, address) = body.split_once(' ').ok_or(EngineError::InvalidOperation)?;
-        if address.trim() != address || address.is_empty() {
-            return Err(EngineError::InvalidOperation);
-        }
+        let fields = body.split_whitespace().collect::<Vec<_>>();
+        let (id, address, ingress_address) = match fields.as_slice() {
+            [id, address] => (*id, *address, None),
+            [id, address, ingress_address] => (*id, *address, Some((*ingress_address).to_owned())),
+            _ => return Err(EngineError::InvalidOperation),
+        };
         nodes.push(ClusterNode {
             id: NodeId(parse_u64(id)?),
             address: address.to_owned(),
+            ingress_address,
         });
     }
 

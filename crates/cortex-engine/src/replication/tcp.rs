@@ -5,7 +5,7 @@ use std::net::TcpStream;
 use crate::distributed::NodeId;
 use crate::error::{EngineError, EngineResult};
 
-use super::election::{ElectionState, VoteRequest, VoteResponse};
+use super::election::{ElectionRole, ElectionState, VoteRequest, VoteResponse};
 use super::log_matching;
 use super::snapshot::{
     decode_snapshot_chunk, hex_decode, hex_encode, parse_bool, parse_u64, SnapshotChunk,
@@ -97,6 +97,7 @@ pub fn handle_authenticated_replication_frame(
             };
             Ok(encode_vote_response(&state.handle_vote_request(&request)))
         }
+        ["STATUS"] => Ok(status_response(state)),
         ["APPEND", term, leader, prev_index, prev_term, commit, rest @ ..] => {
             let request = AppendEntriesRequest {
                 term: Term(parse_u64(term)?),
@@ -131,6 +132,19 @@ pub fn handle_authenticated_replication_frame(
         }
         _ => Err(EngineError::InvalidOperation),
     }
+}
+
+fn status_response(state: &ElectionState) -> String {
+    let role = match state.role {
+        ElectionRole::Follower => "follower",
+        ElectionRole::Candidate => "candidate",
+        ElectionRole::Leader => "leader",
+    };
+    let leader = state.leader.map(|node| node.0).unwrap_or(0);
+    format!(
+        "STATUS_RESP {} {} {} {}\n",
+        state.current_term.0, state.local_node.0, role, leader
+    )
 }
 
 pub(super) fn authenticated_payload<'a>(

@@ -1,8 +1,9 @@
 use crate::query::CellMetadata;
 
+use super::super::frozen_weights;
 use super::super::EnterpriseRagQuestionType;
 
-pub(super) const Q16_ONE: u32 = 65_535;
+pub(super) const Q16_ONE: u32 = frozen_weights::Q16_ONE_U32;
 
 #[derive(Clone, Copy, Debug)]
 pub struct SearchRerankInput<'a> {
@@ -29,22 +30,22 @@ pub struct HybridRrfWeights {
 impl HybridRrfWeights {
     pub fn lexical_heavy() -> Self {
         Self {
-            lexical_q16: 45_000,
-            vector_q16: Q16_ONE - 45_000,
+            lexical_q16: frozen_weights::RRF_LEXICAL_HEAVY_Q16,
+            vector_q16: Q16_ONE - frozen_weights::RRF_LEXICAL_HEAVY_Q16,
         }
     }
 
     pub fn vector_heavy() -> Self {
         Self {
-            lexical_q16: 20_000,
-            vector_q16: Q16_ONE - 20_000,
+            lexical_q16: frozen_weights::RRF_VECTOR_HEAVY_Q16,
+            vector_q16: Q16_ONE - frozen_weights::RRF_VECTOR_HEAVY_Q16,
         }
     }
 
     pub fn balanced() -> Self {
         Self {
-            lexical_q16: 32_768,
-            vector_q16: Q16_ONE - 32_768,
+            lexical_q16: frozen_weights::RRF_BALANCED_LEXICAL_Q16,
+            vector_q16: Q16_ONE - frozen_weights::RRF_BALANCED_LEXICAL_Q16,
         }
     }
 }
@@ -72,13 +73,14 @@ impl Default for WeightedScoreReranker {
     fn default() -> Self {
         Self {
             calibrate_by_question_type: false,
-            lexical_weight: 2,
-            vector_weight: 2,
-            anchor_payload_bonus: 25_000,
-            source_hint_payload_bonus: 10_000,
-            scope_mapping_metadata_bonus: 1,
-            condition_payload_bonus: 1,
-            no_evidence_overlap_score_q16: 16_384,
+            lexical_weight: frozen_weights::RERANK_DEFAULT_LEXICAL_WEIGHT,
+            vector_weight: frozen_weights::RERANK_DEFAULT_VECTOR_WEIGHT,
+            anchor_payload_bonus: frozen_weights::RERANK_DEFAULT_ANCHOR_PAYLOAD_BONUS,
+            source_hint_payload_bonus: frozen_weights::RERANK_DEFAULT_SOURCE_HINT_PAYLOAD_BONUS,
+            scope_mapping_metadata_bonus:
+                frozen_weights::RERANK_DEFAULT_SCOPE_MAPPING_METADATA_BONUS,
+            condition_payload_bonus: frozen_weights::RERANK_DEFAULT_CONDITION_PAYLOAD_BONUS,
+            no_evidence_overlap_score_q16: frozen_weights::RERANK_DEFAULT_NO_EVIDENCE_OVERLAP_Q16,
         }
     }
 }

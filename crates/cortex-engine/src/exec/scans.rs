@@ -153,7 +153,16 @@ impl<P: CandidateResolver> PhysicalOp for QualityFilter<'_, P> {
                 .filter(|version| {
                     cell_version_meets_quality_thresholds(version, &self.plan.quality_thresholds)
                 })
-                .and_then(|version| self.database.retrieved_cell_from_version(version).ok());
+                .and_then(|version| {
+                    let mut cell = self.database.retrieved_cell_from_version(version).ok()?;
+                    cell.captured_access_decision =
+                        self.provider.captured_access_decision_for_candidate(
+                            candidate,
+                            cell.cell_id,
+                            &cell.descriptor,
+                        );
+                    Some(cell)
+                });
             if let Some(cell) = cell {
                 self.trace.output_count += 1;
                 return Some(cell);

@@ -17,6 +17,8 @@ VERSION = "0.2.0-beta.2"
 
 SUITES: tuple[dict[str, Any], ...] = (
     {"name": "beta_foundation", "command": ["make", "beta-foundation-check"]},
+    {"name": "correctness_prerequisites", "command": ["make", "correctness-prerequisites-check"]},
+    {"name": "fail_closed_end_to_end", "command": ["make", "fail-closed-end-to-end-check"]},
     {"name": "sdk_e2e_release", "command": ["make", "sdk-e2e-release-check"]},
     {"name": "context_pack_quality", "command": ["make", "context-pack-quality-check"]},
     {"name": "verification_quality", "command": ["make", "verification-quality-check"]},
@@ -51,6 +53,8 @@ SUITES: tuple[dict[str, Any], ...] = (
 
 KNOWN_ARTIFACTS = (
     "target/beta-foundation/report.json",
+    "target/correctness-prerequisites/report.json",
+    "target/fail-closed-end-to-end/report.json",
     "target/sdk-e2e-release/report.json",
     "target/sdk-registry-gate/report.json",
     "target/context-pack-quality/report.json",
@@ -188,7 +192,13 @@ def self_test() -> int:
     if len(names) != len(set(names)):
         print("beta release self-test failed: duplicate suite names")
         return 1
-    required = {"sdk_e2e_release", "context_pack_quality", "verification_quality", "retrieval_quality"}
+    required = {
+        "sdk_e2e_release",
+        "fail_closed_end_to_end",
+        "context_pack_quality",
+        "verification_quality",
+        "retrieval_quality",
+    }
     missing = sorted(required.difference(names))
     if missing:
         print(f"beta release self-test failed: missing suites {missing}")

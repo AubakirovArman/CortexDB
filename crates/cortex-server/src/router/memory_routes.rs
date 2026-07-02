@@ -2,6 +2,7 @@ use cortex_aql::AgentView;
 
 use crate::authz;
 use crate::memory;
+use crate::receipt::ReceiptEmissionContext;
 use crate::responses::{PutCellResponse, RouterError};
 
 use super::params::cell_id;
@@ -14,6 +15,7 @@ pub(super) fn try_route<A: DatabaseAccess>(
     query: &str,
     body: &[u8],
     authenticated_view: Option<&AgentView>,
+    receipt_context: Option<&ReceiptEmissionContext>,
 ) -> Option<Result<String, RouterError>> {
     if !matches!(
         (method, path),
@@ -50,7 +52,7 @@ pub(super) fn try_route<A: DatabaseAccess>(
             }
             ("POST", "/v1/verify") => {
                 let db = db.as_read();
-                memory::handle_verify_shared(db, query, body, authenticated_view)
+                memory::handle_verify_shared(db, query, body, authenticated_view, receipt_context)
             }
             ("POST", "/v1/feedback") => {
                 let db = db

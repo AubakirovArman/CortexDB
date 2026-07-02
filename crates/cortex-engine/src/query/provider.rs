@@ -1,18 +1,21 @@
 use std::collections::BTreeSet;
 
 use cortex_aql::{AgentView, BitmapHandle, BitmapProvider, RoaringBitmap};
-use cortex_core::CellId;
+use cortex_core::{CellDescriptor, CellId};
 
 use super::metadata::scope_handle;
 use super::EngineAqlIndex;
-use crate::database::CandidateResolver;
+use crate::access_capture::{captured_allowed_access_decision, captured_denied_access_decision};
+use crate::database::{CandidateResolver, CapturedAccessDecision, CapturedAccessDenial};
 use crate::plan::PolicyRewrite;
+use crate::query::scope_id;
 use crate::search::{analyze_search_query, bm25_term_score_q16, Bm25CorpusStats, Bm25TermInput};
 
 #[derive(Clone, Debug)]
 pub struct EngineAqlProvider {
     index: EngineAqlIndex,
     agent_allowed: BTreeSet<u32>,
+    view: AgentView,
 }
 
 impl EngineAqlProvider {
@@ -28,6 +31,7 @@ impl EngineAqlProvider {
         Self {
             index,
             agent_allowed,
+            view: view.clone(),
         }
     }
 
@@ -71,6 +75,32 @@ impl BitmapProvider for EngineAqlProvider {
 impl CandidateResolver for EngineAqlProvider {
     fn cell_id_for_candidate(&self, candidate: u32) -> Option<CellId> {
         self.index.cell_id_for_candidate(candidate)
+    }
+
+    fn captured_access_decision_for_candidate(
+        &self,
+        candidate: u32,
+        cell_id: CellId,
+        descriptor: &CellDescriptor,
+    ) -> Option<CapturedAccessDecision> {
+        if self.agent_allowed.contains(&candidate)
+            && self.view.can_read_scope(scope_id(&descriptor.scope))
+        {
+            Some(captured_allowed_access_decision(
+                cell_id, descriptor, &self.view,
+            ))
+        } else {
+            None
+        }
+    }
+
+    fn captured_access_denial_for_candidate(&self, candidate: u32) -> Option<CapturedAccessDenial> {
+        if self.agent_allowed.contains(&candidate) {
+            return None;
+        }
+        self.index
+            .cell_id_for_candidate(candidate)
+            .map(|cell_id| captured_denied_access_decision(candidate, cell_id, &self.view))
     }
 
     fn lexical_candidates_for_terms(&self, terms: &[String]) -> Option<BTreeSet<u32>> {

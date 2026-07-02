@@ -11,6 +11,9 @@ mod sink;
 pub(crate) use llm::{emit_llm_inference_decision, LlmInferenceDecisionAudit};
 pub(crate) use sink::{AuditSink, AuditSinkOptions};
 
+pub(super) const AUDIT_SCHEMA_VERSION_V1: &str = "cortexdb.audit.v1";
+pub(super) const AUDIT_SCHEMA_VERSION_V2: &str = "cortexdb.audit.v2";
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum AuditAction {
     Admin,
@@ -103,6 +106,10 @@ pub(super) struct AuditRecord<'a> {
     sequence: u64,
     prev_hash: String,
     event_hash: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    mac_key_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    event_mac: Option<String>,
     principal_id: &'a str,
     auth_role: &'a str,
     auth_agent_id: Option<u64>,
@@ -115,6 +122,8 @@ pub(super) struct AuditRecord<'a> {
     error_code: &'a str,
     duration_ms: u64,
     unix_time_ms: u128,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    accountability_receipt_hash: Option<&'a str>,
     #[serde(skip_serializing_if = "Option::is_none")]
     llm: Option<llm::LlmInferenceAuditFields<'a>>,
 }
@@ -130,6 +139,7 @@ pub(crate) struct HttpResponseAudit<'a> {
     pub(crate) status: u16,
     pub(crate) error_code: Option<&'a str>,
     pub(crate) duration_ms: u64,
+    pub(crate) accountability_receipt_hash: Option<&'a str>,
 }
 
 pub(crate) fn emit_http_response(event: HttpResponseAudit<'_>, sink: Option<&AuditSink>) {
@@ -141,13 +151,15 @@ pub(crate) fn emit_http_response(event: HttpResponseAudit<'_>, sink: Option<&Aud
         .map(|duration| duration.as_millis())
         .unwrap_or_default();
     let mut record = AuditRecord {
-        schema_version: "cortexdb.audit.v1",
+        schema_version: AUDIT_SCHEMA_VERSION_V1,
         audit_event: "http_response",
         audit_action: action.as_str(),
         chain_id: AUDIT_CHAIN_ID,
         sequence: 0,
         prev_hash: AUDIT_CHAIN_ZERO_HASH.to_owned(),
         event_hash: String::new(),
+        mac_key_id: None,
+        event_mac: None,
         principal_id: event.principal_id.unwrap_or(""),
         auth_role: event.auth_role.unwrap_or(""),
         auth_agent_id: event.auth_agent_id,
@@ -160,6 +172,7 @@ pub(crate) fn emit_http_response(event: HttpResponseAudit<'_>, sink: Option<&Aud
         error_code,
         duration_ms: event.duration_ms,
         unix_time_ms,
+        accountability_receipt_hash: event.accountability_receipt_hash,
         llm: None,
     };
     tracing::info!(
@@ -190,13 +203,25 @@ pub(crate) fn emit_http_response(event: HttpResponseAudit<'_>, sink: Option<&Aud
 }
 
 pub(super) fn audit_event_hash(record: &AuditRecord<'_>) -> String {
-    audit_chain::event_hash(&[
+    audit_chain::event_hash(&audit_event_fields(record))
+}
+
+pub(super) fn audit_event_mac(record: &AuditRecord<'_>, key: &cortex_crypto::MacKey) -> String {
+    audit_chain::event_mac(key, &audit_event_fields(record))
+}
+
+fn audit_event_fields(record: &AuditRecord<'_>) -> Vec<(&'static str, String)> {
+    vec![
         ("chain_id", record.chain_id.to_owned()),
         ("sequence", record.sequence.to_string()),
         ("prev_hash", record.prev_hash.clone()),
         ("schema_version", record.schema_version.to_owned()),
         ("audit_event", record.audit_event.to_owned()),
         ("audit_action", record.audit_action.to_owned()),
+        (
+            "mac_key_id",
+            record.mac_key_id.as_deref().unwrap_or_default().to_owned(),
+        ),
         ("principal_id", record.principal_id.to_owned()),
         ("auth_role", record.auth_role.to_owned()),
         (
@@ -215,8 +240,15 @@ pub(super) fn audit_event_hash(record: &AuditRecord<'_>) -> String {
         ("error_code", record.error_code.to_owned()),
         ("duration_ms", record.duration_ms.to_string()),
         ("unix_time_ms", record.unix_time_ms.to_string()),
+        (
+            "accountability_receipt_hash",
+            record
+                .accountability_receipt_hash
+                .unwrap_or_default()
+                .to_owned(),
+        ),
         ("llm", record.llm.map(llm::hash_value).unwrap_or_default()),
-    ])
+    ]
 }
 
 fn scope_decision(action: AuditAction, status: u16, error_code: &str) -> ScopeDecision {
@@ -230,25 +262,33 @@ fn scope_decision(action: AuditAction, status: u16, error_code: &str) -> ScopeDe
 }
 
 fn action_has_scope_decision(action: AuditAction) -> bool {
+    use AuditAction::*;
     matches!(
         action,
-        AuditAction::Aql
-            | AuditAction::Context
-            | AuditAction::Delete
-            | AuditAction::Ingest
-            | AuditAction::Memory
-            | AuditAction::Read
-            | AuditAction::Search
-            | AuditAction::Verify
-            | AuditAction::Write
+        Aql | Context | Delete | Ingest | Memory | Read | Search | Verify | Write
     )
 }
 
 impl AuditSinkOptions {
-    pub(crate) fn from_parts(rotate_bytes: Option<u64>, fsync_policy: AuditLogFsyncPolicy) -> Self {
+    pub(crate) fn from_parts(
+        rotate_bytes: Option<u64>,
+        fsync_policy: AuditLogFsyncPolicy,
+        mac_key: Option<crate::config::AuditMacKey>,
+    ) -> Self {
         Self {
             rotate_bytes,
             fsync_policy,
+            mac_key,
         }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn test_default() -> Self {
+        let mac_key = crate::config::AuditMacKey::from_hex(
+            "test-audit-key",
+            "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+        )
+        .expect("test audit MAC key is valid");
+        Self::from_parts(None, AuditLogFsyncPolicy::Always, Some(mac_key))
     }
 }

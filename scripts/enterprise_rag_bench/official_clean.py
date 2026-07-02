@@ -149,7 +149,7 @@ def model_profile(provider: str) -> dict[str, Any]:
             "provider": provider,
             "api_key": key_path.read_text(encoding="utf-8").strip() if key_path.exists() else "",
             "base_url": "https://api.deepseek.com",
-            "model": "deepseek-v4-flash",
+            "model": os.environ.get("DEEPSEEK_MODEL", "deepseek-v4-flash"),
             "gemini_native": False,
             "omit_thinking_field": False,
         }

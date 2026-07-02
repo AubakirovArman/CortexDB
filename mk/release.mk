@@ -20,6 +20,8 @@ alpha-check:
 	$(MAKE) storage-format-change-note-check
 	$(MAKE) migration-compatibility-check
 	$(MAKE) beta-delta-check
+	$(MAKE) correctness-prerequisites-check
+	$(MAKE) accountability-receipt-check
 	$(MAKE) public-claims-check
 	$(MAKE) load-smoke-check
 	$(MAKE) single-node-performance-check
@@ -51,6 +53,8 @@ release-check: alpha-check
 	$(MAKE) crash-fault-check
 	$(MAKE) chaos-restart-check
 	$(MAKE) replication-lifecycle-check
+	$(MAKE) consensus-release-lane-check
+	$(MAKE) receipt-production-readiness-check
 	$(MAKE) retrieval-quality-check
 	$(MAKE) release-regression-dashboard-check
 	$(MAKE) smoke-test

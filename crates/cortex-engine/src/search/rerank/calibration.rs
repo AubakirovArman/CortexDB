@@ -1,3 +1,4 @@
+use super::super::frozen_weights::{self, FrozenRerankProfile};
 use super::super::{classify_enterprise_rag_question_type, EnterpriseRagQuestionType};
 use super::types::{HybridRrfWeights, RerankCalibrationProfile, WeightedScoreReranker, Q16_ONE};
 
@@ -14,75 +15,42 @@ pub fn rerank_calibration_profile(
         calibrate_by_question_type: false,
         ..base
     };
-    let rrf_weights = match question_type {
-        EnterpriseRagQuestionType::Basic => {
-            reranker.lexical_weight = 4;
-            reranker.vector_weight = 1;
-            reranker.no_evidence_overlap_score_q16 = 12_000;
-            HybridRrfWeights::lexical_heavy()
-        }
+    let profile = match question_type {
+        EnterpriseRagQuestionType::Basic => frozen_weights::BASIC_PROFILE,
         EnterpriseRagQuestionType::Semantic | EnterpriseRagQuestionType::IntraDocumentReasoning => {
-            reranker.lexical_weight = 1;
-            reranker.vector_weight = 4;
-            reranker.anchor_payload_bonus = 18_000;
-            reranker.no_evidence_overlap_score_q16 = 20_000;
-            HybridRrfWeights::vector_heavy()
+            frozen_weights::SEMANTIC_PROFILE
         }
-        EnterpriseRagQuestionType::ProjectRelated => {
-            reranker.lexical_weight = 2;
-            reranker.vector_weight = 3;
-            reranker.scope_mapping_metadata_bonus = 2;
-            reranker.anchor_payload_bonus = 30_000;
-            HybridRrfWeights {
-                lexical_q16: 24_000,
-                vector_q16: Q16_ONE - 24_000,
-            }
-        }
-        EnterpriseRagQuestionType::Constrained => {
-            reranker.lexical_weight = 4;
-            reranker.vector_weight = 1;
-            reranker.condition_payload_bonus = 3;
-            reranker.anchor_payload_bonus = 28_000;
-            reranker.no_evidence_overlap_score_q16 = 10_000;
-            HybridRrfWeights::lexical_heavy()
-        }
-        EnterpriseRagQuestionType::ConflictingInfo => {
-            reranker.lexical_weight = 3;
-            reranker.vector_weight = 2;
-            reranker.source_hint_payload_bonus = 14_000;
-            HybridRrfWeights {
-                lexical_q16: 38_000,
-                vector_q16: Q16_ONE - 38_000,
-            }
-        }
-        EnterpriseRagQuestionType::Completeness => {
-            reranker.lexical_weight = 2;
-            reranker.vector_weight = 3;
-            reranker.anchor_payload_bonus = 22_000;
-            reranker.no_evidence_overlap_score_q16 = 22_000;
-            HybridRrfWeights {
-                lexical_q16: 28_000,
-                vector_q16: Q16_ONE - 28_000,
-            }
-        }
-        EnterpriseRagQuestionType::HighLevel => {
-            reranker.lexical_weight = 1;
-            reranker.vector_weight = 4;
-            reranker.source_hint_payload_bonus = 18_000;
-            reranker.no_evidence_overlap_score_q16 = 24_000;
-            HybridRrfWeights::vector_heavy()
-        }
+        EnterpriseRagQuestionType::ProjectRelated => frozen_weights::PROJECT_RELATED_PROFILE,
+        EnterpriseRagQuestionType::Constrained => frozen_weights::CONSTRAINED_PROFILE,
+        EnterpriseRagQuestionType::ConflictingInfo => frozen_weights::CONFLICTING_INFO_PROFILE,
+        EnterpriseRagQuestionType::Completeness => frozen_weights::COMPLETENESS_PROFILE,
+        EnterpriseRagQuestionType::HighLevel => frozen_weights::HIGH_LEVEL_PROFILE,
         EnterpriseRagQuestionType::InfoNotFound | EnterpriseRagQuestionType::Miscellaneous => {
-            reranker.lexical_weight = 2;
-            reranker.vector_weight = 2;
-            reranker.no_evidence_overlap_score_q16 = 8_000;
-            HybridRrfWeights::balanced()
+            frozen_weights::INFO_NOT_FOUND_PROFILE
         }
     };
+    let rrf_weights = apply_profile(&mut reranker, profile);
     RerankCalibrationProfile {
         question_type,
         rrf_weights,
         reranker,
+    }
+}
+
+fn apply_profile(
+    reranker: &mut WeightedScoreReranker,
+    profile: FrozenRerankProfile,
+) -> HybridRrfWeights {
+    reranker.lexical_weight = profile.lexical_weight;
+    reranker.vector_weight = profile.vector_weight;
+    reranker.anchor_payload_bonus = profile.anchor_payload_bonus;
+    reranker.source_hint_payload_bonus = profile.source_hint_payload_bonus;
+    reranker.scope_mapping_metadata_bonus = profile.scope_mapping_metadata_bonus;
+    reranker.condition_payload_bonus = profile.condition_payload_bonus;
+    reranker.no_evidence_overlap_score_q16 = profile.no_evidence_overlap_score_q16;
+    HybridRrfWeights {
+        lexical_q16: profile.rrf_lexical_q16,
+        vector_q16: Q16_ONE - profile.rrf_lexical_q16,
     }
 }
 

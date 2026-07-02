@@ -10,6 +10,7 @@ balanced ranking before any profile is accepted.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -31,6 +32,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--report", required=True)
     parser.add_argument("--min-heldout-mrr-lift-bps", type=int, default=2500)
     parser.add_argument("--min-heldout-win-rate-pct", type=int, default=75)
+    parser.add_argument("--compiled-artifact-template")
+    parser.add_argument("--compiled-artifact")
     return parser.parse_args()
 
 
@@ -206,11 +209,73 @@ def build_report(rows: list[dict], args: argparse.Namespace) -> dict:
     }
 
 
+def artifact_bytes(artifact: dict) -> str:
+    def dump(value, indent: int) -> str:
+        if isinstance(value, dict):
+            lines = ["{"]
+            items = list(value.items())
+            for index, (key, child) in enumerate(items):
+                suffix = "," if index + 1 < len(items) else ""
+                lines.append(f'{" " * (indent + 2)}{json.dumps(key)}: {dump(child, indent + 2)}{suffix}')
+            lines.append(f'{" " * indent}}}')
+            return "\n".join(lines)
+        if isinstance(value, list):
+            return "[" + ", ".join(dump_scalar(child) for child in value) + "]"
+        return dump_scalar(value)
+
+    return dump(artifact, 0) + "\n"
+
+
+def dump_scalar(value) -> str:
+    if value is None:
+        return "null"
+    return json.dumps(value)
+
+
+def compile_frozen_artifact(template_path: Path, learned_profiles: dict[str, dict]) -> tuple[dict, str]:
+    artifact = json.loads(template_path.read_text(encoding="utf-8"))
+    calibration = artifact.get("calibration")
+    if not isinstance(calibration, dict):
+        raise ValueError(f"{template_path}: missing calibration object")
+    for question_type, profile in sorted(learned_profiles.items()):
+        if question_type not in calibration:
+            continue
+        values = list(calibration[question_type])
+        if len(values) != 8:
+            raise ValueError(f"{template_path}: calibration.{question_type} must have 8 fields")
+        values[0] = int(profile["lexical_weight"])
+        values[1] = int(profile["vector_weight"])
+        calibration[question_type] = values
+    text = artifact_bytes(artifact)
+    return artifact, hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def maybe_write_compiled_artifact(report: dict, args: argparse.Namespace) -> None:
+    if not args.compiled_artifact:
+        return
+    if not args.compiled_artifact_template:
+        raise ValueError("--compiled-artifact requires --compiled-artifact-template")
+    artifact, content_sha256 = compile_frozen_artifact(
+        Path(args.compiled_artifact_template),
+        report["learned_profiles"],
+    )
+    output = Path(args.compiled_artifact)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(artifact_bytes(artifact), encoding="utf-8")
+    report["compiled_artifact"] = {
+        "path": args.compiled_artifact,
+        "template": args.compiled_artifact_template,
+        "content_sha256": content_sha256,
+        "updated_question_types": sorted(report["learned_profiles"]),
+    }
+
+
 def main() -> int:
     args = parse_args()
     try:
         rows = read_rows(Path(args.fixture))
         report = build_report(rows, args)
+        maybe_write_compiled_artifact(report, args)
         output = Path(args.report)
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")

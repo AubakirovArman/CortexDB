@@ -86,6 +86,7 @@ impl SessionIndex {
                     cell_id: *cell_id,
                     payload,
                     descriptor: cell.descriptor().clone(),
+                    captured_access_decision: None,
                 })
             })
             .collect()

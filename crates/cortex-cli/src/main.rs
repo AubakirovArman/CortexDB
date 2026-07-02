@@ -24,6 +24,9 @@ mod cli_ingest_tests;
 mod cli_json;
 mod cli_json_types;
 mod cli_ops;
+mod cli_receipt_key;
+#[cfg(test)]
+mod cli_receipt_key_tests;
 mod cli_upgrade;
 mod context;
 #[cfg(test)]
