@@ -145,6 +145,48 @@ fn retrieval_recall_is_deterministic_across_runs() {
     assert_eq!(first, second, "retrieval metrics must be deterministic");
 }
 
+/// Adversarial A1.1 case: a strong lexical match must outrank a query-irrelevant
+/// cell that merely has maximum source trust and the newest timestamp. Under
+/// `USING MODE fast` the lexical weight (0.55) exceeds recency+trust (0.25+0.10),
+/// so a scale-correct fusion ranks the relevant cell first. The pre-fix fusion
+/// multiplied recency/trust by 1024, letting them swamp the lexical signal and
+/// rank the irrelevant-but-recent cell first.
+#[test]
+fn fast_mode_lexical_match_outranks_recent_high_trust_distractor() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+
+    // Relevant to the query, but OLD and LOW trust.
+    db.put_cell(
+        CellId(301),
+        b"scope=project:investments\nstatus=ready\ntype=fact\nsource=doc-relevant\nsource_trust_q16=10000\ncreated_unix_seconds=1000000000\n\nquantum encryption protocol key exchange design"
+            .to_vec(),
+    )
+    .unwrap();
+    // Irrelevant to the query, but NEWEST and MAX trust.
+    db.put_cell(
+        CellId(302),
+        b"scope=project:investments\nstatus=ready\ntype=fact\nsource=doc-distractor\nsource_trust_q16=65535\ncreated_unix_seconds=2000000000\n\nweekly cafeteria lunch menu and parking notice"
+            .to_vec(),
+    )
+    .unwrap();
+
+    let aql = "RETRIEVE CONTEXT FOR TASK \"quantum encryption protocol\" IN BRAIN default \
+               USING MODE fast WHERE space = project:investments LIMIT 10 CANDIDATES;";
+    let ranked: Vec<u64> = db
+        .retrieve_aql(aql, &view())
+        .unwrap()
+        .into_iter()
+        .map(|cell| cell.cell_id.0)
+        .collect();
+
+    assert_eq!(
+        ranked.first().copied(),
+        Some(301),
+        "the lexical match (301) must outrank the recent/high-trust distractor (302); ranked={ranked:?}"
+    );
+}
+
 fn view() -> AgentView {
     AgentView {
         agent_id: AgentId(7),
@@ -152,7 +194,7 @@ fn view() -> AgentView {
         readable_brains: BTreeSet::from([BrainId(1)]),
         readable_scopes: BTreeSet::from([scope_id("project:investments")]),
         writable_scopes: BTreeSet::new(),
-        allowed_modes: BTreeSet::from([RetrievalMode::Balanced]),
+        allowed_modes: BTreeSet::from([RetrievalMode::Balanced, RetrievalMode::Fast]),
         allowed_memory_types: BTreeSet::from([MemoryType::Decision]),
         max_context_budget_tokens: 4_000,
         default_context_budget_tokens: 2_000,

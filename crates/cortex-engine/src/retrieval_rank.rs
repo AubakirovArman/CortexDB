@@ -31,25 +31,46 @@ pub(crate) fn rank_retrieved_cells(
         .collect::<Vec<_>>();
     let lexical_scores = lexical_bm25_scores_from_metadata(&metadata, task);
     let query_vector = query_vector_from_task(task);
-    let recency_scores = recency_scores_q16_from_metadata(&metadata);
-    let now = current_unix_seconds();
-    let rank_keys = cells
+    let semantic_scores = cells
         .iter()
-        .enumerate()
-        .map(|(index, cell)| {
-            let lexical = lexical_scores.get(index).copied().unwrap_or(0);
-            let semantic = query_vector
+        .map(|cell| {
+            query_vector
                 .as_deref()
                 .map(|query| semantic_dot_score(&cell.payload, query))
-                .unwrap_or(0);
-            let recency = recency_scores.get(index).copied().unwrap_or(0);
-            let metadata = &metadata[index];
-            let trust = u64::from(
+                .unwrap_or(0)
+        })
+        .collect::<Vec<_>>();
+    let recency_scores = recency_scores_q16_from_metadata(&metadata);
+    let trust_scores = metadata
+        .iter()
+        .map(|metadata| {
+            u64::from(
                 SourceTrust::from_metadata(metadata.source_trust_q16, metadata.source_trust_class)
                     .q16,
-            );
-            let score = weighted_retrieval_score(lexical, semantic, recency, trust, weights)
-                .saturating_mul(memory_decay_q16(metadata, now))
+            )
+        })
+        .collect::<Vec<_>>();
+
+    // Fusion normalization: the four raw component scales are incomparable
+    // (BM25, a raw i16 dot product, and two Q16 signals), so blending them by
+    // weight is only meaningful after each component is min-max normalized to a
+    // common [0, Q16] range across the candidate set.
+    let lexical = min_max_normalize_q16(&lexical_scores);
+    let semantic = min_max_normalize_q16(&semantic_scores);
+    let recency = min_max_normalize_q16(&recency_scores);
+    let trust = min_max_normalize_q16(&trust_scores);
+
+    let now = current_unix_seconds();
+    let rank_keys = (0..cells.len())
+        .map(|index| {
+            let score = weighted_retrieval_score(
+                lexical[index],
+                semantic[index],
+                recency[index],
+                trust[index],
+                weights,
+            )
+            .saturating_mul(memory_decay_q16(&metadata[index], now))
                 / u64::from(u16::MAX);
             (score, index)
         })
@@ -227,16 +248,40 @@ fn recency_scores_q16_from_metadata(metadata: &[CellMetadata]) -> Vec<u64> {
 fn weighted_retrieval_score(
     lexical: u64,
     semantic: u64,
-    recency_q16: u64,
-    trust_q16: u64,
+    recency: u64,
+    trust: u64,
     weights: &RetrievalWeights,
 ) -> u64 {
+    // Each component is already min-max normalized to [0, Q16], so the weighted
+    // sum is a true weighted blend in [0, Q16]; no per-component rescaling here.
     weighted_component(lexical, weights.lexical_q16)
         .saturating_add(weighted_component(semantic, weights.semantic_q16))
-        .saturating_add(weighted_component(recency_q16 * 1024, weights.recency_q16))
-        .saturating_add(weighted_component(trust_q16 * 1024, weights.trust_q16))
+        .saturating_add(weighted_component(recency, weights.recency_q16))
+        .saturating_add(weighted_component(trust, weights.trust_q16))
 }
 
 fn weighted_component(value: u64, weight_q16: u16) -> u64 {
     value.saturating_mul(u64::from(weight_q16)) / u64::from(u16::MAX)
+}
+
+/// Min-max normalizes a component to `[0, u16::MAX]` across the candidate set so
+/// that weighted fusion of otherwise-incomparable scales (BM25, i16 dot product,
+/// Q16 signals) is meaningful. A component with no spread (all-equal) maps every
+/// candidate to `u16::MAX`: it adds the same constant to every base score, so it
+/// does not change relative ordering, while keeping the base score non-zero so a
+/// downstream multiplier (e.g. memory decay) still differentiates candidates.
+fn min_max_normalize_q16(values: &[u64]) -> Vec<u64> {
+    let (min, max) = values
+        .iter()
+        .fold((u64::MAX, 0u64), |(lo, hi), &value| {
+            (lo.min(value), hi.max(value))
+        });
+    if max <= min {
+        return vec![u64::from(u16::MAX); values.len()];
+    }
+    let span = u128::from(max - min);
+    values
+        .iter()
+        .map(|&value| (u128::from(value - min) * u128::from(u16::MAX) / span) as u64)
+        .collect()
 }
