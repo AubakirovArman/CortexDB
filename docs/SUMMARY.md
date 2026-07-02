@@ -82,6 +82,7 @@
 - [Benchmarks](BENCHMARKS.md)
 - [Scale Benchmarks](SCALE_BENCHMARKS.md)
 - [Baseline Comparison](BASELINE_COMPARISON.md)
+- [ERB Embedding Evidence](ERB_EMBEDDING_EVIDENCE.md)
 - [Comparisons](COMPARISONS.md)
 - [Public Claims Policy](PUBLIC_CLAIMS_POLICY.md)
 
