@@ -38,8 +38,9 @@ pub use analyzer::{
     mean_reciprocal_rank_q16, Language, TextAnalyzer, TextAnalyzerConfig, TEXT_ANALYZER_VERSION,
 };
 pub use ann::{
-    AnnEvaluationReport, AnnFallbackReason, AnnMetrics, AnnSearchPath, AnnSearchPolicy,
-    AnnSearchReport, AnnSloViolation, MIN_ANN_RECALL_Q16,
+    should_sample_recall, AnnEvaluationReport, AnnFallbackReason, AnnMetrics, AnnSearchPath,
+    AnnSearchPolicy, AnnSearchReport, AnnSloViolation, RecallWindow, GUARDED_RECALL_SAMPLE_RATE,
+    GUARDED_RECALL_WARMUP_QUERIES, GUARDED_RECALL_WINDOW, MIN_ANN_RECALL_Q16,
 };
 pub use ann_corpus::{
     evaluate_ann_corpus, metric_name, parse_ann_metric, AnnCorpusGroundTruth, AnnCorpusOptions,
