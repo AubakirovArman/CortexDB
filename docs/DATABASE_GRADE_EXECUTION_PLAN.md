@@ -2367,3 +2367,148 @@ Next exit step: move to `EPIC-B08` — VerifyOp as a planned operator.
   crates/cortex-engine/src/multi_agent_consistency.rs, mk/core.mk,
   mk/vars-core.mk, mk/phony.mk, docs/SUMMARY.md,
   docs/DOCUMENTATION_INDEX.md.
+
+## Block G — Accountability & Governed Context Engine (GCE)
+
+Landing note: the answer-accountability program (the category-defining moat of
+`docs/NEXT_GEN_MASTER_PLAN.md`) was implemented in the working tree but had
+**never been committed** (193 modified + ~198 untracked files, incl. the whole
+`crates/cortex-crypto`, `crates/cortex-receipt-verify`, and
+`crates/cortex-engine/src/accountability/`). It is now preserved on branch
+`accountability-landing` (snapshot commit `a850a92`) plus a `git bundle`
+backup. This block records it in the tracker (previously **zero** mentions).
+Boundary: landed and core gates green locally; **not yet merged to `main`**,
+**not yet wired into the `alpha-check`/`release-check` aggregate lanes**, and
+production-evidence items (KMS/HSM custody, external witnesses) remain
+`production_ready=false` by design (`PUBLIC_CLAIMS_POLICY`). Design contract:
+`docs/spec/GCE_CONTRACT.md`; program plan: `docs/ACCOUNTABILITY_ROADMAP.md`;
+status detail: `docs/ACCOUNTABILITY_IMPLEMENTATION_STATUS.md`.
+
+### EPIC-G01 — Crypto foundation (`cortex-crypto`)
+
+- status: `partial`
+- meta: Category: accountability · P0 · foundation for every signed/hashed surface
+- tasks:
+  - [x] First real crypto primitives in the workspace behind a shared crate:
+    BLAKE3, Ed25519, XChaCha20-Poly1305, Argon2id, HMAC/SHA-256, `subtle`,
+    `zeroize` (replaces all FNV/XOR integrity surfaces).
+  - [ ] Wire `crypto-*-check` gates into the release lane.
+- evidence:
+  - `crates/cortex-crypto` compiles clean and unit tests pass
+    (`cargo test -p cortex-crypto` green this session; incl. recursive
+    canonical-bytes key-sort test).
+  - Gates present: `crypto-primitives-check`, `crypto-deps-policy-check`,
+    `crypto-deps-readiness-check`, `crypto-foundation-check`,
+    `crypto-claims-honesty-check`.
+- latest checks: `cargo check --workspace` (0 warnings/0 errors);
+  `cargo test -p cortex-crypto -p cortex-receipt-verify`.
+- next exit step: run each `crypto-*-check` from a clean clone and add to
+  `alpha-check`.
+- files: crates/cortex-crypto/*, mk/core-contracts.mk.
+
+### EPIC-G02 — Canonical serialization + determinism
+
+- status: `partial`
+- meta: Category: accountability · P0 · the DB↔verifier agreement point
+- tasks:
+  - [x] `canonical_bytes()` for ContextPack/VerificationReport (recursive key
+    sort, integer-only, wall-clock excluded).
+  - [ ] Cross-process byte-identity harness in the release lane.
+- evidence:
+  - `crates/cortex-engine/src/canonical.rs`; gates
+    `canonical-serialization-check`, `pack-determinism-hash-check`,
+    `engine-determinism-check`, `verify-determinism-check`.
+- latest checks: covered by the receipt determinism sub-gate below.
+- next exit step: confirm `elapsed_nanos` is excluded from every hashed surface
+  (VERIFY operator wall-clock).
+- files: crates/cortex-engine/src/canonical.rs, scripts/verify_determinism_check.py.
+
+### EPIC-G03 — Accountability receipt + standalone verifier
+
+- status: `partial`
+- meta: Category: accountability · P0 · **the non-absorbable core**
+- tasks:
+  - [x] BLAKE3-Merkle + Ed25519-signed `accountability_receipt.v1` (additive to
+    `context_pack.v1`); engine-free offline `cortex-receipt-verify` binary.
+  - [ ] Merge to main + wire umbrella into `alpha-check`.
+- evidence:
+  - `make accountability-receipt-check` GREEN this session (EXIT 0): sub-gates
+    `accountability-receipt-schema-check`, `-determinism-check`, `-sign-check`,
+    `-verify-check`, `-tamper-check`; the standalone verifier accepts the golden
+    receipt and rejects signature/field tampering
+    (`fixtures/accountability_receipt/verify_input.golden.json`).
+- latest checks: `make accountability-receipt-check`.
+- next exit step: verify `access_root` re-executes the signed `bitmap_program`
+  (plan-bound access, not a re-derivation) end-to-end.
+- files: crates/cortex-engine/src/accountability/*, crates/cortex-receipt-verify/*,
+  scripts/accountability_receipt_*.py, fixtures/accountability_receipt/*.
+
+### EPIC-G04 — Fail-closed parity + scope-leak + invariant model
+
+- status: `partial`
+- meta: Category: accountability · P0 · makes `access_root` honest
+- tasks:
+  - [ ] Persisted ANN/lexical allowed-set == full bound bitmap program (not
+    `readable_scopes` alone); sparse-scope recall; machine-checked model_hash.
+- evidence: gates `fail-closed-end-to-end-check`, `scope-leak-bench-check`,
+  `fail-closed-invariant-model-check`, `http-raft-routing-accountability-check`.
+- latest checks: pending clean-clone run.
+- next exit step: run `scope-leak-bench-check` across all output surfaces
+  (0 sentinel bytes).
+- files: crates/cortex-engine/src/search/*, scripts/*scope*_check.py.
+
+### EPIC-G05 — Transparency log / anti-equivocation anchor
+
+- status: `partial`
+- meta: Category: accountability · P0 · closes the one class a signing wrapper can't
+- tasks:
+  - [ ] Append-only `pack_root` transparency log with witness quorum + gossip.
+- evidence: gates `transparency-anchor-check`, `-inclusion-check`,
+  `-consistency-check`, `-witness-check`, `-witness-quorum-check`,
+  `-gossip-check`, `-availability-check`, `-slo-check`.
+- latest checks: pending clean-clone run.
+- next exit step: promote from stub to first-class per master-plan critique.
+- files: crates/cortex-engine/src/accountability/transparency*.rs.
+
+### EPIC-G06 — Deterministic verify at strength
+
+- status: `partial`
+- meta: Category: accountability · P1 · measured contradiction recall
+- tasks:
+  - [ ] Broaden conflict extraction beyond single `(project,metric)`; unit/currency
+    normalization; temporal/citation/multi-value conflicts; recall ≥0.90.
+- evidence: gates `verify-conflict-recall-check`,
+  `verify-numeric-normalization-check`, `verify-temporal-conflict-check`,
+  `verify-citation-conflict-check`, `verify-multivalue-extraction-check`,
+  `numeric-verify-index-check`.
+- latest checks: pending clean-clone run.
+- next exit step: publish measured recall/false-conflict numbers.
+- files: crates/cortex-engine/src/verification/*, scripts/verify_*_check.py.
+
+### EPIC-G07 — GCE contract spec + AAB conformance
+
+- status: `partial`
+- meta: Category: accountability · P2 · public category proof (Oso test)
+- tasks:
+  - [ ] Open `GCE_CONTRACT.md` spec; AAB axes; thin-wrapper reference fails
+    plan-bound access + equivocation + dropped-conflict.
+- evidence: `docs/spec/GCE_CONTRACT.md`; gates `gce-spec-doc-check`,
+  `aab-conformance-check`.
+- latest checks: pending clean-clone run.
+- next exit step: live pgvector+policy baseline scores UNRANKED on
+  receipt-verifiability/determinism.
+- files: docs/spec/GCE_CONTRACT.md, scripts/aab_conformance_check.py.
+
+### EPIC-G08 — Production evidence handoff (external-dependent)
+
+- status: `blocked`
+- meta: Category: accountability · external · stays `production_ready=false`
+- tasks:
+  - [ ] KMS/HSM key custody, ≥2 independent witnesses, external compliance
+    review — agent deliverable is runbooks + dry-runs only; acquisition is human.
+- evidence: gates `receipt-production-readiness-check`,
+  `receipt-production-ready-check`, `receipt-production-evidence-*-check`,
+  `receipt-kms-hsm-custody-check`, `receipt-replica-invariance-check`.
+- latest checks: n/a (external dependencies).
+- next exit step: keep `production_ready=false`; ship runbooks/dry-runs only.
+- files: scripts/receipt_production_*.py, scripts/receipt_kms_hsm_*.py.
