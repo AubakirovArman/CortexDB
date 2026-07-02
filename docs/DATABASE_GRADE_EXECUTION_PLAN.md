@@ -2384,6 +2384,28 @@ production-evidence items (KMS/HSM custody, external witnesses) remain
 `docs/spec/GCE_CONTRACT.md`; program plan: `docs/ACCOUNTABILITY_ROADMAP.md`;
 status detail: `docs/ACCOUNTABILITY_IMPLEMENTATION_STATUS.md`.
 
+Verification ledger (local, this landing session): `cargo check --workspace`
+clean (0 warnings / 0 errors); **~40 accountability gates pass green** —
+`accountability-receipt-check` umbrella (schema/determinism/sign/verify/tamper)
+with the engine-free `cortex-receipt-verify` accepting the golden receipt and
+rejecting tampering; `canonical-serialization-check`, `pack-determinism-hash-check`,
+`engine-determinism-check`, `verify-determinism-check`; the full crypto suite
+(`crypto-primitives/deps-policy/deps-readiness/foundation/claims-honesty-check`);
+the full transparency suite
+(`transparency-anchor/inclusion/consistency/witness/witness-quorum/gossip/availability/slo-check`);
+`fail-closed-end-to-end-check`, `scope-leak-bench-check`,
+`fail-closed-invariant-model-check`, `receipt-replica-invariance-check`,
+`receipt-threat-model-check`, `audit-receipt-binding-check`,
+`http-raft-routing-accountability-check`, `verify-conflict-recall-check`,
+`verify-numeric/temporal/citation/multivalue-check`, `gce-spec-doc-check`,
+`aab-conformance-check`. One gate, `numeric-verify-index-check`, is a
+performance SLO (1M cells, p95 ≤ 250ms) that missed on this shared/loaded host
+(measured p95 ≈ 2947ms) — correctness-neutral, hardware-dependent, not a code
+regression. The `receipt-production-*` / `receipt-kms-hsm-*` gates remain
+`production_ready=false` by design (external KMS/HSM + witnesses). Full
+clean-clone CI of every gate + wiring into `alpha-check`/`release-check`
+remains the C1-2 exit step before merge to `main`.
+
 ### EPIC-G01 — Crypto foundation (`cortex-crypto`)
 
 - status: `partial`
