@@ -2,7 +2,7 @@ use cortex_sdk::{Aql, AqlRetrievalMode, CortexDbClient};
 
 use crate::config::McpConfig;
 use crate::tools::{
-    RememberArgs, RetrieveContextArgs, ToolCallResult, ToolExecutor, VerifyFactArgs,
+    RememberArgs, RetrieveContextArgs, SearchArgs, ToolCallResult, ToolExecutor, VerifyFactArgs,
 };
 
 #[derive(Clone, Debug)]
@@ -98,6 +98,16 @@ impl ToolExecutor for SdkToolExecutor {
         let statement = builder.build().map_err(|error| error.to_string())?;
         self.client
             .remember(&scope, &statement)
+            .and_then(|response| serde_json::to_string_pretty(&response).map_err(Into::into))
+            .map(ToolCallResult::text)
+            .map_err(|error| error.to_string())
+    }
+
+    fn search(&self, args: SearchArgs) -> Result<ToolCallResult, String> {
+        let scope = self.scope(args.scope);
+        let limit = args.limit.unwrap_or(10) as usize;
+        self.client
+            .search_keyword(&scope, &args.query, limit)
             .and_then(|response| serde_json::to_string_pretty(&response).map_err(Into::into))
             .map(ToolCallResult::text)
             .map_err(|error| error.to_string())

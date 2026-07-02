@@ -6,17 +6,20 @@ tenant routing, AgentView policy, or request limits.
 
 ## Tools
 
-The adapter intentionally exposes only the first adoption surface:
+The adapter exposes the governed agent surface plus permission-scoped search:
 
 | Tool | Purpose |
 |---|---|
 | `retrieve_context` | Build and execute `RETRIEVE CONTEXT` and return a ContextPack, prompt, or markdown. |
 | `verify_fact` | Build and execute deterministic `VERIFY FACT`. |
 | `remember` | Build and execute policy-checked `REMEMBER`. |
+| `search` | Permission-scoped keyword search returning ranked cells (not a governed ContextPack). |
 
-Raw `put` and broad `search` are not MCP tools in this adapter. Agents should
-write durable memories through `remember` and retrieve grounded context through
-`retrieve_context`.
+Raw `put` is not an MCP tool. Prefer `retrieve_context` for grounded agent
+context: unlike `search`, it returns a permission-filtered, token-budgeted,
+cited ContextPack. `search` is offered for exploration and cell lookup; it is
+still AgentView-scoped through the server and cannot read outside the caller's
+readable scopes.
 
 ## AgentView Mapping
 
@@ -49,7 +52,8 @@ printf '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}\n' \
   | cargo run -p cortex-mcp --
 ```
 
-The response should contain `retrieve_context`, `verify_fact`, and `remember`.
+The response should contain `retrieve_context`, `verify_fact`, `remember`, and
+`search`.
 
 ## Claude Code / IDE Config
 

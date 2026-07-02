@@ -4,6 +4,7 @@ use serde_json::{json, Value};
 pub const TOOL_RETRIEVE_CONTEXT: &str = "retrieve_context";
 pub const TOOL_VERIFY_FACT: &str = "verify_fact";
 pub const TOOL_REMEMBER: &str = "remember";
+pub const TOOL_SEARCH: &str = "search";
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 pub struct RetrieveContextArgs {
@@ -31,6 +32,13 @@ pub struct RememberArgs {
     pub scope: Option<String>,
     pub memory_type: Option<String>,
     pub ttl_seconds: Option<u64>,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+pub struct SearchArgs {
+    pub query: String,
+    pub scope: Option<String>,
+    pub limit: Option<u32>,
 }
 
 #[derive(Clone, Debug, Serialize, PartialEq, Eq)]
@@ -73,6 +81,7 @@ pub trait ToolExecutor {
     fn retrieve_context(&self, args: RetrieveContextArgs) -> Result<ToolCallResult, String>;
     fn verify_fact(&self, args: VerifyFactArgs) -> Result<ToolCallResult, String>;
     fn remember(&self, args: RememberArgs) -> Result<ToolCallResult, String>;
+    fn search(&self, args: SearchArgs) -> Result<ToolCallResult, String>;
 }
 
 pub fn tools_list_result() -> Value {
@@ -123,6 +132,20 @@ pub fn tools_list_result() -> Value {
                         "scope": {"type": "string"},
                         "memory_type": {"type": "string"},
                         "ttl_seconds": {"type": "integer", "minimum": 1}
+                    },
+                    "additionalProperties": false
+                }
+            },
+            {
+                "name": TOOL_SEARCH,
+                "description": "Keyword-search CortexDB for cells in a scope (permission-scoped). Returns ranked cells, not a governed ContextPack; prefer retrieve_context for grounded agent context.",
+                "inputSchema": {
+                    "type": "object",
+                    "required": ["query"],
+                    "properties": {
+                        "query": {"type": "string"},
+                        "scope": {"type": "string"},
+                        "limit": {"type": "integer", "minimum": 1}
                     },
                     "additionalProperties": false
                 }

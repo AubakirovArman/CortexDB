@@ -6,7 +6,7 @@ use serde_json::{json, Value};
 use crate::protocol::{empty_result, initialize_result, JsonRpcRequest, JsonRpcResponse};
 use crate::tools::{
     tools_list_result, ToolCallResult, ToolExecutor, TOOL_REMEMBER, TOOL_RETRIEVE_CONTEXT,
-    TOOL_VERIFY_FACT,
+    TOOL_SEARCH, TOOL_VERIFY_FACT,
 };
 
 const PARSE_ERROR: i32 = -32700;
@@ -86,6 +86,7 @@ fn call_tool<E: ToolExecutor>(executor: &E, params: Option<Value>) -> Result<Val
             parse_args(arguments).map(|args| tool_result(executor.verify_fact(args)))
         }
         TOOL_REMEMBER => parse_args(arguments).map(|args| tool_result(executor.remember(args))),
+        TOOL_SEARCH => parse_args(arguments).map(|args| tool_result(executor.search(args))),
         other => Err((INVALID_PARAMS, format!("unknown tool: {other}"))),
     }?;
     serde_json::to_value(result).map_err(|error| {
@@ -132,7 +133,7 @@ mod tests {
 
     use super::{handle_message, run_stdio};
     use crate::tools::{
-        RememberArgs, RetrieveContextArgs, ToolCallResult, ToolExecutor, VerifyFactArgs,
+        RememberArgs, RetrieveContextArgs, SearchArgs, ToolCallResult, ToolExecutor, VerifyFactArgs,
     };
 
     struct FakeExecutor;
@@ -149,17 +150,35 @@ mod tests {
         fn remember(&self, args: RememberArgs) -> Result<ToolCallResult, String> {
             Ok(ToolCallResult::text(format!("remember:{}", args.content)))
         }
+
+        fn search(&self, args: SearchArgs) -> Result<ToolCallResult, String> {
+            Ok(ToolCallResult::text(format!("search:{}", args.query)))
+        }
     }
 
     #[test]
-    fn lists_three_tools() {
+    fn lists_four_tools() {
         let response = handle_message(
             &FakeExecutor,
             r#"{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}"#,
         )
         .unwrap();
         let result = response.result.unwrap();
-        assert_eq!(result["tools"].as_array().unwrap().len(), 3);
+        assert_eq!(result["tools"].as_array().unwrap().len(), 4);
+    }
+
+    #[test]
+    fn calls_search_tool() {
+        let response = handle_message(
+            &FakeExecutor,
+            r#"{"jsonrpc":"2.0","id":"s","method":"tools/call","params":{"name":"search","arguments":{"query":"budget"}}}"#,
+        )
+        .unwrap();
+        assert!(response.error.is_none());
+        assert_eq!(
+            response.result.unwrap()["content"][0]["text"],
+            "search:budget"
+        );
     }
 
     #[test]
