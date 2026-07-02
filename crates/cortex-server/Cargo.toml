@@ -22,6 +22,7 @@ cortex-engine = { path = "../cortex-engine" }
 ed25519-dalek = { version = "2.1", optional = true }
 getrandom = { version = "0.2", optional = true }
 serde_json = "1"
+ureq = { version = "2", features = ["tls"] }
 axum = "0.7"
 tokio = { version = "1", features = ["full"] }
 tower = "0.4"

@@ -158,9 +158,20 @@ fn spawn_embedder(body: &'static str) -> (String, thread::JoinHandle<()>) {
     let addr = listener.local_addr().unwrap();
     let handle = thread::spawn(move || {
         let (mut stream, _) = listener.accept().unwrap();
-        let mut request = [0; 2048];
-        let read = stream.read(&mut request).unwrap();
-        let request = String::from_utf8_lossy(&request[..read]);
+        stream
+            .set_read_timeout(Some(std::time::Duration::from_secs(2)))
+            .unwrap();
+        let mut request = String::new();
+        let mut buffer = [0u8; 1024];
+        // A single read can return a partial request under load; read until the
+        // full JSON body (closing brace) has arrived.
+        while !request.contains('}') {
+            match stream.read(&mut buffer) {
+                Ok(0) => break,
+                Ok(read) => request.push_str(&String::from_utf8_lossy(&buffer[..read])),
+                Err(_) => break,
+            }
+        }
         assert!(request.contains("POST /embed HTTP/1.1"));
         assert!(request.contains("\"model\":\"test-model\""));
         assert!(request.contains("\"input\":\"semantic lookup\""));
