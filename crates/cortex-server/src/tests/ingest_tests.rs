@@ -59,6 +59,33 @@ fn text_ingestion_without_embed_writes_no_vector_header() {
     assert!(!cell.contains("vector="));
 }
 
+/// Full "text in -> governed context out" loop over HTTP, end to end against a
+/// real embedding provider: ingest plain text with embedding at ingest, then
+/// retrieve it with a natural-language query embedded at query time (no literal
+/// `vector=`). Ignored by default; opt in with a live `CORTEXDB_EMBEDDING_URL`.
+#[test]
+#[ignore = "requires a live CORTEXDB_EMBEDDING_URL endpoint"]
+fn text_in_context_out_loop_is_closed_live() {
+    if std::env::var("CORTEXDB_EMBEDDING_URL").is_err() {
+        eprintln!("skipping: CORTEXDB_EMBEDDING_URL not set");
+        return;
+    }
+    let dir = tempfile::tempdir().unwrap();
+
+    // Write side: ingest text and embed each chunk at ingest.
+    let ingest = "POST /v1/ingest/text?scope=project:investments&source=loop.md&embed=true HTTP/1.1\r\n\r\nThe board approved the solar photovoltaic plant capital expenditure for fiscal year 2025.";
+    assert!(handle_http(dir.path(), ingest).contains(r#""chunks_ingested":1"#));
+
+    // Read side: a natural-language query, embedded at query time (embed_query),
+    // in pure-vector mode with no literal vector supplied by the caller.
+    let search = "POST /v1/search?scope=project:investments&mode=vector&algorithm=exact&embed_query=true&q=how+much+capital+was+approved+for+the+renewable+energy+plant HTTP/1.1\r\n\r\n";
+    let response = handle_http(dir.path(), search);
+    assert!(
+        response.contains(r#""cell_id":10001"#),
+        "expected the embedded cell to be retrieved from a text-only query: {response}"
+    );
+}
+
 #[test]
 fn embedding_backfill_rejects_invalid_batch_size() {
     // Malformed maintenance params fail closed before any embedding call.

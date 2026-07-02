@@ -12,6 +12,24 @@ Status vocabulary:
   under *Not yet* so it is not mistaken for full completion.
 - **Not started** — no code yet.
 
+## Milestone — text-in → context-out loop closed over HTTP
+
+The end-to-end embedding loop works over the HTTP surface and is live-verified
+against a real provider (`text_in_context_out_loop_is_closed_live`, ignored by
+default):
+
+1. **Write side** — `POST /v1/ingest/text?embed=true` embeds each chunk at
+   ingest, or `POST /v1/embedding/backfill` embeds an already-ingested corpus
+   idempotently by content hash.
+2. **Read side** — `POST /v1/search?embed_query=true` (also `/v1/context`,
+   `/v1/search/explain`) embeds a natural-language query at request time, so a
+   caller retrieves by meaning without ever supplying a literal `vector=`.
+
+Every step is fail-closed: with no `CORTEXDB_EMBEDDING_*` endpoint configured,
+each embedding entry point returns `bad_request` rather than silently degrading.
+What remains (see *Not yet* columns) is the contract-grade layer — embedding
+profile provenance in the manifest and the CLI-side query embedder.
+
 ## Track A — Retrieval quality & embeddings
 
 | Task | State | What landed | Not yet (remaining plan scope) | Gate |
@@ -21,7 +39,7 @@ Status vocabulary:
 | A2.1 Embedder adapter | Slice | Engine `Embedder` trait + offline `DeterministicTestEmbedder` (splitmix64/fnv1a64) in `embedding_pipeline/adapter.rs`, exported from `lib.rs`. | `EmbeddingProfile` in manifest; per-cell `embedding_ref` (profile+model+dim+content-hash); profile-mismatch typed error at `open`; goldens re-baselined for the new canonical fields. | (covered by ingest tests) |
 | A2.2 Auto-embed at ingest | Slice | Engine `ingest_text_chunks_with_embedder(..)` writes a `vector=` payload header per chunk through an injected `&dyn Embedder` (engine stays network-free). Server `HttpEmbedder` + `embedder_from_env()`; opt-in `POST /v1/ingest/text?embed=true`, parsed fail-closed. **Corpus backfill** `POST /v1/embedding/backfill` drives the engine's pre-existing idempotent, content-hash-keyed `backfill_embedding_debt_batched` over HTTP (batched, `max_items` bound, fail-closed on bad params/no config). Hermetic + ignored live end-to-end tests (live-verified: `embed=true` writes a `vector=` header over HTTPS; backfill embeds an existing cell then converges to zero debt on re-run). | `allow_unembedded=true` job-report escape; checkpoint ACV1/ACH0 interaction; ERB-50 engine-hybrid gate with **no** external vector files; 10k-doc test-embedder → working HNSW; ANN recall gates; crash-between-embed-and-write fail-closed. | `ingest_embedding` tests |
 | A2.0 Embedding-model selection | Not started | Empirical input recorded: [`ERB_EMBEDDING_EVIDENCE.md`](ERB_EMBEDDING_EVIDENCE.md) shows dense BGE-M3 vectors did **not** move ERB semantic recall (flat ~32.8→33.6), so the semantic gap is not a pure embedding-pipeline gap. | Formal 2–3 candidate eval on ERB-50 + LongMemEval compact-50 (recall@10/MRR, latency, index size at Q15 i16); frozen profile before A2.2 hardcodes one. | `embedding-model-selection-check` (planned) |
-| A2.3 Query-side text→vector | Not started | Server query path already accepts `embed_query=true` (search/context/explain). | CLI `--mode hybrid\|semantic` without `--vector` when an adapter is configured; explain records vector source (literal vs embedded + profile); prior fail-closed text preserved with no config. | `cli-embedded-query-check` (planned) |
+| A2.3 Query-side text→vector | Slice (server) | Server query path embeds the query text when `embed_query=true` (`/v1/search`, `/v1/context`, `/v1/search/explain`) via `embed_query_from_env`, fail-closed with no config. This closes the HTTP text-in/context-out loop end to end (see milestone below). | CLI `--mode hybrid\|vector` without `--vector` when an adapter is configured (CLI is offline and has no embedding client yet); explain records vector source (literal vs embedded + profile). | `cli-embedded-query-check` (planned) |
 
 ## Cross-cutting landings
 
