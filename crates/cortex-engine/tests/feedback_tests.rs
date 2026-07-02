@@ -233,6 +233,40 @@ fn feedback_index_tracks_patch_tombstone_checkpoint_and_reopen() {
     assert_eq!(scores_after_reopen.get(&CellId(43)), None);
 }
 
+#[test]
+fn record_context_feedback_probes_past_occupied_cell_id() {
+    // Regression for B1.1: feedback allocation must probe for a free id like
+    // session allocation, instead of blindly writing `current_seq + 1` and
+    // silently overwriting an existing feedback cell.
+    const FEEDBACK_CELL_NAMESPACE: u64 = 0x9000_0000_0000_0000;
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+
+    // Occupying a cell advances current_seq by 1, so occupying the id with
+    // sequence (current_seq + 2) makes the next feedback candidate
+    // (current_seq + 1 after the occupying write) land exactly on it.
+    let slot: u64 = 7;
+    let seq = db.current_seq().0;
+    let collide_id = CellId(FEEDBACK_CELL_NAMESPACE | (slot << 32) | (seq + 2));
+    db.put_knowledge_cell(collide_id, feedback_cell(CellId(99), true, 100))
+        .unwrap();
+    // The occupying write advanced current_seq so the next candidate == collide_id.
+    assert_eq!(db.current_seq().0 + 1, seq + 2);
+
+    let stored = db
+        .record_context_feedback(AgentId(7), feedback(CellId(42), true))
+        .unwrap();
+
+    // Must have probed PAST the occupied id, not reused (and overwritten) it.
+    assert_ne!(stored.cell_id, collide_id);
+    // The occupied cell is intact (its source_cell_id=99 body survives).
+    let occupied = db.get_latest_cell(collide_id).unwrap();
+    assert!(String::from_utf8_lossy(&occupied).contains("source_cell_id=99"));
+    // The new feedback cell is the real feedback for source cell 42.
+    let new_cell = db.get_latest_cell(stored.cell_id).unwrap();
+    assert!(String::from_utf8_lossy(&new_cell).contains("source=cell:42"));
+}
+
 fn feedback(source_cell_id: CellId, useful: bool) -> ContextFeedback {
     ContextFeedback {
         source_cell_id,

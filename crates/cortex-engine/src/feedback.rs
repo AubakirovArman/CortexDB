@@ -82,13 +82,28 @@ impl Database {
 
     fn next_feedback_cell_id(&self, agent_id: AgentId) -> EngineResult<CellId> {
         let agent_slot = agent_cell_id_slot(agent_id).ok_or_else(feedback_id_overflow)?;
-        let sequence = self
+        let mut sequence = self
             .current_seq()
             .0
             .checked_add(1)
             .ok_or_else(feedback_id_overflow)?;
-        namespaced_agent_cell_id(FEEDBACK_CELL_NAMESPACE, agent_slot, sequence)
-            .ok_or_else(feedback_id_overflow)
+        // Probe for a free id, mirroring session allocation
+        // (`session.rs::next_session_cell_id`). The sequence is derived from
+        // `current_seq`; without this probe a reused sequence would silently
+        // overwrite an existing feedback cell instead of allocating a new one.
+        let mut attempts = 0u64;
+        loop {
+            let cell_id = namespaced_agent_cell_id(FEEDBACK_CELL_NAMESPACE, agent_slot, sequence)
+                .ok_or_else(feedback_id_overflow)?;
+            if self.get_latest_cell_descriptor(cell_id).is_none() {
+                return Ok(cell_id);
+            }
+            attempts = attempts.checked_add(1).ok_or_else(feedback_id_overflow)?;
+            if attempts > u64::from(u32::MAX) {
+                return Err(feedback_id_overflow());
+            }
+            sequence = sequence.checked_add(1).ok_or_else(feedback_id_overflow)?;
+        }
     }
 
     pub fn feedback_scores(&self) -> BTreeMap<CellId, i32> {
