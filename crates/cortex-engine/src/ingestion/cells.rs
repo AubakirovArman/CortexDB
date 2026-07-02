@@ -13,9 +13,10 @@ pub(crate) fn put_text_chunk_cell(
     chunk: &TextChunk,
     scope: &str,
     source: &str,
+    vector: Option<&[i16]>,
 ) -> EngineResult<CommitSeq> {
     let metadata = document_metadata(scope.to_owned(), source.to_owned());
-    let payload = text_chunk_payload(&metadata, source, chunk);
+    let payload = text_chunk_payload(&metadata, source, chunk, vector);
     db.append_then_apply_with_metadata(
         DbOperation::PutCell { cell_id, payload },
         metadata.encode_wal_section(),
@@ -108,6 +109,7 @@ fn text_chunk_payload(
     metadata: &KnowledgeCellMetadata,
     document_id: &str,
     chunk: &TextChunk,
+    vector: Option<&[i16]>,
 ) -> Vec<u8> {
     let mut lines = vec![
         format!("scope={}", sanitize_header_value(&metadata.scope)),
@@ -130,10 +132,21 @@ fn text_chunk_payload(
         sanitize_header_value(&chunk.chunk_id)
     ));
     push_enrichment_headers(&mut lines, &chunk.text, document_id);
+    if let Some(vector) = vector.filter(|values| !values.is_empty()) {
+        lines.push(format!("vector={}", vector_literal(vector)));
+    }
     lines.push(String::new());
     let mut payload = lines.join("\n").into_bytes();
     payload.extend_from_slice(chunk.text.as_bytes());
     payload
+}
+
+fn vector_literal(vector: &[i16]) -> String {
+    vector
+        .iter()
+        .map(ToString::to_string)
+        .collect::<Vec<_>>()
+        .join(",")
 }
 
 fn source_ref_payload(

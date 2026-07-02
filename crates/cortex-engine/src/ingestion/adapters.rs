@@ -1,6 +1,7 @@
 use cortex_core::{CellId, CommitSeq, KnowledgeCell};
 
 use crate::database::Database;
+use crate::embedding_pipeline::Embedder;
 use crate::error::{EngineError, EngineResult};
 use crate::ingestion::cells::{
     entity_metadata, fact_metadata, offset_cell_id, put_source_ref_cell, put_text_chunk_cell,
@@ -95,6 +96,42 @@ impl Database {
         policy: TextChunkPolicy,
         update_policy: IngestionUpdatePolicy,
     ) -> EngineResult<Vec<IngestedCell>> {
+        self.ingest_text_chunks_inner(first_cell_id, text, options, policy, update_policy, None)
+    }
+
+    /// Ingest text chunks and embed each chunk body through `embedder`, writing a
+    /// `vector=` header into each cell so it becomes retrievable by vector search.
+    /// The engine stays network-free: the embedding backend is injected by the
+    /// caller (e.g. the server, which owns the HTTP client). An embedding error
+    /// fails the ingest call (fail-closed).
+    pub fn ingest_text_chunks_with_embedder(
+        &mut self,
+        first_cell_id: CellId,
+        text: &str,
+        options: TextIngestOptions,
+        policy: TextChunkPolicy,
+        update_policy: IngestionUpdatePolicy,
+        embedder: &dyn Embedder,
+    ) -> EngineResult<Vec<IngestedCell>> {
+        self.ingest_text_chunks_inner(
+            first_cell_id,
+            text,
+            options,
+            policy,
+            update_policy,
+            Some(embedder),
+        )
+    }
+
+    fn ingest_text_chunks_inner(
+        &mut self,
+        first_cell_id: CellId,
+        text: &str,
+        options: TextIngestOptions,
+        policy: TextChunkPolicy,
+        update_policy: IngestionUpdatePolicy,
+        embedder: Option<&dyn Embedder>,
+    ) -> EngineResult<Vec<IngestedCell>> {
         let chunks = split_text_chunks(&options.source, text, policy)?;
         if chunks.is_empty() {
             return Ok(Vec::new());
@@ -112,8 +149,18 @@ impl Database {
                 continue;
             }
             let cell_id = offset_cell_id(first_cell_id, index)?;
-            let commit_seq =
-                put_text_chunk_cell(self, cell_id, chunk, &options.scope, &options.source)?;
+            let vector = match embedder {
+                Some(embedder) => Some(embedder.embed(&chunk.text)?),
+                None => None,
+            };
+            let commit_seq = put_text_chunk_cell(
+                self,
+                cell_id,
+                chunk,
+                &options.scope,
+                &options.source,
+                vector.as_deref(),
+            )?;
             ingested.push(IngestedCell {
                 cell_id,
                 commit_seq,
