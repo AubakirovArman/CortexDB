@@ -975,6 +975,12 @@ paths:
       - $ref: '#/components/parameters/Tenant'
       - $ref: '#/components/parameters/Scope'
       - $ref: '#/components/parameters/Source'
+      - name: embed
+        in: query
+        required: false
+        schema:
+          type: boolean
+        description: When true, embed each chunk at ingest via the configured CORTEXDB_EMBEDDING_* endpoint. Parsed fail-closed; a non-boolean value or a missing endpoint returns 400.
       responses:
         '200':
           description: Ingestion result
@@ -982,6 +988,35 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/IngestResponse'
+        '400': *id001
+        '500': *id002
+  /v1/embedding/backfill:
+    post:
+      summary: Backfill embeddings for cells missing a vector
+      description: Corpus-wide maintenance surface. Embeds cells that still lack a vector via the configured CORTEXDB_EMBEDDING_* endpoint, idempotently by content hash. Fails closed on malformed params or when no endpoint is configured.
+      parameters:
+      - $ref: '#/components/parameters/Tenant'
+      - name: batch_size
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+        description: Embedding batch size (default 64).
+      - name: max_items
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+        description: Optional cap on the number of cells embedded in this pass.
+      responses:
+        '200':
+          description: EmbeddingBackfillReport (schema_version, scanned_items, debt_items, embedded_items, failed_items, skipped_items, batch_size, embedding_batches, write_batches, max_batch_items, final_debt_items, failure_samples).
+          content:
+            application/json:
+              schema:
+                type: object
         '400': *id001
         '500': *id002
   /v1/ingest/json:

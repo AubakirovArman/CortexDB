@@ -32,6 +32,7 @@ pub(crate) fn is_write_route(method: &str, target: &str) -> bool {
             | ("POST", "/v1/ingest/text")
             | ("POST", "/v1/ingest/json")
             | ("POST", "/v1/ingest/csv")
+            | ("POST", "/v1/embedding/backfill")
     ) || (method == "DELETE" && path.starts_with("/v1/ingest/jobs/"))
         || (method == "POST"
             && path.starts_with("/v1/ingest/jobs/")

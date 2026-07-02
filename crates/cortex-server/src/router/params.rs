@@ -20,6 +20,20 @@ pub fn query_param_opt_decoded(query: &str, key: &str) -> Option<String> {
     query_param_opt(query, key).and_then(|raw| decode_percent(raw).ok())
 }
 
+/// Parses an optional non-negative integer query parameter. Returns `None` when
+/// the parameter is absent, and a caller-facing error when it is present but not
+/// a valid `usize`.
+pub fn query_param_usize(query: &str, key: &str) -> Result<Option<usize>, String> {
+    match query_param_opt_decoded(query, key) {
+        Some(raw) => raw
+            .trim()
+            .parse::<usize>()
+            .map(Some)
+            .map_err(|_| format!("{key} must be a non-negative integer")),
+        None => Ok(None),
+    }
+}
+
 fn decode_percent(raw: &str) -> Result<String, String> {
     // Replace '+' with space for application/x-www-form-urlencoded compatibility
     let normalized = raw.replace('+', " ");

@@ -59,6 +59,62 @@ fn text_ingestion_without_embed_writes_no_vector_header() {
     assert!(!cell.contains("vector="));
 }
 
+#[test]
+fn embedding_backfill_rejects_invalid_batch_size() {
+    // Malformed maintenance params fail closed before any embedding call.
+    let dir = tempfile::tempdir().unwrap();
+    let response = handle_http(
+        dir.path(),
+        "POST /v1/embedding/backfill?batch_size=lots HTTP/1.1\r\n\r\n",
+    );
+    assert!(response.contains(r#""code":"bad_request""#));
+    assert!(response.contains("batch_size must be a non-negative integer"));
+}
+
+/// Live end-to-end check of the corpus embedding-backfill path against a real
+/// provider: ingest without embeddings, then backfill, and confirm the report
+/// shows work was done. Ignored by default; opt in with a live
+/// `CORTEXDB_EMBEDDING_URL`.
+#[test]
+#[ignore = "requires a live CORTEXDB_EMBEDDING_URL endpoint"]
+fn embedding_backfill_embeds_existing_cells_live() {
+    if std::env::var("CORTEXDB_EMBEDDING_URL").is_err() {
+        eprintln!("skipping: CORTEXDB_EMBEDDING_URL not set");
+        return;
+    }
+    let dir = tempfile::tempdir().unwrap();
+    let ingest = "POST /v1/ingest/text?scope=project:investments&source=backfill.md HTTP/1.1\r\n\r\nsolar plant capital budget approved for 2025";
+    assert!(handle_http(dir.path(), ingest).contains(r#""chunks_ingested":1"#));
+
+    let before = handle_http(dir.path(), "GET /v1/cell?cell_id=10001 HTTP/1.1\r\n\r\n");
+    assert!(!before.contains("vector="), "cell should start un-embedded");
+
+    let report = handle_http(
+        dir.path(),
+        "POST /v1/embedding/backfill?batch_size=8 HTTP/1.1\r\n\r\n",
+    );
+    assert!(
+        report.contains(r#""embedded_items":1"#),
+        "expected one embedded item: {report}"
+    );
+
+    let after = handle_http(dir.path(), "GET /v1/cell?cell_id=10001 HTTP/1.1\r\n\r\n");
+    assert!(
+        after.contains("vector="),
+        "expected a vector= header after backfill: {after}"
+    );
+
+    // Idempotent: a second backfill finds no remaining debt.
+    let again = handle_http(
+        dir.path(),
+        "POST /v1/embedding/backfill?batch_size=8 HTTP/1.1\r\n\r\n",
+    );
+    assert!(
+        again.contains(r#""embedded_items":0"#),
+        "second backfill should be a no-op: {again}"
+    );
+}
+
 /// Live end-to-end check of the `embed=true` HTTP path against a real embedding
 /// provider. Ignored by default; opt in by exporting `CORTEXDB_EMBEDDING_URL`
 /// (and any auth/model vars) and running:

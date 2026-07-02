@@ -153,6 +153,29 @@ CORTEXDB_EMBEDDING_TIMEOUT_MS=2000             # optional
 An embedding error during ingest fails the whole `POST /v1/ingest/text` call
 (fail-closed) instead of persisting a partially embedded batch.
 
+### Corpus backfill
+
+Cells ingested without embeddings (or before an endpoint was configured) can be
+embedded later with the corpus-wide maintenance endpoint:
+
+```text
+POST /v1/embedding/backfill?batch_size=64&max_items=1000
+```
+
+- Drives the engine's `Database::backfill_embedding_debt_batched`, which scans
+  for cells that still lack a vector and embeds them in batches through the
+  configured `CORTEXDB_EMBEDDING_*` endpoint.
+- **Idempotent by content hash**: a cell whose current text is already embedded
+  is not re-embedded, so re-running the endpoint converges to zero remaining
+  debt (`embedded_items` drops to `0`).
+- Fail-closed: a malformed `batch_size`/`max_items` is a `400` before any work;
+  with no embedding endpoint configured the call returns
+  `bad_request: semantic requires vector or embedding config`.
+- This is an operator/maintenance surface (analogous to `/v1/compact`): it
+  operates corpus-wide rather than per agent scope. The response is an
+  `EmbeddingBackfillReport` (`scanned_items`, `debt_items`, `embedded_items`,
+  `failed_items`, `final_debt_items`, …).
+
 ## Ingestion Job Lifecycle
 
 The HTTP API exposes persisted ingestion job records so clients and the

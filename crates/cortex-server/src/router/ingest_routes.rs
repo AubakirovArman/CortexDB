@@ -1,13 +1,14 @@
 use cortex_aql::AgentView;
 use cortex_engine::{
-    Database, IngestedCell, IngestionBackpressureRequest, IngestionJobId, IngestionProgressTracker,
+    Database, Embedder, IngestedCell, IngestionBackpressureRequest, IngestionJobId,
+    IngestionProgressTracker,
 };
 
 use crate::authz;
 use crate::embedding;
 use crate::responses::{DeleteJobResponse, IngestResponse, RouterError};
 
-use super::params::query_param_opt_decoded;
+use super::params::{query_param_opt_decoded, query_param_usize};
 use super::DatabaseAccess;
 
 pub(super) fn try_route<A: DatabaseAccess>(
@@ -24,6 +25,7 @@ pub(super) fn try_route<A: DatabaseAccess>(
         ("POST", "/v1/ingest/text")
             | ("POST", "/v1/ingest/json")
             | ("POST", "/v1/ingest/csv")
+            | ("POST", "/v1/embedding/backfill")
             | ("GET", "/v1/ingest/jobs")
     ) && !is_ingest_job_route
     {
@@ -149,6 +151,31 @@ pub(super) fn try_route<A: DatabaseAccess>(
                     validation_report: ingestion_validation_report(db, &results, "ingest_csv"),
                 };
                 Ok(serde_json::to_string(&response)?)
+            }
+            ("POST", "/v1/embedding/backfill") => {
+                // Maintenance surface: embed already-ingested cells that still
+                // lack a vector, idempotently by content hash. Requires a
+                // configured embedding endpoint and fails closed without one.
+                let db = db
+                    .as_write()
+                    .ok_or_else(|| RouterError::Internal("write route on read lock".to_owned()))?;
+                // Validate cheap inputs before the config lookup so a malformed
+                // param fails closed deterministically, regardless of whether an
+                // embedding endpoint happens to be configured.
+                let batch_size = query_param_usize(query, "batch_size")?.unwrap_or(64).max(1);
+                let max_items = query_param_usize(query, "max_items")?;
+                let embedder = embedding::embedder_from_env()?
+                    .ok_or_else(embedding::missing_vector_or_config_error)?;
+                let mut provider = |text: &str| embedder.embed(text);
+                let report = db.backfill_embedding_debt_batched(
+                    &mut provider,
+                    cortex_engine::EmbeddingBackfillOptions {
+                        config: cortex_engine::EmbeddingCoverageConfig::default(),
+                        max_items,
+                    },
+                    batch_size,
+                )?;
+                Ok(serde_json::to_string(&report)?)
             }
             ("GET", "/v1/ingest/jobs") => {
                 let jobs = db.list_ingestion_jobs()?;
