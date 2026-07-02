@@ -19,11 +19,22 @@ pub fn search(
     algorithm: &str,
 ) -> Result<String, String> {
     let db = open_database(path, false)?;
+    let provided = vector.filter(|value| !value.trim().is_empty());
+    let embedded = if provided.is_none() {
+        embed_query_literal(query, mode)?
+    } else {
+        None
+    };
+    let effective_vector = provided.or(embedded.as_deref());
+    if matches!(mode, "vector" | "hybrid") && effective_vector.is_none() {
+        return Err(needs_vector_or_endpoint(mode));
+    }
+    let vector_source = vector_source(provided.is_some(), embedded.is_some());
     let route = route_search_query(SearchRouteInput {
         requested_mode: mode,
         algorithm,
         text_available: !query.trim().is_empty(),
-        vector_available: vector
+        vector_available: effective_vector
             .map(|value| !value.trim().is_empty())
             .unwrap_or(false),
     })?;
@@ -31,15 +42,15 @@ pub fn search(
     let results = match route.selected_strategy {
         SearchRouteStrategy::Keyword => db.search_keyword(query, &view, SearchLimit(20)),
         SearchRouteStrategy::VectorExact => {
-            let vector = parse_vector_literal(vector.unwrap_or(query))?;
+            let vector = parse_vector_literal(effective_vector.unwrap_or(query))?;
             db.search_vector_exact(&vector, &view, SearchLimit(20))
         }
         SearchRouteStrategy::VectorAnn => {
-            let vector = parse_vector_literal(vector.unwrap_or(query))?;
+            let vector = parse_vector_literal(effective_vector.unwrap_or(query))?;
             db.search_vector(&vector, &view, SearchLimit(20))
         }
         SearchRouteStrategy::Hybrid => {
-            let vector = vector.ok_or_else(|| "mode=hybrid requires --vector".to_owned())?;
+            let vector = effective_vector.ok_or_else(|| needs_vector_or_endpoint("hybrid"))?;
             let vector = parse_vector_literal(vector)?;
             db.search_cells(
                 SearchQuery {
@@ -61,13 +72,51 @@ pub fn search(
         ))
     } else {
         Ok(format!(
-            "routing requested_mode={} selected_strategy={} reason={}\n{}",
+            "routing requested_mode={} selected_strategy={} reason={} vector_source={}\n{}",
             route.requested_mode,
             route.selected_strategy.as_str(),
             route.reason,
+            vector_source,
             format_search_results(&results)
         ))
     }
+}
+
+/// Embeds the query text into a `vector=`-style literal for vector/hybrid/auto
+/// modes when a `CORTEXDB_EMBEDDING_*` endpoint is configured, so an offline
+/// `cortexdb search` can search by meaning without a literal `--vector`. Returns
+/// `None` (preserving the prior fail-closed behavior) for keyword mode, an empty
+/// query, or when no endpoint is configured. Uses the same shared embedding
+/// client as the server, so query and stored vectors are quantized identically.
+fn embed_query_literal(query: &str, mode: &str) -> Result<Option<String>, String> {
+    if !matches!(mode, "vector" | "hybrid" | "auto") || query.trim().is_empty() {
+        return Ok(None);
+    }
+    let Some(config) = cortex_embed_client::config_from_env()? else {
+        return Ok(None);
+    };
+    let vector = cortex_embed_client::embed_query(&config, query)?;
+    Ok(Some(
+        vector
+            .iter()
+            .map(ToString::to_string)
+            .collect::<Vec<_>>()
+            .join(","),
+    ))
+}
+
+fn vector_source(provided: bool, embedded: bool) -> &'static str {
+    if provided {
+        "literal"
+    } else if embedded {
+        "embedded"
+    } else {
+        "none"
+    }
+}
+
+fn needs_vector_or_endpoint(mode: &str) -> String {
+    format!("mode={mode} requires --vector or a configured CORTEXDB_EMBEDDING_* embedding endpoint")
 }
 
 pub fn search_explain(
@@ -79,14 +128,24 @@ pub fn search_explain(
 ) -> Result<String, String> {
     let db = open_database(path, false)?;
     let diagnostics = db.search_diagnostics(query).map_err(fmt_engine_error)?;
+    let provided = vector.filter(|value| !value.trim().is_empty());
+    let embedded = if provided.is_none() {
+        embed_query_literal(query, mode)?
+    } else {
+        None
+    };
+    let effective_vector = provided.or(embedded.as_deref());
+    if matches!(mode, "vector" | "hybrid") && effective_vector.is_none() {
+        return Err(needs_vector_or_endpoint(mode));
+    }
     let results = match mode {
         "keyword" => db.search_keyword(query, &view_for_scope(scope), SearchLimit(20)),
         "vector" => {
-            let v = parse_vector_literal(vector.unwrap_or(query))?;
+            let v = parse_vector_literal(effective_vector.unwrap_or(query))?;
             db.search_vector(&v, &view_for_scope(scope), SearchLimit(20))
         }
         "hybrid" => {
-            let vector = vector.ok_or_else(|| "mode=hybrid requires --vector".to_owned())?;
+            let vector = effective_vector.ok_or_else(|| needs_vector_or_endpoint("hybrid"))?;
             let vector = parse_vector_literal(vector)?;
             db.search_cells(
                 SearchQuery {

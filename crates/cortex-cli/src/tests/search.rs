@@ -198,6 +198,74 @@ fn search_command_auto_mode_reports_routing_json() {
 }
 
 #[test]
+fn search_reports_vector_source_literal_when_vector_given() {
+    let path = unique_path("cortexdb-cli-search-vector-source");
+    let path_arg = path.to_string_lossy().into_owned();
+    run(vec![
+        "cortexdb".to_owned(),
+        "put".to_owned(),
+        path_arg.clone(),
+        "1".to_owned(),
+        "scope=project:investments\nstatus=ready\nvector=5,0\nalpha budget".to_owned(),
+    ])
+    .unwrap();
+
+    let output = run(vec![
+        "cortexdb".to_owned(),
+        "search".to_owned(),
+        path_arg.clone(),
+        "project:investments".to_owned(),
+        "budget".to_owned(),
+        "--mode".to_owned(),
+        "hybrid".to_owned(),
+        "--vector".to_owned(),
+        "5,0".to_owned(),
+    ])
+    .unwrap();
+    assert!(output.contains("vector_source=literal"), "output: {output}");
+
+    let _ = std::fs::remove_dir_all(path);
+}
+
+#[test]
+fn search_hybrid_without_vector_or_embedding_config_fails_closed() {
+    // With no --vector and no CORTEXDB_EMBEDDING_* endpoint configured, a
+    // semantic mode cannot fabricate a vector: it fails closed with guidance.
+    if std::env::var("CORTEXDB_EMBEDDING_URL").is_ok() {
+        // An endpoint is configured in this environment, so the query would be
+        // embedded instead of failing closed — skip.
+        return;
+    }
+    let path = unique_path("cortexdb-cli-search-hybrid-noembed");
+    let path_arg = path.to_string_lossy().into_owned();
+    run(vec![
+        "cortexdb".to_owned(),
+        "put".to_owned(),
+        path_arg.clone(),
+        "1".to_owned(),
+        "scope=project:investments\nstatus=ready\nalpha budget".to_owned(),
+    ])
+    .unwrap();
+
+    let error = run(vec![
+        "cortexdb".to_owned(),
+        "search".to_owned(),
+        path_arg.clone(),
+        "project:investments".to_owned(),
+        "budget".to_owned(),
+        "--mode".to_owned(),
+        "hybrid".to_owned(),
+    ])
+    .expect_err("hybrid without a vector or embedding endpoint must fail closed");
+    assert!(
+        error.contains("CORTEXDB_EMBEDDING"),
+        "unexpected error: {error}"
+    );
+
+    let _ = std::fs::remove_dir_all(path);
+}
+
+#[test]
 fn search_command_hybrid_uses_persisted_indexes_after_flush() {
     let path = unique_path("cortexdb-cli-search-hybrid-persisted");
     let path_arg = path.to_string_lossy().into_owned();

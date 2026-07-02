@@ -513,6 +513,7 @@ dependencies = [
  "cortex-aql",
  "cortex-core",
  "cortex-crypto",
+ "cortex-embed-client",
  "cortex-engine",
  "cortex-storage",
  "ed25519-dalek",
@@ -545,6 +546,15 @@ dependencies = [
  "sha2",
  "subtle",
  "zeroize",
+]
+
+[[package]]
+name = "cortex-embed-client"
+version = "0.2.0-beta.2"
+dependencies = [
+ "cortex-engine",
+ "serde_json",
+ "ureq",
 ]
 
 [[package]]
@@ -599,6 +609,7 @@ dependencies = [
  "cortex-aql",
  "cortex-core",
  "cortex-crypto",
+ "cortex-embed-client",
  "cortex-engine",
  "ed25519-dalek",
  "getrandom 0.2.17",
@@ -614,7 +625,6 @@ dependencies = [
  "tower-http 0.5.2",
  "tracing",
  "tracing-subscriber",
- "ureq",
  "zeroize",
 ]
 

@@ -6,6 +6,7 @@ members = [
     "crates/cortex-cli",
     "crates/cortex-core",
     "crates/cortex-crypto",
+    "crates/cortex-embed-client",
     "crates/cortex-engine",
     "crates/cortex-mcp",
     "crates/cortex-receipt-verify",

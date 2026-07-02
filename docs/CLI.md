@@ -288,10 +288,22 @@ Search with explicit or automatic routing. Default mode is `keyword`.
 cortexdb search ./db project:investments "budget solar"
 cortexdb --json search ./db project:investments "budget solar" \
   --mode auto --vector "1,2,3"
+# Semantic search without a literal vector: the query text is embedded when an
+# embedding endpoint is configured (same client as the server).
+CORTEXDB_EMBEDDING_URL=https://<provider>/v1/embeddings \
+CORTEXDB_EMBEDDING_MODEL=<model> CORTEXDB_EMBEDDING_API_KEY=<key> \
+  cortexdb search ./db project:investments "how much capital for the plant" --mode vector
 ```
 
-Human output starts with the selected routing strategy. JSON output includes a
-`routing` object with `selected_strategy` and `reason`.
+For `vector`, `hybrid`, and `auto` modes, if no `--vector` is given the CLI
+embeds the query text through the configured `CORTEXDB_EMBEDDING_*` endpoint. It
+fails closed: with no endpoint configured, `vector`/`hybrid` return
+`mode=… requires --vector or a configured CORTEXDB_EMBEDDING_* embedding endpoint`
+rather than fabricating a vector.
+
+Human output starts with the selected routing strategy and a `vector_source`
+(`literal`, `embedded`, or `none`). JSON output includes a `routing` object with
+`selected_strategy` and `reason`.
 
 #### `search-vector <path> <scope> <vector>`
 Approximate nearest neighbor search.

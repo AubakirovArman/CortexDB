@@ -23,6 +23,7 @@ clap_complete = "4"
 cortex-aql = { path = "../cortex-aql" }
 cortex-core = { path = "../cortex-core" }
 cortex-crypto = { path = "../cortex-crypto" }
+cortex-embed-client = { path = "../cortex-embed-client" }
 cortex-engine = { path = "../cortex-engine" }
 cortex-storage = { path = "../cortex-storage" }
 ed25519-dalek = { version = "2.1", optional = true }
