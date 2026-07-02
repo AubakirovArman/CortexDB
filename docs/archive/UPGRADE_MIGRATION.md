@@ -236,6 +236,16 @@ Core Alpha release candidates should pass:
 make release-check
 ```
 
+## Additive manifest sections (no migration required)
+
+Some storage changes are additive optional manifest trailers appended after all
+existing sections. The manifest magic stays `ACM0` and every existing byte
+offset is preserved, so a pre-change database opens unchanged (the new section
+decodes as absent) and no data rewrite is needed. The embedding profile (`EMBD`,
+model/dimension/metric) is one such section: databases created before it existed
+open normally and are stamped with a profile on their next checkpoint once an
+embedding model is configured. See [`../STORAGE_FORMATS.md`](../STORAGE_FORMATS.md).
+
 ## Current Limitations
 
 - No in-place downgrade guarantee.

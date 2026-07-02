@@ -33,6 +33,17 @@ pub struct ManifestVectorProfile {
     pub metric: u32,
 }
 
+/// Store-wide embedding provenance: which model produced the stored vectors and
+/// with what dimension/metric. Recorded so a later open with an incompatible
+/// embedding model fails closed instead of silently mixing vector spaces. Holds
+/// a `String`, so unlike the all-numeric profiles it is not `Copy`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ManifestEmbeddingProfile {
+    pub model: String,
+    pub dimension: u32,
+    pub metric: u32,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ManifestTextAnalyzerProfile {
     pub version: u32,
@@ -96,6 +107,7 @@ pub struct StorageManifest {
     pub retired_segments: Vec<ManifestSegment>,
     pub hnsw_profile: Option<ManifestHnswProfile>,
     pub vector_profile: Option<ManifestVectorProfile>,
+    pub embedding_profile: Option<ManifestEmbeddingProfile>,
     pub text_analyzer_profile: Option<ManifestTextAnalyzerProfile>,
     pub segment_stats: Vec<ManifestSegmentStats>,
     pub hnsw_no_fallback_profile: Option<ManifestHnswNoFallbackProfile>,

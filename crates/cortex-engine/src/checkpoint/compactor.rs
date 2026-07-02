@@ -150,11 +150,19 @@ impl Database {
         let new_segment_stats =
             segment_stats_from_cell_refs_with_analyzer(new_segment_id, &cells, &analyzer);
         let vector_profile = vector_profile_for_cell_refs(&cells, self.hnsw_build_config)?;
+        // Incremental compaction merges same-profile segments and does not
+        // rewrite the store's vector profile, so guard against the current one.
+        let embedding_profile = super::database::next_embedding_profile(
+            self.embedding_profile.as_ref(),
+            self.manifest.embedding_profile.as_ref(),
+            vector_profile.as_ref(),
+        );
         ensure_checkpoint_profiles(
             &self.manifest,
             hnsw_profile,
             vector_profile,
             text_analyzer_profile,
+            embedding_profile.as_ref(),
         )?;
 
         fs::create_dir_all(&self.segments_path)?;

@@ -261,6 +261,12 @@ optional text_analyzer_profile:
   analyzer_version u32
   language u32
   stemming_enabled u32
+optional embedding_profile:
+  magic[4] = "EMBD"
+  model_len u32
+  model bytes[model_len]
+  dimension u32
+  metric u32
 crc32c u32 over all previous bytes
 ```
 
@@ -284,6 +290,30 @@ engine writes `ANLZ` on checkpoint/compact and rejects opening a persisted
 database with a different requested `DatabaseOptions::text_analyzer` profile.
 This keeps `.aci` token streams consistent after enabling language-specific
 stemming.
+
+The optional `EMBD` trailer records the collection-level embedding profile: the
+embedding model label, vector dimension, and distance metric the stored vectors
+were built with. It is **appended last** (after every other section, before the
+CRC), so a manifest written before `EMBD` existed decodes it as absent and a new
+manifest read by an older engine ignores the trailing bytes — the change is
+additive and needs no migration. The engine stamps `EMBD` on checkpoint/compact
+only when a model is configured (`DatabaseOptions::embedding_profile`) and the
+store actually holds vectors. The recorded profile is kept in lockstep with the
+vector profile: a checkpoint/compact that leaves the store without vectors clears
+it, and a rebuild without a configured model drops a now-stale label rather than
+letting it outlive the vectors it named. Opening a persisted database whose
+recorded profile differs from the configured one fails closed, so a change of
+embedding model, dimension, or metric cannot silently mix incompatible vector
+spaces; open also rejects a manifest whose recorded embedding profile disagrees
+with its vector profile (an internal-consistency guard). Each embedded cell
+additionally carries an `embedding_ref=emb1:<model>:<dimension>:<metric>:<content_hash>`
+payload header for per-cell provenance.
+
+Known limitation: the experimental replication snapshot-install path (off by
+default) writes leader-origin vectors without re-stamping the follower manifest's
+embedding profile. The open-time internal-consistency guard catches a resulting
+dimension/metric divergence, but a same-shape model difference across peers is
+not yet validated on that path.
 
 The CLI can inspect the manifest without opening a database writer:
 

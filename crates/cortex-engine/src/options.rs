@@ -176,7 +176,8 @@ impl Default for EngineFeatureFlags {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+// Not `Copy`: `embedding_profile` carries a `String` model label.
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DatabaseOptions {
     pub durability_mode: DurabilityMode,
     pub recovery_mode: RecoveryMode,
@@ -196,6 +197,10 @@ pub struct DatabaseOptions {
     pub ingestion_backpressure: IngestionBackpressurePolicy,
     pub compaction_policy: CompactionPolicy,
     pub text_analyzer: TextAnalyzerConfig,
+    /// Store-wide embedding profile (model/dimension/metric). When set, cells
+    /// embedded at ingest are stamped with it and the manifest records it, so a
+    /// later open with an incompatible profile fails closed.
+    pub embedding_profile: Option<crate::embedding_pipeline::EmbeddingProfile>,
 }
 
 impl Default for DatabaseOptions {
@@ -219,6 +224,7 @@ impl Default for DatabaseOptions {
             ingestion_backpressure: IngestionBackpressurePolicy::default(),
             compaction_policy: CompactionPolicy::default(),
             text_analyzer: TextAnalyzerConfig::default(),
+            embedding_profile: None,
         }
     }
 }

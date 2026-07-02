@@ -558,6 +558,7 @@ dependencies = [
  "cortex-core",
  "cortex-crypto",
  "cortex-storage",
+ "crc32c",
  "csv",
  "ed25519-dalek",
  "flate2",

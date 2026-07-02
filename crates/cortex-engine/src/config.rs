@@ -13,7 +13,7 @@ use crate::options::{
 };
 use crate::search::{HnswBuildConfig, HnswBuildProfile};
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct EngineConfig {
     pub database_options: DatabaseOptions,
 }
@@ -74,13 +74,14 @@ impl EngineConfig {
             ingestion_backpressure: Default::default(),
             compaction_policy: CompactionPolicy::default(),
             text_analyzer: Default::default(),
+            embedding_profile: None,
         };
         database_options.hnsw_build_config = database_options.hnsw_build_config.normalized();
         Ok(Self { database_options })
     }
 
-    pub fn database_options(self) -> DatabaseOptions {
-        self.database_options
+    pub fn database_options(&self) -> DatabaseOptions {
+        self.database_options.clone()
     }
 }
 

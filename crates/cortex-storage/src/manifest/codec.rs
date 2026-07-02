@@ -2,9 +2,10 @@ use crate::atomic::{append_crc32c, verify_crc32c};
 use crate::error::{StorageError, StorageResult};
 use crate::format::MANIFEST_MAGIC;
 use crate::manifest::{
-    CompactionMetadata, ManifestCount, ManifestHnswNoFallbackProfile, ManifestHnswProfile,
-    ManifestMemoryCellCursor, ManifestSegment, ManifestSegmentStats, ManifestTermDocumentFrequency,
-    ManifestTextAnalyzerProfile, ManifestVectorProfile, StorageManifest,
+    CompactionMetadata, ManifestCount, ManifestEmbeddingProfile, ManifestHnswNoFallbackProfile,
+    ManifestHnswProfile, ManifestMemoryCellCursor, ManifestSegment, ManifestSegmentStats,
+    ManifestTermDocumentFrequency, ManifestTextAnalyzerProfile, ManifestVectorProfile,
+    StorageManifest,
 };
 
 pub(super) fn encode_manifest(manifest: &StorageManifest) -> Vec<u8> {
@@ -61,6 +62,14 @@ pub(super) fn encode_manifest(manifest: &StorageManifest) -> Vec<u8> {
             put_u64(&mut out, cursor.next_sequence);
         }
     }
+    // Appended last so every prior section keeps its byte offset; a manifest
+    // written before this section decodes it as `None` (see read_embedding_profile).
+    if let Some(profile) = &manifest.embedding_profile {
+        out.extend_from_slice(b"EMBD");
+        put_string(&mut out, &profile.model);
+        put_u32(&mut out, profile.dimension);
+        put_u32(&mut out, profile.metric);
+    }
     append_crc32c(&mut out);
     out
 }
@@ -82,6 +91,7 @@ pub(super) fn decode_manifest(bytes: &[u8]) -> StorageResult<StorageManifest> {
     let text_analyzer_profile = read_text_analyzer_profile(bytes, &mut cursor)?;
     let compaction_metadata = read_compaction_metadata(bytes, &mut cursor)?;
     let (next_cell_id, memory_cell_cursors) = read_cell_id_allocator(bytes, &mut cursor)?;
+    let embedding_profile = read_embedding_profile(bytes, &mut cursor)?;
     if cursor > bytes.len() {
         return Err(StorageError::InvalidManifestFile);
     }
@@ -94,6 +104,7 @@ pub(super) fn decode_manifest(bytes: &[u8]) -> StorageResult<StorageManifest> {
         retired_segments,
         hnsw_profile,
         vector_profile,
+        embedding_profile,
         text_analyzer_profile,
         segment_stats,
         hnsw_no_fallback_profile,
@@ -168,6 +179,25 @@ fn read_vector_profile(
     }
     *cursor += 4;
     let profile = ManifestVectorProfile {
+        dimension: read_u32(bytes, cursor)?,
+        metric: read_u32(bytes, cursor)?,
+    };
+    if profile.dimension == 0 {
+        return Err(StorageError::InvalidManifestFile);
+    }
+    Ok(Some(profile))
+}
+
+fn read_embedding_profile(
+    bytes: &[u8],
+    cursor: &mut usize,
+) -> StorageResult<Option<ManifestEmbeddingProfile>> {
+    if bytes.len().saturating_sub(*cursor) < 4 || &bytes[*cursor..*cursor + 4] != b"EMBD" {
+        return Ok(None);
+    }
+    *cursor += 4;
+    let profile = ManifestEmbeddingProfile {
+        model: read_string(bytes, cursor)?,
         dimension: read_u32(bytes, cursor)?,
         metric: read_u32(bytes, cursor)?,
     };

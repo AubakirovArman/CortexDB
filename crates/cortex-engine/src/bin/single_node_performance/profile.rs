@@ -29,7 +29,7 @@ pub(super) fn run_profile(
     let query = r#"RETRIEVE CONTEXT FOR TASK "performance budget" IN BRAIN default WHERE space = perf AND status = "ready" LIMIT 10 CANDIDATES;"#;
 
     let (mut db, phase) = measure("open_empty", 1, || {
-        Database::open_with_options(&db_path, options)
+        Database::open_with_options(&db_path, options.clone())
     })?;
     phases.push(phase);
 
@@ -115,7 +115,7 @@ pub(super) fn run_profile(
     phases.push(phase);
 
     let (db, phase) = measure("restart_open", total_cells, || {
-        Database::open_with_options(&db_path, options)
+        Database::open_with_options(&db_path, options.clone())
     })?;
     phases.push(phase);
 

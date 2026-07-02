@@ -165,6 +165,7 @@ impl CellMetadata {
                     row_label = non_empty(value);
                 } else if line.strip_prefix("embedding_model=").is_some()
                     || line.strip_prefix("embedding_text_hash=").is_some()
+                    || line.strip_prefix("embedding_ref=").is_some()
                     || line.strip_prefix("vector=").is_some()
                     || line.contains("_vector=")
                 {

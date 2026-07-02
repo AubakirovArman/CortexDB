@@ -56,7 +56,7 @@ pub(crate) fn run() -> Result<(), String> {
     };
     eprintln!("[scale-bench] {open_phase}");
     let (mut db, phase) = measure_once(open_phase, 1, || {
-        Database::open_with_options(&db_path, options)
+        Database::open_with_options(&db_path, options.clone())
     })?;
     phases.push(phase);
     if args.direct_checkpoint || args.reopen_only {
@@ -169,7 +169,7 @@ pub(crate) fn run() -> Result<(), String> {
     phases.push(measure_once("close", 1, || db.close())?.1);
     eprintln!("[scale-bench] restart_open");
     let (reopened, phase) = measure_once("restart_open", args.cells, || {
-        Database::open_with_options(&db_path, options)
+        Database::open_with_options(&db_path, options.clone())
     })?;
     phases.push(phase);
     if !args.skip_validation {

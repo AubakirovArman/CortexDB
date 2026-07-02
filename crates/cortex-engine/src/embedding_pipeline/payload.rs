@@ -1,3 +1,4 @@
+use super::types::embedding_ref_string;
 use crate::ingestion::stable_ingestion_hash_hex;
 
 pub fn embedding_text_hash(payload: &[u8]) -> String {
@@ -23,11 +24,12 @@ pub(super) fn embedding_payload_field(payload: &[u8], field: &str) -> Option<Str
         .filter(|value| !value.is_empty())
 }
 
-pub(super) fn payload_with_embedding(
+pub(crate) fn payload_with_embedding(
     payload: &[u8],
     model: Option<&str>,
     text_hash: &str,
     vector: &[i16],
+    metric: u32,
 ) -> Vec<u8> {
     let text = String::from_utf8_lossy(payload);
     let mut lines = text
@@ -46,6 +48,15 @@ pub(super) fn payload_with_embedding(
         "embedding_text_hash={}",
         sanitize_embedding_value(text_hash)
     ));
+    embedding_lines.push(format!(
+        "embedding_ref={}",
+        sanitize_embedding_value(&embedding_ref_string(
+            model.unwrap_or(""),
+            vector.len() as u32,
+            metric,
+            text_hash,
+        ))
+    ));
     embedding_lines.push(format!("vector={}", format_vector_literal(vector)));
     let insert_at = lines
         .iter()
@@ -61,6 +72,7 @@ fn is_embedding_payload_line(line: &str) -> bool {
     line.starts_with("vector=")
         || line.starts_with("embedding_model=")
         || line.starts_with("embedding_text_hash=")
+        || line.starts_with("embedding_ref=")
         || line.contains("_vector=")
 }
 

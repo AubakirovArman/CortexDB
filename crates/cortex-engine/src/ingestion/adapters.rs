@@ -5,7 +5,7 @@ use crate::embedding_pipeline::Embedder;
 use crate::error::{EngineError, EngineResult};
 use crate::ingestion::cells::{
     entity_metadata, fact_metadata, offset_cell_id, put_source_ref_cell, put_text_chunk_cell,
-    relation_metadata, table_metadata, SourceRefHeaders,
+    relation_metadata, table_metadata, ChunkEmbedding, SourceRefHeaders,
 };
 use crate::ingestion::chunking::{split_text_chunks, TableChunkPolicy, TextChunkPolicy};
 use crate::ingestion::dedup::{content_hash_hex, source_hash_hex};
@@ -137,6 +137,15 @@ impl Database {
             return Ok(Vec::new());
         }
 
+        // Embedding provenance for cells embedded at ingest: the model label is
+        // the caller-configured profile (the engine is network-free and never
+        // learns the model itself); the metric is the store's vector metric.
+        let embed_metric = self.hnsw_build_config.metric as u32;
+        let embed_model = self
+            .embedding_profile
+            .as_ref()
+            .map(|profile| profile.model.clone());
+
         let mut ingested = Vec::new();
         for (index, chunk) in chunks.iter().enumerate() {
             let source_hash = source_hash_hex(&options.source);
@@ -153,13 +162,18 @@ impl Database {
                 Some(embedder) => Some(embedder.embed(&chunk.text)?),
                 None => None,
             };
+            let embedding = vector.as_deref().map(|vector| ChunkEmbedding {
+                vector,
+                model: embed_model.as_deref(),
+                metric: embed_metric,
+            });
             let commit_seq = put_text_chunk_cell(
                 self,
                 cell_id,
                 chunk,
                 &options.scope,
                 &options.source,
-                vector.as_deref(),
+                embedding,
             )?;
             ingested.push(IngestedCell {
                 cell_id,

@@ -50,6 +50,7 @@ pub struct Database {
     pub(crate) learned_ranking: LearnedRankingOptions,
     pub(crate) semantic_compression: SemanticCompressionOptions,
     pub(crate) hnsw_build_config: HnswBuildConfig,
+    pub(crate) embedding_profile: Option<crate::embedding_pipeline::EmbeddingProfile>,
     pub(crate) feature_flags: EngineFeatureFlags,
     pub(crate) ingestion_backpressure_policy: crate::ingestion::IngestionBackpressurePolicy,
     pub(crate) ingestion_rate_state: Mutex<crate::ingestion::IngestionRateState>,

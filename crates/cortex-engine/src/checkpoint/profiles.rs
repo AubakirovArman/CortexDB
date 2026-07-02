@@ -1,5 +1,6 @@
 use cortex_storage::manifest::{
-    ManifestHnswProfile, ManifestTextAnalyzerProfile, ManifestVectorProfile, StorageManifest,
+    ManifestEmbeddingProfile, ManifestHnswProfile, ManifestTextAnalyzerProfile,
+    ManifestVectorProfile, StorageManifest,
 };
 
 use crate::error::{EngineError, EngineResult};
@@ -21,9 +22,17 @@ pub(crate) fn ensure_checkpoint_profiles(
     hnsw_profile: Option<ManifestHnswProfile>,
     vector_profile: Option<ManifestVectorProfile>,
     text_analyzer_profile: ManifestTextAnalyzerProfile,
+    embedding_profile: Option<&ManifestEmbeddingProfile>,
 ) -> EngineResult<()> {
     if manifest.live_segments.is_empty() {
         return Ok(());
+    }
+    if let (Some(existing), Some(next)) = (manifest.embedding_profile.as_ref(), embedding_profile) {
+        if existing != next {
+            return Err(EngineError::StorageInvariant(format!(
+                "checkpoint embedding profile {next:?} does not match existing manifest profile {existing:?}; compact with the embedding model this store was built with",
+            )));
+        }
     }
     if let (Some(existing), Some(next)) = (manifest.hnsw_profile, hnsw_profile) {
         if existing != next {

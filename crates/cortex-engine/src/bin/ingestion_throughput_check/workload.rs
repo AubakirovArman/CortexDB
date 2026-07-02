@@ -49,8 +49,8 @@ pub fn run_workload(args: &Args) -> Result<WorkloadReport, String> {
         durability_mode: DurabilityMode::Balanced,
         ..DatabaseOptions::default()
     };
-    let mut db =
-        Database::open_with_options(&db_path, db_options).map_err(|error| error.to_string())?;
+    let mut db = Database::open_with_options(&db_path, db_options.clone())
+        .map_err(|error| error.to_string())?;
 
     let (ingestion_write_batches, ingest_ms) = ingest_docs(&mut db, args, &mut phases)?;
     let resume_after_docs = args
@@ -78,8 +78,8 @@ pub fn run_workload(args: &Args) -> Result<WorkloadReport, String> {
 
     db.close().map_err(|error| error.to_string())?;
     let reopen_started = Instant::now();
-    let mut db =
-        Database::open_with_options(&db_path, db_options).map_err(|error| error.to_string())?;
+    let mut db = Database::open_with_options(&db_path, db_options.clone())
+        .map_err(|error| error.to_string())?;
     phases.push(phase("reopen_for_resume", 1, elapsed_ms(reopen_started)));
 
     let second_started = Instant::now();

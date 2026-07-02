@@ -1,11 +1,20 @@
 use cortex_core::{CellId, CommitSeq, KnowledgeCellMetadata, KnowledgeCellType};
 
 use crate::database::Database;
+use crate::embedding_pipeline::{embedding_text_hash, payload_with_embedding};
 use crate::error::{EngineError, EngineResult};
 use crate::ingestion::chunking::{sanitize_header_value, TextChunk};
 use crate::ingestion::dedup::{content_hash_hex, source_hash_hex};
 use crate::ingestion::enrichment::SourceMetadataEnrichment;
 use crate::operation::DbOperation;
+
+/// The embedding stamped onto a text chunk at ingest: the vector plus the
+/// provenance needed for the `embedding_ref` header (model label + metric).
+pub(crate) struct ChunkEmbedding<'a> {
+    pub vector: &'a [i16],
+    pub model: Option<&'a str>,
+    pub metric: u32,
+}
 
 pub(crate) fn put_text_chunk_cell(
     db: &mut Database,
@@ -13,10 +22,25 @@ pub(crate) fn put_text_chunk_cell(
     chunk: &TextChunk,
     scope: &str,
     source: &str,
-    vector: Option<&[i16]>,
+    embedding: Option<ChunkEmbedding<'_>>,
 ) -> EngineResult<CommitSeq> {
     let metadata = document_metadata(scope.to_owned(), source.to_owned());
-    let payload = text_chunk_payload(&metadata, source, chunk, vector);
+    let base = text_chunk_payload(&metadata, source, chunk);
+    // Reuse the exact embedding-line formatter the backfill path uses so
+    // ingest-time and backfill-time provenance headers are byte-identical.
+    let payload = match embedding.filter(|embedding| !embedding.vector.is_empty()) {
+        Some(embedding) => {
+            let text_hash = embedding_text_hash(&base);
+            payload_with_embedding(
+                &base,
+                embedding.model,
+                &text_hash,
+                embedding.vector,
+                embedding.metric,
+            )
+        }
+        None => base,
+    };
     db.append_then_apply_with_metadata(
         DbOperation::PutCell { cell_id, payload },
         metadata.encode_wal_section(),
@@ -109,7 +133,6 @@ fn text_chunk_payload(
     metadata: &KnowledgeCellMetadata,
     document_id: &str,
     chunk: &TextChunk,
-    vector: Option<&[i16]>,
 ) -> Vec<u8> {
     let mut lines = vec![
         format!("scope={}", sanitize_header_value(&metadata.scope)),
@@ -132,21 +155,10 @@ fn text_chunk_payload(
         sanitize_header_value(&chunk.chunk_id)
     ));
     push_enrichment_headers(&mut lines, &chunk.text, document_id);
-    if let Some(vector) = vector.filter(|values| !values.is_empty()) {
-        lines.push(format!("vector={}", vector_literal(vector)));
-    }
     lines.push(String::new());
     let mut payload = lines.join("\n").into_bytes();
     payload.extend_from_slice(chunk.text.as_bytes());
     payload
-}
-
-fn vector_literal(vector: &[i16]) -> String {
-    vector
-        .iter()
-        .map(ToString::to_string)
-        .collect::<Vec<_>>()
-        .join(",")
 }
 
 fn source_ref_payload(

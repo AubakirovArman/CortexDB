@@ -241,7 +241,7 @@ pub fn handle_http_with_options(root: &Path, request: &str, options: &ServerOpti
 }
 
 fn open_database(root: &Path, options: &ServerOptions) -> cortex_engine::EngineResult<Database> {
-    Database::open_with_options(root, options.engine_database_options)
+    Database::open_with_options(root, options.engine_database_options.clone())
 }
 
 fn open_tenant_database(

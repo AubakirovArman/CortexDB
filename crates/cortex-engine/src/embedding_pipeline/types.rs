@@ -1,5 +1,6 @@
 use std::path::Path;
 
+use cortex_storage::manifest::ManifestEmbeddingProfile;
 use serde::{Deserialize, Serialize};
 
 use crate::error::{EngineError, EngineResult};
@@ -23,6 +24,76 @@ impl Default for EmbeddingCoverageConfig {
             expected_model: None,
         }
     }
+}
+
+/// Store-wide embedding provenance recorded in the manifest: which model built
+/// the stored vectors, at what dimension, with which distance metric. Opening a
+/// store with an incompatible profile fails closed instead of silently mixing
+/// vector spaces. Mirrors [`ManifestEmbeddingProfile`] but lives engine-side so
+/// callers do not depend on the storage crate directly.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EmbeddingProfile {
+    pub model: String,
+    pub dimension: u32,
+    pub metric: u32,
+}
+
+impl EmbeddingProfile {
+    pub fn to_manifest_profile(&self) -> ManifestEmbeddingProfile {
+        ManifestEmbeddingProfile {
+            model: self.model.clone(),
+            dimension: self.dimension,
+            metric: self.metric,
+        }
+    }
+
+    pub fn from_manifest_profile(profile: &ManifestEmbeddingProfile) -> Self {
+        Self {
+            model: profile.model.clone(),
+            dimension: profile.dimension,
+            metric: profile.metric,
+        }
+    }
+
+    /// Stable lowercase metric name used in the human/wire-visible `embedding_ref`.
+    pub fn metric_str(&self) -> &'static str {
+        metric_str(self.metric)
+    }
+
+    /// The per-cell provenance string
+    /// `emb1:<model>:<dimension>:<metric>:<content_hash>`.
+    pub fn ref_string(&self, content_hash: &str) -> String {
+        embedding_ref_string(&self.model, self.dimension, self.metric, content_hash)
+    }
+}
+
+/// Maps a [`DistanceMetric`](crate::search::DistanceMetric) discriminant
+/// (0=dot, 1=cosine, 2=l2) to a stable lowercase name; unknown values map to
+/// `"unknown"`.
+pub fn metric_str(metric: u32) -> &'static str {
+    match metric {
+        0 => "dot_product",
+        1 => "cosine",
+        2 => "l2",
+        _ => "unknown",
+    }
+}
+
+/// Builds the per-cell `embedding_ref` value
+/// `emb1:<model>:<dimension>:<metric>:<content_hash>`. Any `:` in the model is
+/// replaced with `_` so the delimiter stays unambiguous; an empty model marks an
+/// unlabelled/legacy embedding.
+pub fn embedding_ref_string(
+    model: &str,
+    dimension: u32,
+    metric: u32,
+    content_hash: &str,
+) -> String {
+    let safe_model = model.replace(':', "_");
+    format!(
+        "emb1:{safe_model}:{dimension}:{}:{content_hash}",
+        metric_str(metric)
+    )
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

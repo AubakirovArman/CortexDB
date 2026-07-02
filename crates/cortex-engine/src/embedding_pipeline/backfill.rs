@@ -168,6 +168,7 @@ fn process_embedding_batch<P: EmbeddingBackfillProvider>(
             options.config.expected_model.as_deref(),
             &item.text_hash,
             vector,
+            db.hnsw_build_config.metric as u32,
         );
         write_batch = write_batch.patch_cell(item.cell_id, payload);
         valid_items += 1;

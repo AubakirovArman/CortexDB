@@ -10,7 +10,7 @@ use cortex_engine::{
 fn configured_russian_analyzer_survives_checkpointed_search() {
     let dir = tempfile::tempdir().unwrap();
     let options = russian_stemming_options();
-    let mut db = Database::open_with_options(dir.path(), options).unwrap();
+    let mut db = Database::open_with_options(dir.path(), options.clone()).unwrap();
     let cell = KnowledgeCell::new(
         KnowledgeCellMetadata {
             scope: "project:investments".to_owned(),

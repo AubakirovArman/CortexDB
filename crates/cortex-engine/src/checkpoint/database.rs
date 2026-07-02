@@ -2,10 +2,11 @@ use std::collections::BTreeMap;
 use std::fs;
 
 use cortex_core::{CellId, CommitSeq};
-use cortex_storage::manifest::ManifestSegment;
+use cortex_storage::manifest::{ManifestEmbeddingProfile, ManifestSegment, ManifestVectorProfile};
 use cortex_storage::segment::{SegmentCell, SegmentCellRecord, SegmentCellRef, SegmentWriter};
 
 use crate::database::{CheckpointStats, Database};
+use crate::embedding_pipeline::EmbeddingProfile;
 use crate::error::{EngineError, EngineResult};
 use crate::query::EngineAqlIndex;
 
@@ -45,11 +46,21 @@ impl Database {
             let cells = self.checkpoint_delta_cell_refs(base_seq, &candidate_map, &tombstones)?;
             vector::vector_profile_for_cell_refs(&cells, self.hnsw_build_config)
         }?;
+        // Checkpoint is incremental: a delta with no vectors keeps the store's
+        // current vector profile, so couple the embedding profile to the
+        // profile that will be in effect afterwards.
+        let effective_vector_profile = vector_profile.or(self.manifest.vector_profile);
+        let embedding_profile = next_embedding_profile(
+            self.embedding_profile.as_ref(),
+            self.manifest.embedding_profile.as_ref(),
+            effective_vector_profile.as_ref(),
+        );
         ensure_checkpoint_profiles(
             &self.manifest,
             hnsw_profile,
             vector_profile,
             text_analyzer_profile,
+            embedding_profile.as_ref(),
         )?;
 
         let archived_wal = self.writer.rotate().map_err(|e| {
@@ -96,6 +107,9 @@ impl Database {
         if let Some(profile) = vector_profile {
             self.manifest.vector_profile = Some(profile);
         }
+        // Written in lockstep with the vector profile so a stale label can
+        // never outlive or misdescribe the vectors (see next_embedding_profile).
+        self.manifest.embedding_profile = embedding_profile;
         self.manifest.store(&self.manifest_path)?;
         self.finish_rotated_wal(&archived_wal)?;
         self.memtable.gc_versions_before(self.gc_horizon());
@@ -126,11 +140,20 @@ impl Database {
         let records = self.full_snapshot_segment_records()?;
         let cells = segment_record_refs(&records);
         let vector_profile = vector::vector_profile_for_cell_refs(&cells, self.hnsw_build_config)?;
+        // compact rewrites the whole store, so the derived vector profile IS the
+        // effective one (may be None when no vectors remain) — couple embedding
+        // to it so a rebuild without a model drops any stale label.
+        let embedding_profile = next_embedding_profile(
+            self.embedding_profile.as_ref(),
+            self.manifest.embedding_profile.as_ref(),
+            vector_profile.as_ref(),
+        );
         ensure_checkpoint_profiles(
             &self.manifest,
             hnsw_profile,
             vector_profile,
             text_analyzer_profile,
+            embedding_profile.as_ref(),
         )?;
 
         let archived_wal = self.writer.rotate().map_err(|e| {
@@ -174,6 +197,9 @@ impl Database {
         self.manifest.hnsw_profile = hnsw_profile;
         self.manifest.vector_profile = vector_profile;
         self.manifest.text_analyzer_profile = Some(text_analyzer_profile);
+        // Coupled to the vector profile: cleared when no vectors remain, so a
+        // stale label cannot survive a rebuild (see next_embedding_profile).
+        self.manifest.embedding_profile = embedding_profile;
         self.manifest.store(&self.manifest_path)?;
         self.finish_rotated_wal(&archived_wal)?;
         self.memtable.gc_versions_before(self.gc_horizon());
@@ -288,6 +314,35 @@ impl Database {
             })
             .collect()
     }
+}
+
+/// Computes the embedding profile to record after a checkpoint/compact, kept in
+/// lockstep with the effective vector profile so a recorded profile can never
+/// outlive or misdescribe the vectors it names:
+/// - no vectors -> `None` (a store with no vectors has no embedding provenance);
+/// - a configured model -> stamped with the observed dimension/metric;
+/// - no configured model -> the existing label is preserved ONLY while its
+///   dimension/metric still match the vectors, otherwise it is dropped so the
+///   store becomes honestly unlabelled rather than carrying a stale profile.
+pub(super) fn next_embedding_profile(
+    configured: Option<&EmbeddingProfile>,
+    existing: Option<&ManifestEmbeddingProfile>,
+    vector_profile: Option<&ManifestVectorProfile>,
+) -> Option<ManifestEmbeddingProfile> {
+    let vector_profile = vector_profile?;
+    if let Some(configured) = configured {
+        return Some(ManifestEmbeddingProfile {
+            model: configured.model.clone(),
+            dimension: vector_profile.dimension,
+            metric: vector_profile.metric,
+        });
+    }
+    existing
+        .filter(|existing| {
+            existing.dimension == vector_profile.dimension
+                && existing.metric == vector_profile.metric
+        })
+        .cloned()
 }
 
 fn segment_record_refs(records: &[SegmentCellRecord]) -> Vec<SegmentCellRef<'_>> {

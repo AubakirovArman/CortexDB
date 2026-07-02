@@ -16,9 +16,11 @@ pub use coverage::{
 };
 pub use debt::{embedding_debt_report_from_versions, embedding_expected_items_from_versions};
 pub use payload::embedding_text_hash;
+pub(crate) use payload::payload_with_embedding;
 pub use types::{
-    EmbeddingBackfillOptions, EmbeddingBackfillProvider, EmbeddingBackfillReport,
-    EmbeddingClientConfig, EmbeddingCoverageConfig, EmbeddingCoverageReport, EmbeddingDebtItem,
-    EmbeddingDebtReport, EmbeddingExpectedItem, QueryEmbeddingProvider,
-    DEFAULT_MIN_EMBEDDING_COVERAGE_BPS, EMBEDDING_PIPELINE_REPORT_SCHEMA,
+    embedding_ref_string, metric_str, EmbeddingBackfillOptions, EmbeddingBackfillProvider,
+    EmbeddingBackfillReport, EmbeddingClientConfig, EmbeddingCoverageConfig,
+    EmbeddingCoverageReport, EmbeddingDebtItem, EmbeddingDebtReport, EmbeddingExpectedItem,
+    EmbeddingProfile, QueryEmbeddingProvider, DEFAULT_MIN_EMBEDDING_COVERAGE_BPS,
+    EMBEDDING_PIPELINE_REPORT_SCHEMA,
 };

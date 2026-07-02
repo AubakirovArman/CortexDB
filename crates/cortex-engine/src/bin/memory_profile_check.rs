@@ -62,8 +62,8 @@ fn run() -> Result<(), String> {
         prepare_direct_checkpoint(&db_path, args.cells, args.payload_bytes, args.batch_size)?;
         samples.push(memory_sample("after_direct_checkpoint"));
     } else if !args.reopen_only {
-        let mut db =
-            Database::open_with_options(&db_path, options).map_err(|error| error.to_string())?;
+        let mut db = Database::open_with_options(&db_path, options.clone())
+            .map_err(|error| error.to_string())?;
         samples.push(memory_sample("open_empty"));
 
         put_profile_cells(&mut db, args.cells, args.payload_bytes, args.batch_size)?;

@@ -94,7 +94,7 @@ impl AppState {
         let db_shared = Arc::new(actor::DatabaseActor::open_with_capacity_and_options(
             &tenant_path,
             capacity,
-            self.options.engine_database_options,
+            self.options.engine_database_options.clone(),
         )?);
         dbs.insert(tenant.to_owned(), db_shared.clone());
         Ok(db_shared)
