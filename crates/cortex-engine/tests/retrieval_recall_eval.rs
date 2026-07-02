@@ -187,6 +187,79 @@ fn fast_mode_lexical_match_outranks_recent_high_trust_distractor() {
     );
 }
 
+/// Cross-mode fusion behavior: in `USING MODE audit` (trust weight 0.40, the
+/// highest) two equally-relevant cells are ordered by source trust. This can
+/// only hold once trust is min-max normalized to a scale comparable with the
+/// other components.
+#[test]
+fn audit_mode_prioritizes_higher_source_trust() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    let body = "quarterly budget report figures and totals";
+    for (cell_id, source, trust) in [(401u64, "doc-low-trust", 20_000), (402, "doc-high-trust", 65_000)] {
+        db.put_cell(
+            CellId(cell_id),
+            format!(
+                "scope=project:investments\nstatus=ready\ntype=fact\nsource={source}\nsource_trust_q16={trust}\ncreated_unix_seconds=1700000000\n\n{body}",
+            )
+            .into_bytes(),
+        )
+        .unwrap();
+    }
+
+    let aql = "RETRIEVE CONTEXT FOR TASK \"quarterly budget report\" IN BRAIN default \
+               USING MODE audit WHERE space = project:investments LIMIT 10 CANDIDATES;";
+    let ranked: Vec<u64> = db
+        .retrieve_aql(aql, &view())
+        .unwrap()
+        .into_iter()
+        .map(|cell| cell.cell_id.0)
+        .collect();
+
+    assert_eq!(
+        ranked.first().copied(),
+        Some(402),
+        "audit mode must rank the higher-trust cell first; ranked={ranked:?}"
+    );
+}
+
+/// Among equally-relevant, equally-trusted cells, recency breaks the tie: the
+/// more recent cell ranks first because its normalized recency component is
+/// higher.
+#[test]
+fn recency_breaks_ties_between_equally_relevant_cells() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    let body = "annual maintenance summary report";
+    for (cell_id, source, created) in
+        [(501u64, "doc-older", 1_000_000_000u64), (502, "doc-newer", 1_900_000_000)]
+    {
+        db.put_cell(
+            CellId(cell_id),
+            format!(
+                "scope=project:investments\nstatus=ready\ntype=fact\nsource={source}\nsource_trust_q16=50000\ncreated_unix_seconds={created}\n\n{body}",
+            )
+            .into_bytes(),
+        )
+        .unwrap();
+    }
+
+    let aql = "RETRIEVE CONTEXT FOR TASK \"annual maintenance summary\" IN BRAIN default \
+               WHERE space = project:investments LIMIT 10 CANDIDATES;";
+    let ranked: Vec<u64> = db
+        .retrieve_aql(aql, &view())
+        .unwrap()
+        .into_iter()
+        .map(|cell| cell.cell_id.0)
+        .collect();
+
+    assert_eq!(
+        ranked.first().copied(),
+        Some(502),
+        "the more recent cell must break the tie; ranked={ranked:?}"
+    );
+}
+
 fn view() -> AgentView {
     AgentView {
         agent_id: AgentId(7),
@@ -194,7 +267,11 @@ fn view() -> AgentView {
         readable_brains: BTreeSet::from([BrainId(1)]),
         readable_scopes: BTreeSet::from([scope_id("project:investments")]),
         writable_scopes: BTreeSet::new(),
-        allowed_modes: BTreeSet::from([RetrievalMode::Balanced, RetrievalMode::Fast]),
+        allowed_modes: BTreeSet::from([
+            RetrievalMode::Balanced,
+            RetrievalMode::Fast,
+            RetrievalMode::Audit,
+        ]),
         allowed_memory_types: BTreeSet::from([MemoryType::Decision]),
         max_context_budget_tokens: 4_000,
         default_context_budget_tokens: 2_000,
@@ -204,7 +281,7 @@ fn view() -> AgentView {
         max_ttl_seconds: Some(3_600),
         allow_remember: false,
         allow_verify_fact: false,
-        allow_audit_mode: false,
+        allow_audit_mode: true,
         require_citations_by_default: false,
         private_scope: None,
     }
