@@ -154,6 +154,7 @@ impl Database {
             retrieval_diversify_lambda_q16: options.retrieval_diversify_lambda_q16,
             retrieval_recency_window_seconds: options.retrieval_recency_window_seconds,
             retrieval_two_stage_rerank_weight_q16: options.retrieval_two_stage_rerank_weight_q16,
+            retrieval_suppress_superseded: options.retrieval_suppress_superseded,
             feature_flags: options.feature_flags,
             ingestion_backpressure_policy: options.ingestion_backpressure,
             ingestion_rate_state: crate::ingestion::default_ingestion_rate_state(),

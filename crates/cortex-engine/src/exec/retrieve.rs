@@ -22,8 +22,8 @@ use super::trace::{drain, elapsed_nanos, MaterializedOp, PhysicalOp, PhysicalOpe
 use crate::access_capture::MAX_CAPTURED_ACCESS_DENIALS;
 use crate::database::{
     diversify_retrieved_cells, expand_parent_context, rank_retrieved_cells_with_window,
-    suppress_duplicate_content, two_stage_rerank, CandidateResolver, CapturedAccessDenialSet,
-    Database, RetrievedCell,
+    suppress_duplicate_content, suppress_superseded_cells, two_stage_rerank, CandidateResolver,
+    CapturedAccessDenialSet, Database, RetrievedCell,
 };
 use crate::error::EngineResult;
 use crate::plan::{choose_retrieve_path, CostModelDecision, CostModelOptions, ExecutionPath};
@@ -147,6 +147,29 @@ pub fn execute_retrieve<P: CandidateResolver>(
     );
     let deduped = drain(&mut dedup_op);
     collector.push(dedup_op.trace());
+
+    // Optional A4.2 temporal supersession (off by default). Drops a stale cell
+    // when a newer cell for the same temporal fact key is also present, so an
+    // agent is not handed both the old and current value of the same fact. A
+    // no-op unless the knob is on, so default output and its goldens are
+    // unchanged. Runs alongside DedupOp (before parent expansion): like dedup,
+    // an enabled pass can drop a cell that is another cell's parent source.
+    let deduped = if database.retrieval_suppress_superseded {
+        let started = Instant::now();
+        let input_count = deduped.len();
+        let superseded = suppress_superseded_cells(deduped);
+        let mut supersede_op = MaterializedOp::new(
+            "SupersedeOp",
+            input_count,
+            superseded,
+            elapsed_nanos(started),
+        );
+        let superseded = drain(&mut supersede_op);
+        collector.push(supersede_op.trace());
+        superseded
+    } else {
+        deduped
+    };
 
     let started = Instant::now();
     let expanded = expand_parent_context(deduped);

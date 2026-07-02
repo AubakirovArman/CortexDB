@@ -217,6 +217,13 @@ pub struct DatabaseOptions {
     /// to the query vector. A no-op when the query has no vector, so existing
     /// retrieval output and its goldens are unchanged.
     pub retrieval_two_stage_rerank_weight_q16: Option<u64>,
+    /// A4.2 temporal supersession: when `true`, a retrieval result that contains
+    /// two cells stating the same temporal fact (same subject + metric) returns
+    /// only the newest — the older is superseded. Conservative (a stale cell is
+    /// dropped only when a newer sibling is also present) and deterministic
+    /// (ordered by the maintained index's `(as_of, created, cell_id)`). Off by
+    /// default, so existing retrieval output and its goldens are unchanged.
+    pub retrieval_suppress_superseded: bool,
 }
 
 impl Default for DatabaseOptions {
@@ -244,6 +251,7 @@ impl Default for DatabaseOptions {
             retrieval_diversify_lambda_q16: None,
             retrieval_recency_window_seconds: None,
             retrieval_two_stage_rerank_weight_q16: None,
+            retrieval_suppress_superseded: false,
         }
     }
 }

@@ -48,7 +48,7 @@ impl Database {
     }
 }
 
-pub(super) fn temporal_fact_key(metadata: &CellMetadata) -> Option<TemporalFactKey> {
+pub(crate) fn temporal_fact_key(metadata: &CellMetadata) -> Option<TemporalFactKey> {
     let subject = metadata_value(&metadata.body_text, &["subject", "project", "entity"])
         .or_else(|| metadata.project.clone())
         .or_else(|| metadata.entity.clone())?;
@@ -60,7 +60,7 @@ pub(super) fn temporal_fact_key(metadata: &CellMetadata) -> Option<TemporalFactK
     .filter(|key| !key.subject.is_empty() && !key.metric.is_empty())
 }
 
-pub(super) fn temporal_date_for_record(metadata: &CellMetadata) -> Option<TemporalDate> {
+pub(crate) fn temporal_date_for_record(metadata: &CellMetadata) -> Option<TemporalDate> {
     metadata
         .as_of
         .as_deref()

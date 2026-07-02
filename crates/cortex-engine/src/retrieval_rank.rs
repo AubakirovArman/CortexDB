@@ -13,11 +13,13 @@ use crate::source_trust::SourceTrust;
 mod diversify;
 mod memory_decay;
 mod semantic;
+mod supersede;
 mod two_stage;
 
 pub(crate) use diversify::diversify_retrieved_cells;
 use memory_decay::memory_decay_q16;
 pub(crate) use semantic::{query_vector_from_task, semantic_dot_score};
+pub(crate) use supersede::suppress_superseded_cells;
 pub(crate) use two_stage::two_stage_rerank;
 
 pub(crate) fn rank_retrieved_cells(

@@ -78,6 +78,7 @@ impl EngineConfig {
             retrieval_diversify_lambda_q16: None,
             retrieval_recency_window_seconds: None,
             retrieval_two_stage_rerank_weight_q16: None,
+            retrieval_suppress_superseded: false,
         };
         database_options.hnsw_build_config = database_options.hnsw_build_config.normalized();
         Ok(Self { database_options })
