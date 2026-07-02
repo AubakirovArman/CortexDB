@@ -7,7 +7,8 @@ mod types;
 #[cfg(test)]
 mod tests;
 
-pub(crate) use fields::{lexical_field_weight, non_empty};
+pub use fields::lexical_field_weight;
+pub(crate) use fields::non_empty;
 pub use ids::scope_id;
 pub(crate) use ids::{
     bitmap_handle_kind, cell_type_handle, cell_type_id, memory_type_handle, scope_handle,

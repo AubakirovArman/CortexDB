@@ -26,7 +26,7 @@ pub(crate) use delta::AqlDeltaIndex;
 pub use explain::{
     AqlCandidateCounts, AqlExecutionTraceReport, AqlExplainFilter, AqlExplainReport,
 };
-pub use metadata::{scope_id, CellMetadata, SourceRef};
+pub use metadata::{lexical_field_weight, scope_id, CellMetadata, SourceRef};
 pub use provider::EngineAqlProvider;
 pub use statistics::DatabaseStatistics;
 pub use verify_explain::AqlVerifyExplainReport;

@@ -175,9 +175,9 @@ pub use plan::{
     VectorSearchDecision, VectorSearchExecution, ANN_VECTOR_MIN_LIVE_ROWS, READ_SURFACES,
 };
 pub use query::{
-    scope_id, AqlCandidateCounts, AqlExecutionTraceReport, AqlExplainFilter, AqlExplainReport,
-    AqlQueryCacheStats, AqlVerifyExplainReport, CandidateId, CellMetadata, DatabaseStatistics,
-    EngineAqlIndex, SourceRef,
+    lexical_field_weight, scope_id, AqlCandidateCounts, AqlExecutionTraceReport, AqlExplainFilter,
+    AqlExplainReport, AqlQueryCacheStats, AqlVerifyExplainReport, CandidateId, CellMetadata,
+    DatabaseStatistics, EngineAqlIndex, SourceRef,
 };
 pub use repair::RepairReport;
 pub use replay::{

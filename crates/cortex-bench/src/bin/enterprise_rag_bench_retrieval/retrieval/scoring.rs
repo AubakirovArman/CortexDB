@@ -100,13 +100,7 @@ pub(super) fn average_field_len_q16(
         .unwrap_or(65_536)
 }
 
-pub(super) fn lexical_field_weight(field: &str) -> u32 {
-    match field {
-        "title" => 8,
-        "table" => 6,
-        "path" => 5,
-        "entity" => 4,
-        "chunk" => 2,
-        _ => 1,
-    }
-}
+// A7.1: the field-weight table is owned by the engine (the single source of
+// truth); the bench index imports it instead of keeping a private copy, so the
+// benchmark and the governed engine lexical path can never diverge.
+pub(super) use cortex_engine::lexical_field_weight;
