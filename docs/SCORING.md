@@ -54,3 +54,40 @@ and average field lengths after applying the `AgentView` allowed-candidate set.
 terms, enterprise anchors, quoted phrases, and built-in query expansions. BM25
 multiplies the term score by this query weight after IDF, TF saturation, length
 normalization, and field weighting.
+
+## Score Fusion
+
+Retrieved-cell ranking (`rank_retrieved_cells`) blends four signals per
+candidate: lexical (BM25), semantic (fixed-point i16 dot product), recency (from
+`created_unix_seconds`), and source trust (`source_trust_q16`). These raw scales
+are not comparable (BM25 magnitudes, a large i16 dot product, and two Q16
+signals), so each signal is first **min-max normalized to `[0, 65535]` across
+the candidate set**, then combined by the mode weights:
+
+```text
+score = w_lexical  * norm(lexical)
+      + w_semantic * norm(semantic)
+      + w_recency  * norm(recency)
+      + w_trust    * norm(trust)
+score = score * memory_decay_q16 / 65535
+```
+
+Normalization (`min_max_normalize_q16`) is what makes the per-mode weights
+meaningful. A signal with no spread across candidates maps every candidate to
+`65535`, so it adds the same constant to every base score (it does not change
+relative order) while keeping the base score non-zero, so the memory-decay
+multiplier can still differentiate fresh from stale memory. Weights come from
+the `USING MODE` selection (Q16 fractions summing to `65535`):
+
+| mode | lexical | semantic | recency | trust |
+| --- | ---: | ---: | ---: | ---: |
+| `fast` | 0.55 | 0.10 | 0.25 | 0.10 |
+| `balanced` | 0.30 | 0.35 | 0.20 | 0.15 |
+| `hybrid` | 0.35 | 0.35 | 0.15 | 0.15 |
+| `semantic` | 0.15 | 0.55 | 0.15 | 0.15 |
+| `audit` | 0.20 | 0.20 | 0.20 | 0.40 |
+
+Ties are broken deterministically by candidate order. The fusion is guarded by
+the `retrieval_recall_eval` regression suite
+(`make retrieval-recall-baseline-check`), which asserts recall/MRR floors and
+cross-mode ordering (e.g. `audit` prioritizing source trust).
