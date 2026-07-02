@@ -1,3 +1,4 @@
+mod adapter;
 mod backfill;
 mod coverage;
 mod debt;
@@ -7,6 +8,7 @@ mod types;
 #[cfg(test)]
 mod tests;
 
+pub use adapter::{DeterministicTestEmbedder, Embedder};
 pub use coverage::{
     embedding_coverage_report_from_expected_items, embedding_coverage_report_from_files,
     embedding_coverage_report_from_jsonl, embedding_retry_ids_from_expected_items,
