@@ -204,7 +204,7 @@ impl HnswIndex {
     }
 }
 
-fn first_live_node_in_map(
+pub(super) fn first_live_node_in_map(
     layer_links: &BTreeMap<u32, BTreeSet<u32>>,
     deleted: &BTreeSet<u32>,
 ) -> Option<u32> {
@@ -217,19 +217,21 @@ fn first_live_node_in_map(
     })
 }
 
-fn pop_worst_score(top_scores: &mut BTreeSet<(u64, u32)>) {
+pub(super) fn pop_worst_score(top_scores: &mut BTreeSet<(u64, u32)>) {
     if let Some(worst) = top_scores.iter().next().copied() {
         top_scores.remove(&worst);
     }
 }
 
-fn pop_best_frontier(frontier: &mut BTreeSet<(Reverse<u64>, u32)>) -> Option<(u64, u32)> {
+pub(super) fn pop_best_frontier(
+    frontier: &mut BTreeSet<(Reverse<u64>, u32)>,
+) -> Option<(u64, u32)> {
     let (score, candidate) = frontier.iter().next().copied()?;
     frontier.remove(&(score, candidate));
     Some((score.0, candidate))
 }
 
-fn push_candidate(
+pub(super) fn push_candidate(
     query: &[i16],
     candidate: u32,
     vectors: &BTreeMap<u32, Vec<i16>>,
