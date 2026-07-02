@@ -12,6 +12,12 @@ pub(crate) fn embed_query_from_env(text: &str) -> Result<Vec<i16>, RouterError> 
     embed_query_with_config(&config, text)
 }
 
+/// Builds an [`HttpEmbedder`](super::embedder::HttpEmbedder) from the
+/// `CORTEXDB_EMBEDDING_*` env vars, or `None` when no endpoint is configured.
+pub(crate) fn embedder_from_env() -> Result<Option<super::embedder::HttpEmbedder>, RouterError> {
+    Ok(embedding_config_from_env()?.map(super::embedder::HttpEmbedder::new))
+}
+
 pub(crate) fn missing_vector_or_config_error() -> RouterError {
     RouterError::BadRequest(MISSING_VECTOR_OR_CONFIG.to_owned())
 }

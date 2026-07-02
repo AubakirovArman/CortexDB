@@ -33,6 +33,60 @@ fn empty_ingestion_endpoints_safety() {
 }
 
 #[test]
+fn text_ingestion_rejects_non_boolean_embed_param() {
+    // The opt-in `embed` flag is parsed fail-closed: a non-boolean value is a
+    // 400 before any ingest work happens, so a typo can never silently skip
+    // embedding.
+    let dir = tempfile::tempdir().unwrap();
+    let request =
+        "POST /v1/ingest/text?scope=project:investments&embed=maybe HTTP/1.1\r\n\r\nalpha budget";
+
+    let response = handle_http(dir.path(), request);
+
+    assert!(response.contains(r#""code":"bad_request""#));
+    assert!(response.contains("embed must be boolean"));
+}
+
+#[test]
+fn text_ingestion_without_embed_writes_no_vector_header() {
+    // Default path (no `embed` param) stays network-free and writes no vector.
+    let dir = tempfile::tempdir().unwrap();
+    let request =
+        "POST /v1/ingest/text?scope=project:investments&source=memo.md HTTP/1.1\r\n\r\nalpha budget";
+    assert!(handle_http(dir.path(), request).contains(r#""chunks_ingested":1"#));
+
+    let cell = handle_http(dir.path(), "GET /v1/cell?cell_id=10001 HTTP/1.1\r\n\r\n");
+    assert!(!cell.contains("vector="));
+}
+
+/// Live end-to-end check of the `embed=true` HTTP path against a real embedding
+/// provider. Ignored by default; opt in by exporting `CORTEXDB_EMBEDDING_URL`
+/// (and any auth/model vars) and running:
+/// `cargo test -p cortex-server --lib text_ingestion_embed_true_writes_vector_header_live -- --ignored --nocapture`
+#[test]
+#[ignore = "requires a live CORTEXDB_EMBEDDING_URL endpoint"]
+fn text_ingestion_embed_true_writes_vector_header_live() {
+    if std::env::var("CORTEXDB_EMBEDDING_URL").is_err() {
+        eprintln!("skipping: CORTEXDB_EMBEDDING_URL not set");
+        return;
+    }
+    let dir = tempfile::tempdir().unwrap();
+    let request = "POST /v1/ingest/text?scope=project:investments&source=live.md&embed=true HTTP/1.1\r\n\r\nsolar plant capital budget approved for 2025";
+
+    let response = handle_http(dir.path(), request);
+    assert!(
+        response.contains(r#""chunks_ingested":1"#),
+        "unexpected ingest response: {response}"
+    );
+
+    let cell = handle_http(dir.path(), "GET /v1/cell?cell_id=10001 HTTP/1.1\r\n\r\n");
+    assert!(
+        cell.contains("vector="),
+        "expected a vector= header on the embedded cell: {cell}"
+    );
+}
+
+#[test]
 fn text_ingestion_response_reports_source_refs() {
     let dir = tempfile::tempdir().unwrap();
     let request = "POST /v1/ingest/text?scope=project:investments&source=memo.md HTTP/1.1\r\n\r\nalpha budget";

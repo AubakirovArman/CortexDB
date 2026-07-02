@@ -119,6 +119,40 @@ which records total rows, completed cells, status, and the last written
 so a restart should see either the old complete job state or the new complete
 job state, not a partially written JSON file.
 
+## Optional Embedding at Ingest (opt-in)
+
+Text ingestion can attach a vector to each stored chunk so the cell becomes
+retrievable by vector search without a separate backfill pass. This is
+**opt-in and off by default**: the engine itself stays network-free.
+
+- Engine API: `Database::ingest_text_chunks_with_embedder(first_cell_id, text,
+  options, policy, update_policy, embedder)` takes an injected
+  `&dyn Embedder`. The engine calls `embedder.embed(chunk_text)` for each chunk
+  and writes the returned lanes as a `vector=` payload header. The embedding
+  backend (HTTP client, model, quantization) is owned by the caller, not the
+  engine. Offline/deterministic tests use `DeterministicTestEmbedder`.
+- HTTP API: `POST /v1/ingest/text?embed=true`. When `embed=true`, the server
+  builds an embedder from the `CORTEXDB_EMBEDDING_*` environment variables and
+  embeds each chunk during ingest. The `embed` value is parsed fail-closed: a
+  non-boolean value is rejected with `400 bad_request` before any write, and
+  `embed=true` with no embedding endpoint configured returns
+  `bad_request: semantic requires vector or embedding config` rather than
+  silently storing un-embedded cells.
+- Default path unchanged: without `embed` (or `embed=false`), ingest writes no
+  `vector=` header and performs no network I/O, exactly as before.
+
+Environment configuration (server side) reuses the query-embedding client:
+
+```bash
+CORTEXDB_EMBEDDING_URL=https://<provider>/v1/embeddings
+CORTEXDB_EMBEDDING_MODEL=<model-id>            # optional
+CORTEXDB_EMBEDDING_API_KEY=<key>               # optional
+CORTEXDB_EMBEDDING_TIMEOUT_MS=2000             # optional
+```
+
+An embedding error during ingest fails the whole `POST /v1/ingest/text` call
+(fail-closed) instead of persisting a partially embedded batch.
+
 ## Ingestion Job Lifecycle
 
 The HTTP API exposes persisted ingestion job records so clients and the

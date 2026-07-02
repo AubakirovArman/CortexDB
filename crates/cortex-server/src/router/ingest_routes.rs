@@ -4,6 +4,7 @@ use cortex_engine::{
 };
 
 use crate::authz;
+use crate::embedding;
 use crate::responses::{DeleteJobResponse, IngestResponse, RouterError};
 
 use super::params::query_param_opt_decoded;
@@ -45,16 +46,33 @@ pub(super) fn try_route<A: DatabaseAccess>(
                     &text,
                     cortex_engine::TextChunkPolicy::default(),
                 )?;
+                let embed =
+                    embedding::parse_bool_param(query_param_opt_decoded(query, "embed"), "embed")?;
+                let embedder = if embed {
+                    Some(
+                        embedding::embedder_from_env()?
+                            .ok_or_else(embedding::missing_vector_or_config_error)?,
+                    )
+                } else {
+                    None
+                };
                 let start_id = db.allocate_cell_id_range(expected_cells)?;
                 let (job_id, results) = track_ingest(db, "ingest_text", None, body.len(), |db| {
-                    db.ingest_text_chunks(
-                        start_id,
-                        &text,
-                        cortex_engine::TextIngestOptions {
-                            scope: scope.to_owned(),
-                            source: source.to_owned(),
-                        },
-                    )
+                    let options = cortex_engine::TextIngestOptions {
+                        scope: scope.to_owned(),
+                        source: source.to_owned(),
+                    };
+                    match &embedder {
+                        Some(embedder) => db.ingest_text_chunks_with_embedder(
+                            start_id,
+                            &text,
+                            options,
+                            cortex_engine::TextChunkPolicy::default(),
+                            cortex_engine::IngestionUpdatePolicy::AlwaysInsert,
+                            embedder,
+                        ),
+                        None => db.ingest_text_chunks(start_id, &text, options),
+                    }
                 })?;
                 let response = IngestResponse {
                     rows_ingested: 0,
