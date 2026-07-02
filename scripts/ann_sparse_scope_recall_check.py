@@ -24,7 +24,8 @@ REQUIRED_TERMS = {
         "SPARSE_ALLOWED_EXACT_FALLBACK_MAX_CANDIDATES",
         "should_use_sparse_allowed_exact_fallback",
         "policy.max_visited_candidates.is_some()",
-        "available.saturating_mul(4) <= graph_nodes",
+        "SPARSE_ALLOWED_EXACT_FALLBACK_MAX_RATIO_BPS",
+        "allowed_ratio_within_bps",
         "AnnFallbackReason::SparseAllowedSet",
     ],
     "crates/cortex-engine/src/search/ann/types.rs": [

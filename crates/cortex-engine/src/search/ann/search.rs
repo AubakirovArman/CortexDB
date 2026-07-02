@@ -15,6 +15,28 @@ use super::types::{
 
 pub(super) const SPARSE_ALLOWED_EXACT_FALLBACK_MAX_CANDIDATES: usize = 64;
 
+/// A3.2: explicit allowed-ratio threshold for the sparse-scope exact fallback.
+/// When the permission-allowed set is at most this fraction of the graph
+/// (in basis points; 2500 = 25%), an ANN query over it routes to an exact scan
+/// of the allowed set (recall 1.0) instead of a budgeted HNSW traversal that
+/// would spend its beam on out-of-scope nodes. Codifies the previous implicit
+/// `available * 4 <= graph_nodes` check.
+pub(super) const SPARSE_ALLOWED_EXACT_FALLBACK_MAX_RATIO_BPS: u64 = 2_500;
+
+/// Returns true when `available` is at most `max_ratio_bps` basis points of
+/// `graph_nodes`. Integer-only and overflow-safe.
+pub(super) fn allowed_ratio_within_bps(
+    available: usize,
+    graph_nodes: usize,
+    max_ratio_bps: u64,
+) -> bool {
+    if graph_nodes == 0 {
+        return false;
+    }
+    // available/graph_nodes <= max_ratio_bps/10000, cross-multiplied.
+    (available as u128) * 10_000 <= (graph_nodes as u128) * u128::from(max_ratio_bps)
+}
+
 pub fn search_persisted_ann(
     vectors: &BTreeMap<u32, Vec<i16>>,
     graph: &HnswGraphIndex,
@@ -264,7 +286,11 @@ pub(super) fn should_use_sparse_allowed_exact_fallback(
         && policy.max_visited_candidates.is_some()
         && available > 0
         && available <= SPARSE_ALLOWED_EXACT_FALLBACK_MAX_CANDIDATES
-        && available.saturating_mul(4) <= graph_nodes
+        && allowed_ratio_within_bps(
+            available,
+            graph_nodes,
+            SPARSE_ALLOWED_EXACT_FALLBACK_MAX_RATIO_BPS,
+        )
 }
 
 pub(super) fn search_hnsw(
