@@ -64,17 +64,18 @@ scale and retrieves the gold document for the majority of factual questions
 (basic 76.5%, reasoning 75%, conflicting-info 100%). The measurement is
 reproducible from a committed make target.
 
-**Not yet at the exit bar.** Overall recall@10 (56.35%) is **below** the plan's
-≥75% retrieval exit target. The deficit is concentrated in exactly two pools —
-`semantic` (23.1%) and `project_related` (24.7%) — which is consistent with the
-A2.0 finding in [`EMBEDDING_MODEL_SELECTION.md`](EMBEDDING_MODEL_SELECTION.md)
-that a dense embedding pass alone does not fix the semantic pool. Closing this
-gap is what the still-open plan dependencies target: A1.4 (weight
-re-derivation), A4.2 (temporal supersession), and A7.2 (two-stage retrieve).
-The A-track slices landed this cycle (graph-descent HNSW A3.1, MMR A5, temporal
-window A4.1, guarded-recall A3.3) are **default-off** and not yet wired into
-this bench path, so they do not move this number — the remaining wiring (A7.2
-two-stage retrieve; A5/A4.1 as AQL surfaces) is the honest integration gap.
+**Not yet at the exit bar (lexical alone).** Overall recall@10 (56.35%) for the
+single lexical pass is **below** the plan's ≥75% retrieval exit target. The
+deficit is concentrated in two pools — `semantic` (23.1%) and `project_related`
+(24.7%). The A2.0 finding in
+[`EMBEDDING_MODEL_SELECTION.md`](EMBEDDING_MODEL_SELECTION.md) was that a dense
+pass *replacing* lexical does not fix the semantic pool; the two-stage rerank
+below (lexical **then** dense) is a different lever and does help it materially
+(+15.4 pts). Remaining gap-closers among the still-open plan deps: A1.4 (weight
+re-derivation) and A7.2's end-to-end wiring into this harness. The other A-track
+slices landed this cycle (graph-descent HNSW A3.1, MMR A5, temporal window A4.1,
+temporal supersession A4.2, guarded-recall A3.3) are **default-off** and not yet
+wired into this bench path, so they do not move this specific number.
 
 **Answer quality is unmeasured here.** This is a retrieval-only run, so
 `average_correctness_pct` and the combined correctness/completeness score are
@@ -83,10 +84,44 @@ answer+judge combined-score exit-proof (Gemma answer generation + judge over the
 official set) remains the outstanding external step; it is expensive and is not
 run as part of this record.
 
+## Two-stage dense rerank (the A7.2 pattern) — measured lift
+
+The single lexical pass above is stage 1. Reranking its **top-50 candidates** by
+**BAAI/bge-m3** dense similarity (the A2.0-selected model) down to the top-10 —
+i.e. exactly the two-stage retrieve that A7.2 productizes in the engine — lifts
+document recall substantially, and lifts it precisely in the pools the lexical
+pass is weakest in:
+
+| Question type | Lexical recall@10 | + dense rerank | Δ |
+| --- | --- | --- | --- |
+| **Overall** | **56.35%** | **68.85%** | **+12.5** |
+| intra_document_reasoning | 75.0% | 100.0% | +25.0 |
+| basic | 76.5% | 94.1% | +17.7 |
+| **semantic** | **23.1%** | **38.5%** | **+15.4** |
+| completeness | 75.0% | 68.8% | −6.2 |
+| project_related / constrained / conflicting_info / misc | (unchanged) | | +0.0 |
+
+Provenance (`cortexdb_balanced_50_embedding_rerank_report.json`): stage-1 input
+is the engine's full-corpus top-50 lexical candidates
+(`cortexdb_balanced_50_candidates_top50.jsonl`); `embedding_model=BAAI/bge-m3`,
+`candidate_top_k=50`, `final_top_k=10`.
+
+Honest caveat on the boundary: this measurement was produced by the bench-side
+reranker `scripts/enterprise_rag_bench/rerank_with_embeddings.py`, which reranks
+the engine's *exported* lexical candidates. The engine's A7.2 `RerankOp`
+(`retrieval_rank/two_stage.rs`) implements the same math — an exact dense dot
+rerank of the ranked pool against the query vector — natively and deterministically,
+but it is not yet wired into this bench harness (that needs the candidate-doc
+vectors materialised on the retrieved cells at query time). So this table
+validates the two-stage **pattern** on real ERB data; reproducing it *through*
+the engine's own `RerankOp` end-to-end is the remaining integration step.
+
 ## Exit-proof status
 
-Honest verdict: the engine product path is **wired and reproducible**, factual
-retrieval is strong, but the retrieval exit bar (≥75% recall@10) is **not yet
-met** (56.35%), and the answer-quality half of the exit-proof is **not yet
-measured**. A6.4 is therefore recorded as *measured, not passing* — the honest
-outcome the task exists to surface.
+Honest verdict: the engine product path is **wired and reproducible**, and the
+two-stage dense rerank that A7.2 productizes measurably closes the gap —
+recall@10 rises from **56.35% to 68.85%**, with the flagged `semantic` pool up
+**+15.4 points** — but the retrieval exit bar (≥75% recall@10) is **still not
+met** (68.85%), and the answer-quality half of the exit-proof is **not yet
+measured**. A6.4 is therefore recorded as *measured, materially improved by the
+A7.2 pattern, not yet passing* — the honest outcome the task exists to surface.
