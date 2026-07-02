@@ -151,6 +151,7 @@ impl Database {
             semantic_compression: options.semantic_compression,
             hnsw_build_config: options.hnsw_build_config.normalized(),
             embedding_profile: options.embedding_profile.clone(),
+            retrieval_diversify_lambda_q16: options.retrieval_diversify_lambda_q16,
             feature_flags: options.feature_flags,
             ingestion_backpressure_policy: options.ingestion_backpressure,
             ingestion_rate_state: crate::ingestion::default_ingestion_rate_state(),

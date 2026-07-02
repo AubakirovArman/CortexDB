@@ -75,6 +75,7 @@ impl EngineConfig {
             compaction_policy: CompactionPolicy::default(),
             text_analyzer: Default::default(),
             embedding_profile: None,
+            retrieval_diversify_lambda_q16: None,
         };
         database_options.hnsw_build_config = database_options.hnsw_build_config.normalized();
         Ok(Self { database_options })

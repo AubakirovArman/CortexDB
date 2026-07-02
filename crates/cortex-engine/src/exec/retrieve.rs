@@ -21,8 +21,9 @@ use super::scans::{BitmapIndexScan, PermissionFilter, QualityFilter};
 use super::trace::{drain, elapsed_nanos, MaterializedOp, PhysicalOp, PhysicalOperatorTrace};
 use crate::access_capture::MAX_CAPTURED_ACCESS_DENIALS;
 use crate::database::{
-    expand_parent_context, rank_retrieved_cells, suppress_duplicate_content, CandidateResolver,
-    CapturedAccessDenialSet, Database, RetrievedCell,
+    diversify_retrieved_cells, expand_parent_context, rank_retrieved_cells,
+    suppress_duplicate_content, CandidateResolver, CapturedAccessDenialSet, Database,
+    RetrievedCell,
 };
 use crate::error::EngineResult;
 use crate::plan::{choose_retrieve_path, CostModelDecision, CostModelOptions, ExecutionPath};
@@ -88,6 +89,26 @@ pub fn execute_retrieve<P: CandidateResolver>(
         MaterializedOp::new("RankOp", rank_input_count, ranked, elapsed_nanos(started));
     let ranked = drain(&mut rank_op);
     collector.push(rank_op.trace());
+
+    // Optional MMR diversification (off by default; a no-op unless a Q16 lambda
+    // < 65535 is configured on the database). Applied after ranking so the most
+    // relevant cell stays first while near-duplicates are demoted.
+    let ranked = if let Some(lambda) = database.retrieval_diversify_lambda_q16 {
+        let started = Instant::now();
+        let input_count = ranked.len();
+        let diversified = diversify_retrieved_cells(ranked, lambda);
+        let mut diversify_op = MaterializedOp::new(
+            "DiversifyOp",
+            input_count,
+            diversified,
+            elapsed_nanos(started),
+        );
+        let diversified = drain(&mut diversify_op);
+        collector.push(diversify_op.trace());
+        diversified
+    } else {
+        ranked
+    };
 
     let started = Instant::now();
     let deduped = suppress_duplicate_content(ranked);

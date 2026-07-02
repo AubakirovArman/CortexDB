@@ -10,9 +10,11 @@ use crate::query::CellMetadata;
 use crate::search::{analyze_search_query, bm25_term_score_q16, Bm25CorpusStats, Bm25TermInput};
 use crate::source_trust::SourceTrust;
 
+mod diversify;
 mod memory_decay;
 mod semantic;
 
+pub(crate) use diversify::diversify_retrieved_cells;
 use memory_decay::memory_decay_q16;
 pub(crate) use semantic::{query_vector_from_task, semantic_dot_score};
 

@@ -201,6 +201,11 @@ pub struct DatabaseOptions {
     /// embedded at ingest are stamped with it and the manifest records it, so a
     /// later open with an incompatible profile fails closed.
     pub embedding_profile: Option<crate::embedding_pipeline::EmbeddingProfile>,
+    /// Optional MMR diversification of ranked retrieval results, as a Q16 lambda
+    /// in `[0, 65535]`: `None` or `65535` is off (pure relevance); smaller
+    /// values trade relevance for diversity. Off by default, so existing
+    /// retrieval output and its goldens are unchanged.
+    pub retrieval_diversify_lambda_q16: Option<u64>,
 }
 
 impl Default for DatabaseOptions {
@@ -225,6 +230,7 @@ impl Default for DatabaseOptions {
             compaction_policy: CompactionPolicy::default(),
             text_analyzer: TextAnalyzerConfig::default(),
             embedding_profile: None,
+            retrieval_diversify_lambda_q16: None,
         }
     }
 }
