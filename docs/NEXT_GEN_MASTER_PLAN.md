@@ -2112,6 +2112,11 @@ Commit-граница F06 есть, операционный цикл — non-go
 - `make receipt-cross-language-check`
 - `make receipt-kms-hsm-custody-check`
 - `make receipt-performance-check`
+
+> Boundary note: the `receipt-production-*` gates below keep
+> `production_ready=false`. They are **not** a production claim — external
+> KMS/HSM custody and independent transparency witnesses remain future work.
+
 - `make receipt-production-evidence-preflight-check`
 - `make receipt-production-evidence-production-preflight-check`
 - `make receipt-production-readiness-check`
