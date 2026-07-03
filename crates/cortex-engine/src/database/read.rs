@@ -16,7 +16,7 @@ use crate::exec::{execute_retrieve, RetrieveExecutionReport};
 use crate::feedback::current_unix_seconds;
 #[cfg(test)]
 use crate::retrieval_quality::cell_version_meets_quality_thresholds;
-use crate::retrieval_rank::rank_retrieved_cells;
+use crate::retrieval_rank::{rank_retrieved_cells, two_stage_rerank};
 #[cfg(test)]
 use crate::retrieval_rank::{expand_parent_context, suppress_duplicate_content};
 
@@ -168,6 +168,23 @@ impl Database {
         weights: &cortex_aql::RetrievalWeights,
     ) -> Vec<RetrievedCell> {
         rank_retrieved_cells(cells, task, weights)
+    }
+
+    /// A7.2: reranks an already-materialized candidate pool by an exact dense
+    /// pass against the query vector embedded in `task` (a `query_vector=` /
+    /// `vector=` line), blended with the pool's incoming order by `weight_q16`
+    /// (Q16; `65535` is pure dense, `0`/no query vector is a no-op). This is the
+    /// exact `two_stage_rerank` the retrieve pipeline's `RerankOp` runs when
+    /// `retrieval_two_stage_rerank_weight_q16` is set — exposed so a caller that
+    /// already holds a lexical candidate pool (e.g. a benchmark harness) can
+    /// apply the engine's own two-stage rerank directly.
+    pub fn two_stage_rerank_for_task(
+        &self,
+        cells: Vec<RetrievedCell>,
+        task: &str,
+        weight_q16: u64,
+    ) -> Vec<RetrievedCell> {
+        two_stage_rerank(cells, task, weight_q16)
     }
 
     pub fn current_seq(&self) -> CommitSeq {

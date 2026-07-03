@@ -68,6 +68,9 @@ impl BenchmarkRetrievalMode {
 pub enum BenchmarkRerankMode {
     None,
     Weighted,
+    /// A7.2: rerank the lexical candidate pool by the engine's own exact dense
+    /// two-stage pass (`Database::two_stage_rerank_for_task`, pure dense).
+    TwoStage,
 }
 
 impl BenchmarkRerankMode {
@@ -75,7 +78,8 @@ impl BenchmarkRerankMode {
         match value {
             "none" => Ok(Self::None),
             "weighted" => Ok(Self::Weighted),
-            _ => Err("rerank mode must be none or weighted".to_owned()),
+            "two-stage" => Ok(Self::TwoStage),
+            _ => Err("rerank mode must be none, weighted, or two-stage".to_owned()),
         }
     }
 
@@ -83,11 +87,12 @@ impl BenchmarkRerankMode {
         match self {
             Self::None => "none",
             Self::Weighted => "weighted",
+            Self::TwoStage => "two-stage",
         }
     }
 
     pub fn is_enabled(self) -> bool {
-        matches!(self, Self::Weighted)
+        matches!(self, Self::Weighted | Self::TwoStage)
     }
 }
 

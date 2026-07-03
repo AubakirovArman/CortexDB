@@ -4,7 +4,7 @@ use cortex_aql::{default_weights, RetrievalMode};
 use cortex_engine::{Database, RetrievedCell};
 use serde_json::{json, Value};
 
-use super::args::Args;
+use super::args::{Args, BenchmarkRerankMode};
 use super::helpers::{doc_id_to_cell_id, retrieval_row};
 use super::logger::RunLogger;
 use super::reporting::{benchmark_task, required_str, source_types};
@@ -137,8 +137,16 @@ pub(crate) fn retrieve_aql_questions(
             RetrievalMode::Balanced
         };
         let task = benchmark_task(query, vector);
-        let results = db
-            .rerank_retrieved_cells_for_task(cells, &task, &default_weights(mode))
+        // A7.2: `--rerank two-stage` reranks the lexical pool by the engine's own
+        // exact dense two-stage pass (pure dense, Q16 = u16::MAX), the same
+        // `two_stage_rerank` the retrieve pipeline's RerankOp runs. Otherwise use
+        // the weighted-fusion ranking.
+        let ranked = if matches!(args.rerank_mode, BenchmarkRerankMode::TwoStage) {
+            db.two_stage_rerank_for_task(cells, &task, u64::from(u16::MAX))
+        } else {
+            db.rerank_retrieved_cells_for_task(cells, &task, &default_weights(mode))
+        };
+        let results = ranked
             .into_iter()
             .take(args.top_k)
             .collect::<Vec<_>>();
