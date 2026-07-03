@@ -48,6 +48,10 @@ benchmark-lane-audit-check:
 benchmark-registry-check:
 	python3 scripts/benchmarks/registry_summarize.py --report "target/benchmark-registry/report.json"
 
+.PHONY: erb-compare-runs-check
+erb-compare-runs-check:
+	python3 scripts/enterprise_rag_bench/compare_official_runs.py --self-test
+
 .PHONY: benchmark-report-schema-check
 benchmark-report-schema-check:
 	python3 scripts/benchmark_report_schema_check.py --report "target/benchmark-schema/report.json"

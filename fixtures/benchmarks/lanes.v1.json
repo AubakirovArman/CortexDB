@@ -13,6 +13,7 @@
         {"target": "benchmark-floor-check", "purpose": "F5.2 headline metric never regresses below committed floor"},
         {"target": "benchmark-lane-audit-check", "purpose": "F1.3 this lane map agrees with the real workflow"},
         {"target": "benchmark-registry-check", "purpose": "F1.2 published benchmark numbers trace to committed evidence, no overclaim"},
+        {"target": "erb-compare-runs-check", "purpose": "F2.2 ERB run comparisons refuse across-judge deltas"},
         {"target": "results-page-check", "purpose": "F5.1 RESULTS.md figures trace to committed reports"},
         {"target": "aab-mini-score-check", "purpose": "F4.2 6-axis AAB mini-score (structural axes unranked)"},
         {"target": "ltr-corpus-check", "purpose": "A5.1 leak-free LTR corpus builder self-test"},

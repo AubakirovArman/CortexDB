@@ -45,6 +45,7 @@ jobs:
       # F1.3: every gate below is pinned to this lane in fixtures/benchmarks/lanes.v1.json.
       - run: make benchmark-lane-audit-check
       - run: make benchmark-registry-check
+      - run: make erb-compare-runs-check
       - run: make results-page-check
       - run: make aab-mini-score-check
       # Learned-ranking pipeline (deterministic corpus + trainer, held-out lift).
