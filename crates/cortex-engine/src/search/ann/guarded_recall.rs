@@ -97,6 +97,129 @@ impl RecallWindow {
     }
 }
 
+/// The serving mode a collection is currently in. `Ann` serves budgeted HNSW
+/// results (with the windowed recall attached); `ExactDegraded` has fallen back
+/// to exact serving after a recall-floor breach and stays there until a rebuild.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GuardedServingMode {
+    Ann,
+    ExactDegraded,
+}
+
+impl GuardedServingMode {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            GuardedServingMode::Ann => "ann",
+            GuardedServingMode::ExactDegraded => "exact_degraded",
+        }
+    }
+}
+
+/// Per-collection guarded-recall state machine (A3.3). Ties the deterministic
+/// sampling decision, the recall window, the sticky degradation verdict, and a
+/// monotonic `serving_epoch` together. Every transition is a pure function of
+/// recorded observations + the manifest generation — no wall clock, no RNG — so a
+/// replay reproduces the same epoch, and the epoch is what enters the signed
+/// determinism surface (see `DeterminismHashInput::serving_epoch` +
+/// ADR-ann-degradation-receipt-visibility).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GuardedRecallState {
+    window: RecallWindow,
+    generation: u64,
+    queries_since_rebuild: u64,
+    serving_epoch: u64,
+    degraded: bool,
+}
+
+impl GuardedRecallState {
+    /// A fresh collection at `generation`, serving ANN, epoch 0.
+    pub fn new(generation: u64) -> Self {
+        Self {
+            window: RecallWindow::new(),
+            generation,
+            queries_since_rebuild: 0,
+            serving_epoch: 0,
+            degraded: false,
+        }
+    }
+
+    /// Reconstruct persisted state (for manifest round-trips).
+    pub fn from_parts(
+        window: RecallWindow,
+        generation: u64,
+        queries_since_rebuild: u64,
+        serving_epoch: u64,
+        degraded: bool,
+    ) -> Self {
+        Self {
+            window,
+            generation,
+            queries_since_rebuild,
+            serving_epoch,
+            degraded,
+        }
+    }
+
+    pub fn generation(&self) -> u64 {
+        self.generation
+    }
+    pub fn queries_since_rebuild(&self) -> u64 {
+        self.queries_since_rebuild
+    }
+    pub fn serving_epoch(&self) -> u64 {
+        self.serving_epoch
+    }
+    pub fn window(&self) -> &RecallWindow {
+        &self.window
+    }
+
+    pub fn serving_mode(&self) -> GuardedServingMode {
+        if self.degraded {
+            GuardedServingMode::ExactDegraded
+        } else {
+            GuardedServingMode::Ann
+        }
+    }
+
+    /// Whether this query should recompute exact recall (be sampled). Once
+    /// degraded, every query is served exact anyway, so sampling is moot — but the
+    /// warm-up/rate decision still governs when the *window* is refreshed.
+    pub fn should_sample(&self, query_bytes: &[u8]) -> bool {
+        should_sample_recall(query_bytes, self.generation, self.queries_since_rebuild)
+    }
+
+    /// Record a sampled query's measured recall. Degradation is **sticky**: once
+    /// the windowed minimum drops below `floor_q16` the collection stays in
+    /// `ExactDegraded` until a rebuild, and the ANN→exact transition bumps the
+    /// serving epoch exactly once.
+    pub fn record_sampled(&mut self, recall_q16: u16, floor_q16: u16) {
+        self.window.push(recall_q16);
+        if !self.degraded && self.window.is_degraded(floor_q16) {
+            self.degraded = true;
+            self.serving_epoch += 1;
+        }
+        self.queries_since_rebuild = self.queries_since_rebuild.saturating_add(1);
+    }
+
+    /// Record an unsampled query (served without an exact recompute).
+    pub fn record_unsampled(&mut self) {
+        self.queries_since_rebuild = self.queries_since_rebuild.saturating_add(1);
+    }
+
+    /// A graph rebuild: clear the window and re-arm sampling at the new
+    /// generation. If the collection was degraded, this is an exact→ANN
+    /// transition and bumps the serving epoch.
+    pub fn on_rebuild(&mut self, new_generation: u64) {
+        self.window = RecallWindow::new();
+        self.queries_since_rebuild = 0;
+        self.generation = new_generation;
+        if self.degraded {
+            self.degraded = false;
+            self.serving_epoch += 1;
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -176,5 +299,88 @@ mod tests {
             Some(65_000),
             "the low observation must have been evicted"
         );
+    }
+
+    const FLOOR: u16 = 40_000;
+
+    // Drives the full serving-mode lifecycle: healthy ANN -> sticky degradation on
+    // a recall-floor breach (epoch bump) -> rebuild recovery (epoch bump), and
+    // asserts the serving epoch only moves on genuine mode transitions.
+    #[test]
+    fn state_machine_degrades_stickily_and_recovers_on_rebuild() {
+        let mut state = GuardedRecallState::new(1);
+        assert_eq!(state.serving_mode(), GuardedServingMode::Ann);
+        assert_eq!(state.serving_epoch(), 0);
+
+        // Healthy samples: stay ANN, epoch unchanged.
+        state.record_sampled(60_000, FLOOR);
+        state.record_sampled(55_000, FLOOR);
+        assert_eq!(state.serving_mode(), GuardedServingMode::Ann);
+        assert_eq!(state.serving_epoch(), 0);
+
+        // A below-floor observation -> degrade (ANN -> exact), epoch bumps once.
+        state.record_sampled(30_000, FLOOR);
+        assert_eq!(state.serving_mode(), GuardedServingMode::ExactDegraded);
+        assert_eq!(state.serving_epoch(), 1);
+
+        // Sticky: further samples (even healthy ones) do NOT re-bump or recover.
+        state.record_sampled(65_000, FLOOR);
+        state.record_sampled(65_000, FLOOR);
+        assert_eq!(state.serving_mode(), GuardedServingMode::ExactDegraded);
+        assert_eq!(state.serving_epoch(), 1);
+
+        // A rebuild clears the window and recovers to ANN (exact -> ANN), epoch bumps.
+        state.on_rebuild(2);
+        assert_eq!(state.serving_mode(), GuardedServingMode::Ann);
+        assert_eq!(state.serving_epoch(), 2);
+        assert_eq!(state.queries_since_rebuild(), 0);
+        assert!(state.window().is_empty());
+
+        // A rebuild while already healthy is not a mode transition: no epoch bump.
+        state.on_rebuild(3);
+        assert_eq!(state.serving_epoch(), 2);
+    }
+
+    #[test]
+    fn state_machine_degrades_within_eight_sampled_queries() {
+        // A corrupted graph reports low recall; degradation must latch quickly.
+        let mut state = GuardedRecallState::new(1);
+        let mut sampled = 0;
+        for _ in 0..8 {
+            state.record_sampled(10_000, FLOOR); // well below floor
+            sampled += 1;
+            if state.serving_mode() == GuardedServingMode::ExactDegraded {
+                break;
+            }
+        }
+        assert_eq!(state.serving_mode(), GuardedServingMode::ExactDegraded);
+        assert!(
+            sampled <= 8,
+            "degradation must latch within 8 sampled queries"
+        );
+    }
+
+    #[test]
+    fn state_machine_is_deterministic_on_replay() {
+        // Same observation stream twice -> identical epoch + mode (double-run proof).
+        let run = || {
+            let mut state = GuardedRecallState::new(5);
+            for (i, recall) in [58_000u16, 61_000, 20_000, 63_000, 64_000]
+                .iter()
+                .enumerate()
+            {
+                if state.should_sample(format!("q{i}").as_bytes()) {
+                    state.record_sampled(*recall, FLOOR);
+                } else {
+                    state.record_unsampled();
+                }
+            }
+            (
+                state.serving_epoch(),
+                state.serving_mode(),
+                state.queries_since_rebuild(),
+            )
+        };
+        assert_eq!(run(), run());
     }
 }
