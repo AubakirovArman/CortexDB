@@ -44,3 +44,12 @@ jobs:
       - run: make enterprise-rag-bench-retrieval-quality-fixture-check
       - run: make enterprise-rag-bench-hybrid-parity-fixture-check
       - run: make enterprise-rag-bench-query-understanding-lift-check
+
+      # C1-2: fast accountability/receipt verifier subset — checks committed
+      # goldens/docs that `cargo test` does not cover, so a receipt-integrity
+      # regression is caught on every PR, not just nightly. All deterministic and
+      # sub-4s locally.
+      - run: make accountability-canonical-check
+      - run: make accountability-receipt-tamper-check
+      - run: make receipt-threat-model-check
+      - run: make gce-spec-doc-check

@@ -4,7 +4,7 @@ CortexDB CI is split by cost and release risk.
 
 | Lane | Trigger | Checks |
 | --- | --- | --- |
-| PR | `pull_request`, `push` to `main` | file-size, docs-link, stable `cargo check`, full workspace tests, fmt, clippy, live examples, migration policy, storage-format change note, EnterpriseRAG fixture quality/parity/query-understanding gates |
+| PR | `pull_request`, `push` to `main` | file-size, docs-link, stable `cargo check`, full workspace tests, fmt, clippy, live examples, migration policy, storage-format change note, EnterpriseRAG fixture quality/parity/query-understanding gates, **fast accountability/receipt verifiers** (canonical serialization, receipt tamper-detection, receipt threat-model, GCE spec doc — committed-artifact checks `cargo test` does not cover) |
 | Benchmark-validation | nightly schedule, manual dispatch (`nightly.yml` job `benchmark-validation`) | benchmark_report/floor/results-page/AAB-mini schema+score gates, LTR corpus + learned-ranker held-out lift, retrieval candidate-pool / corpus-BM25 / vector-metric / two-stage-rerank / temporal-supersede / AQL-diversity / structure-chunking gates, anti-absorption moat proof (AAB-conformance, GCE-spec, receipt threat-model, receipt-emission budget) |
 | Nightly-heavy / ANN-scale | daily schedule, manual dispatch | beta toolchain check/test/fmt/clippy, load smoke, crash/fault, backup offsite, chaos restart, replication partition/lifecycle, dashboard package/smoke/screenshots, ANN regression/release evidence, continuous scale benchmark gate |
 | Release | `v*` tag, manual dispatch on tag | full `make release-check`, release evidence bundle, ANN baseline package, container image, binary release artifacts |
