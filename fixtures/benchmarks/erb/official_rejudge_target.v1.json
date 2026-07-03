@@ -1,0 +1,10 @@
+{
+  "schema_version": "cortexdb.erb.official_rejudge_target.v1",
+  "purpose": "F2.1: pins the official ERB re-judge target + the answers.jsonl integrity SHA that must hold BEFORE any judge tokens are spent.",
+  "judge_of_record": {"model": "gpt-5.4", "provider": "openai"},
+  "note": "The leaderboard-official / comparable ERB judge is gpt-5.4 (see F2.0). Interim in-house numbers judged by gemini-3.5-flash are never leaderboard_comparable.",
+  "judge_env_var": "ENTERPRISE_RAG_BENCH_REJUDGE_API_KEY",
+  "answers_file": "erb-submission/answers.jsonl",
+  "expected_answers_sha256": "b0660cc5cc1a2f4e436b7dbf38c5e4ce61fcaaafa9249afdc979d4ec2888a0b5",
+  "answers_question_count": 500
+}

@@ -153,3 +153,8 @@ enterprise-rag-bench-official-clean-status:
 	  extra="--watch --interval-seconds $(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_STATUS_INTERVAL_SECONDS)"; \
 	fi; \
 	python3 scripts/enterprise_rag_bench/show_official_clean_status.py --run-dir "$$run_dir" --tail-lines "$(ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_STATUS_TAIL_LINES)" $$extra
+
+.PHONY: erb-official-rejudge-ready-check
+erb-official-rejudge-ready-check:
+	python3 scripts/enterprise_rag_bench/check_official_rejudge.py --self-test
+	python3 scripts/enterprise_rag_bench/check_official_rejudge.py --report "target/erb-official-rejudge/readiness.json"
