@@ -51,6 +51,7 @@ pub mod exec;
 pub mod feedback;
 pub mod graph;
 pub mod graph_retrieval;
+pub(crate) mod idempotency;
 pub mod ingestion;
 pub mod legal;
 mod lock;

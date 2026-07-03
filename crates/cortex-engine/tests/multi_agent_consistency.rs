@@ -277,6 +277,173 @@ fn require_seq_visible_enforces_read_after_seq() {
     );
 }
 
+fn keyed_request(
+    agent_id: u64,
+    scope: &str,
+    base_seq: CommitSeq,
+    batch: WriteBatch,
+    key: &str,
+) -> AgentTransactionRequest {
+    let mut request = request(agent_id, scope, base_seq, batch);
+    request.idempotency_key = Some(key.to_owned());
+    request
+}
+
+#[test]
+fn idempotent_transaction_replays_without_rewriting() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open_with_options(dir.path(), options()).unwrap();
+    let owner = view(1, &["agent:one"], &["agent:one"], Some("agent:one"));
+
+    let req = keyed_request(
+        1,
+        "agent:one",
+        db.current_seq(),
+        WriteBatch::new().put_cell(CellId(1), payload("agent:one", "first")),
+        "key-1",
+    );
+    let first = db.commit_agent_transaction(&owner, req.clone()).unwrap();
+    assert_eq!(first.outcome, AgentTransactionOutcome::Committed);
+    assert!(!first.idempotent_replay);
+    let committed = first.committed_seq.unwrap();
+    let seq_after_first = db.current_seq();
+
+    // Replaying the identical request returns the SAME outcome and does not write.
+    let second = db.commit_agent_transaction(&owner, req).unwrap();
+    assert!(second.idempotent_replay);
+    assert_eq!(second.committed_seq, Some(committed));
+    assert_eq!(
+        db.current_seq(),
+        seq_after_first,
+        "an idempotent replay must not advance the commit sequence"
+    );
+}
+
+#[test]
+fn reused_idempotency_key_with_different_request_is_rejected() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open_with_options(dir.path(), options()).unwrap();
+    let owner = view(1, &["agent:one"], &["agent:one"], Some("agent:one"));
+
+    let first = keyed_request(
+        1,
+        "agent:one",
+        db.current_seq(),
+        WriteBatch::new().put_cell(CellId(1), payload("agent:one", "first")),
+        "dup",
+    );
+    db.commit_agent_transaction(&owner, first).unwrap();
+
+    // Same key, different write => reuse is rejected (no silent replay of the wrong
+    // result, no new write).
+    let clashing = keyed_request(
+        1,
+        "agent:one",
+        db.current_seq(),
+        WriteBatch::new().put_cell(CellId(2), payload("agent:one", "second")),
+        "dup",
+    );
+    let error = db.commit_agent_transaction(&owner, clashing).unwrap_err();
+    assert!(matches!(error, EngineError::InvalidAgentSession(_)));
+    assert!(
+        db.get_latest_cell(CellId(2)).is_none(),
+        "rejected write must not land"
+    );
+}
+
+#[test]
+fn distinct_idempotency_keys_execute_independently() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open_with_options(dir.path(), options()).unwrap();
+    let owner = view(1, &["agent:one"], &["agent:one"], Some("agent:one"));
+
+    let one = db
+        .commit_agent_transaction(
+            &owner,
+            keyed_request(
+                1,
+                "agent:one",
+                db.current_seq(),
+                WriteBatch::new().put_cell(CellId(1), payload("agent:one", "a")),
+                "k1",
+            ),
+        )
+        .unwrap();
+    let two = db
+        .commit_agent_transaction(
+            &owner,
+            keyed_request(
+                1,
+                "agent:one",
+                db.current_seq(),
+                WriteBatch::new().put_cell(CellId(2), payload("agent:one", "b")),
+                "k2",
+            ),
+        )
+        .unwrap();
+    assert!(!one.idempotent_replay && !two.idempotent_replay);
+    assert!(db.get_latest_cell(CellId(1)).is_some());
+    assert!(db.get_latest_cell(CellId(2)).is_some());
+}
+
+#[test]
+fn idempotency_ledger_entries_never_leak_into_retrieval() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open_with_options(dir.path(), options()).unwrap();
+    let owner = view(1, &["agent:one"], &["agent:one"], Some("agent:one"));
+
+    db.commit_agent_transaction(
+        &owner,
+        keyed_request(
+            1,
+            "agent:one",
+            db.current_seq(),
+            WriteBatch::new().put_cell(CellId(1), payload("agent:one", "alpha rollout")),
+            "leak-check",
+        ),
+    )
+    .unwrap();
+
+    // The agent sees only its own cell; the reserved-scope ledger entry (namespace
+    // 0xb) is never a retrieval candidate.
+    let ids = retrieve_ids(&db, &owner, alpha_query());
+    assert_eq!(ids, vec![CellId(1)]);
+    assert!(
+        ids.iter()
+            .all(|cell| cell.0 & 0xf000_0000_0000_0000 != 0xb000_0000_0000_0000),
+        "no ledger-namespace cell may surface in retrieval"
+    );
+}
+
+#[test]
+fn idempotency_ledger_survives_restart() {
+    let dir = tempfile::tempdir().unwrap();
+    let owner = view(1, &["agent:one"], &["agent:one"], Some("agent:one"));
+    let req = keyed_request(
+        1,
+        "agent:one",
+        CommitSeq(0),
+        WriteBatch::new().put_cell(CellId(1), payload("agent:one", "durable")),
+        "restart-key",
+    );
+
+    let committed = {
+        let mut db = Database::open_with_options(dir.path(), options()).unwrap();
+        let report = db.commit_agent_transaction(&owner, req.clone()).unwrap();
+        assert!(!report.idempotent_replay);
+        report.committed_seq.unwrap()
+    };
+
+    // Reopen the same directory: the persisted ledger still replays the key.
+    let mut reopened = Database::open_with_options(dir.path(), options()).unwrap();
+    let replay = reopened.commit_agent_transaction(&owner, req).unwrap();
+    assert!(
+        replay.idempotent_replay,
+        "ledger must persist across restart"
+    );
+    assert_eq!(replay.committed_seq, Some(committed));
+}
+
 fn alpha_query() -> &'static str {
     r#"RETRIEVE CONTEXT FOR TASK "alpha" IN BRAIN investment_projects
 WHERE status = "ready" LIMIT 10 CANDIDATES;"#

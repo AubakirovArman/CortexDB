@@ -124,6 +124,11 @@ memory-consolidation-check:
 read-after-seq-check:
 	cargo test -p cortex-engine --test multi_agent_consistency require_seq_visible --all-features
 
+.PHONY: idempotency-ledger-check
+idempotency-ledger-check:
+	cargo test -p cortex-engine --lib idempotency
+	cargo test -p cortex-engine --test multi_agent_consistency idempoten --all-features
+
 accountability-receipt-schema-check:
 	cargo test -p cortexdb-sdk context_pack_v1_deserializes_optional_accountability_receipt
 	python3 scripts/accountability_receipt_schema_check.py --root "." --report "$(ACCOUNTABILITY_RECEIPT_SCHEMA_REPORT)"

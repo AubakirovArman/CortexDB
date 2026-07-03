@@ -44,6 +44,9 @@ pub struct AgentTransactionReport {
     pub committed_seq: Option<CommitSeq>,
     pub conflicts: Vec<AgentTransactionConflict>,
     pub idempotency_key: Option<String>,
+    /// True when this outcome was replayed from the idempotency ledger (F04-B1.3)
+    /// rather than freshly executed — the write was not repeated.
+    pub idempotent_replay: bool,
 }
 
 impl Database {
@@ -57,6 +60,43 @@ impl Database {
         }
         validate_agent_transaction_view(view, &request)?;
         self.validate_agent_transaction_scope(&request)?;
+
+        // F04-B1.3: consult the durable idempotency ledger BEFORE any conflict
+        // check or write. A replay short-circuits with the recorded outcome; a
+        // reused key with a different request is rejected.
+        let idempotency_insert = match &request.idempotency_key {
+            Some(key) => {
+                let digest = crate::idempotency::request_digest(
+                    request.agent_id,
+                    &request.scope,
+                    &request.batch,
+                );
+                match self.resolve_idempotency(request.agent_id, key, &digest)? {
+                    crate::idempotency::LedgerResolution::Replay { committed_seq } => {
+                        return Ok(AgentTransactionReport {
+                            outcome: AgentTransactionOutcome::Committed,
+                            agent_id: request.agent_id,
+                            scope: request.scope,
+                            base_seq: request.base_seq,
+                            committed_seq: Some(committed_seq),
+                            conflicts: Vec::new(),
+                            idempotency_key: request.idempotency_key,
+                            idempotent_replay: true,
+                        });
+                    }
+                    crate::idempotency::LedgerResolution::Conflict => {
+                        return Err(EngineError::InvalidAgentSession(
+                            "idempotency key reused with a different request".to_owned(),
+                        ));
+                    }
+                    crate::idempotency::LedgerResolution::Fresh { insert_cell_id } => {
+                        Some((key.clone(), digest, insert_cell_id))
+                    }
+                }
+            }
+            None => None,
+        };
+
         let conflicts = self.agent_transaction_conflicts(&request);
         if !conflicts.is_empty() {
             return Ok(AgentTransactionReport {
@@ -67,6 +107,7 @@ impl Database {
                 committed_seq: None,
                 conflicts,
                 idempotency_key: request.idempotency_key,
+                idempotent_replay: false,
             });
         }
 
@@ -75,6 +116,14 @@ impl Database {
         let base_seq = request.base_seq;
         let idempotency_key = request.idempotency_key.clone();
         let committed_seq = self.write_batch(request.batch)?;
+
+        // Record the ledger entry only after a successful commit, so a conflict or
+        // error never leaves a phantom entry that would replay a write that never
+        // happened.
+        if let Some((key, digest, insert_cell_id)) = idempotency_insert {
+            self.record_idempotency_entry(insert_cell_id, agent_id, &key, &digest, committed_seq)?;
+        }
+
         Ok(AgentTransactionReport {
             outcome: AgentTransactionOutcome::Committed,
             agent_id,
@@ -83,6 +132,7 @@ impl Database {
             committed_seq: Some(committed_seq),
             conflicts: Vec::new(),
             idempotency_key,
+            idempotent_replay: false,
         })
     }
 
