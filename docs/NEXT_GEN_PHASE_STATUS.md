@@ -21,7 +21,19 @@ the plan). Totals: 86 phases, 14 already landed **at the time this snapshot was 
 > - **F5.2** — benchmark-score trend gate; `benchmark-trend-check`.
 > - **F04-B1.3** (idempotency ledger), **F04-B6.3** (`/v1/transactions` + `/v1/handoff`), **F06-B4.1…B4.5** (semantic compression: classify/select/conflict-guard/MCP worker/unfold+retire), **F08-B6.1** (durable handoff ledger), **F08-B6.2** (read-after-seq) — all landed with their contract gates.
 >
-> So the genuinely-remaining set is much smaller than the row count below suggests, and is dominated by **resource-blocked** work: an LLM chat endpoint (A6.1/A6.2/A6.4/F2.1/F3.4), a 50k-vector perf benchmark (A3.3), official metered-run data (A6.3/A5.2-serving/F2.3/F3.1/F3.3), external human operators (C2-1…C2-4 and peers, 15), a user decision (F2.0), or plan-frozen v1.0 non-goals (F09, A8.3, F4.4, …).
+> **More landed that the rows still mark not-started** (each confirmed by a passing gate this pass): **A1.2** (corpus-wide BM25 IDF in the rerank path, retrieval_rank.rs:205), **A1.3** (`ann-metric-matrix-check`), **A4.2** (coverage retrieval option), **A5.1** (`ltr-corpus-check` — 120-row leak-free corpus), **A7.3** (`aql-diversity-option-check`), **A8.1** (`structure-chunking-check` — 8 structured-chunk tests), **C4-1** (`receipt-emission-budget-check`), **F5.1** (`results-page-check`), plus the learned-ranker training path (`learned-ranker-train-check`).
+>
+> **Accurate totals:** of the 86 phases, **~66 are landed** (each with a committed artifact + passing gate — see NEXT_GEN_PROGRESS.md). The **~20 genuinely-remaining** are *all* resource/time/decision/frozen-blocked, not code-blocked:
+> - **LLM chat endpoint** (5): A6.1, A6.2, A6.4-answer, F2.1, F3.4.
+> - **50k-vector perf benchmark** (1): A3.3-impl (design gate cleared by the C3-5 ADR).
+> - **Official metered-run data** (4): A6.3, F2.3, F3.1, F3.3.
+> - **Frozen-weights regen / calendar** (2): A5.2-serving, F04-B6.4 (two consecutive green releases).
+> - **Aggregate that chains the data-blocked gates** (1): F5.3.
+> - **External human operators** (5): C2-1, C2-2, C2-3, C2-4, F4.3 (KMS/HSM custody, compliance reviewer, transparency witnesses, competitor-capture host).
+> - **User decision** (1): F2.0 (judge-of-record).
+> - **Plan-frozen v1.0 non-goals** (3): F09, A8.3, F4.4.
+>
+> None of the ~20 can be completed by writing more code in this environment; each needs a resource, a person, a metered run, a frozen-golden regeneration, elapsed release time, or a decision that is not the assistant's to make.
 
 
 ## Completable now (no golden churn, no external blocker) (41)
