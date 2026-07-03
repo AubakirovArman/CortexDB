@@ -19,3 +19,4 @@ include mk/performance-dashboard.mk
 include mk/ann.mk
 include mk/storage-ops.mk
 include mk/release.mk
+include mk/validation-program.mk

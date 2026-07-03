@@ -72,6 +72,10 @@ jobs:
       # C4-2 (foundation): the receipt's canonical-JSON layer is reproducible
       # cross-language (Rust == Python) byte-for-byte.
       - run: make canonical-jcs-cross-language-check
+      # F5.3: the benchmark-validation gates above are the same chain the
+      # validation-nightly aggregate target (mk/validation-program.mk) runs
+      # locally; the job runs them individually so the lane-audit maps each one.
+      # Reports are uploaded if:always() below.
       - name: Upload validation reports
         if: always()
         uses: actions/upload-artifact@v7
@@ -79,8 +83,13 @@ jobs:
           name: benchmark-validation-reports
           path: |
             target/benchmark-schema/report.json
+            target/benchmark-registry/report.json
             target/results/results_page_report.json
             target/vector-metric/allowlist_report.json
+            target/quick-retrieval-eval/report.json
+            target/enterprise-rag-bench/category-regression/report.json
+            target/locomo/retrieval/cortexdb_locomo_retrieval.jsonl
+            target/aab/
           if-no-files-found: ignore
 
   heavy-gates:
