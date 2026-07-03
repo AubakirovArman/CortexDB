@@ -133,6 +133,10 @@ idempotency-ledger-check:
 handoff-ledger-check:
 	cargo test -p cortex-engine --test multi_agent_consistency handoff --all-features
 
+.PHONY: agent-transactions-contract-check
+agent-transactions-contract-check:
+	cargo test -p cortex-api-types agent_transaction
+
 accountability-receipt-schema-check:
 	cargo test -p cortexdb-sdk context_pack_v1_deserializes_optional_accountability_receipt
 	python3 scripts/accountability_receipt_schema_check.py --root "." --report "$(ACCOUNTABILITY_RECEIPT_SCHEMA_REPORT)"
