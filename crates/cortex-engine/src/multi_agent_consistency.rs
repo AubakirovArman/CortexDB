@@ -1,10 +1,16 @@
 use cortex_aql::{AgentId, AgentView, BindError, PolicyError, ScopeId};
-use cortex_core::CommitSeq;
+use cortex_core::{CellId, CommitSeq, KnowledgeCell, KnowledgeCellMetadata, KnowledgeCellType};
+use cortex_crypto::hex_lower;
 
+use crate::cell_ids::{agent_cell_id_slot, namespaced_agent_cell_id};
 use crate::database::Database;
 use crate::error::{EngineError, EngineResult};
+use crate::idempotency::decode_hex;
 use crate::plan::PolicyRewrite;
 use crate::query::scope_id;
+
+const HANDOFF_CELL_NAMESPACE: u64 = 0xc000_0000_0000_0000;
+const HANDOFF_LEDGER_SCOPE: &str = "__cortex_handoff__";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum MemoryConsistencyLevel {
@@ -50,6 +56,97 @@ pub struct AgentHandoffReport {
     pub visible_after_seq: CommitSeq,
     pub target_can_read: bool,
     pub idempotency_key: Option<String>,
+}
+
+/// F08-B6.1: a handoff report plus where it was durably recorded.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CommittedAgentHandoff {
+    pub report: AgentHandoffReport,
+    pub handoff_cell_id: CellId,
+    pub committed_seq: CommitSeq,
+}
+
+fn encode_handoff(report: &AgentHandoffReport) -> Vec<u8> {
+    // Every free-form field is hex-encoded so arbitrary bytes can't break parsing.
+    format!(
+        "source_agent_id={}\ntarget_agent_id={}\nscope_hex={}\npack_hash_hex={}\npack_seq={}\nrequired_after_seq={}\nvisible_after_seq={}\ntarget_can_read={}\nidempotency_key_hex={}\n",
+        report.source_agent_id.0,
+        report.target_agent_id.0,
+        hex_lower(report.scope.as_bytes()),
+        hex_lower(report.pack_hash.as_bytes()),
+        report.pack_seq.0,
+        report.required_after_seq.0,
+        report.visible_after_seq.0,
+        report.target_can_read,
+        report
+            .idempotency_key
+            .as_deref()
+            .map(|key| hex_lower(key.as_bytes()))
+            .unwrap_or_default(),
+    )
+    .into_bytes()
+}
+
+fn parse_handoff(payload: &[u8]) -> Option<AgentHandoffReport> {
+    let text = std::str::from_utf8(payload).ok()?;
+    let mut source = None;
+    let mut target = None;
+    let mut scope = None;
+    let mut pack_hash = None;
+    let mut pack_seq = None;
+    let mut required_after_seq = None;
+    let mut visible_after_seq = None;
+    let mut target_can_read = None;
+    let mut idempotency_key = None;
+    let mut saw_idempotency_field = false;
+    for line in text.lines() {
+        let Some((field, value)) = line.split_once('=') else {
+            continue;
+        };
+        match field {
+            "source_agent_id" => source = value.parse::<u64>().ok().map(AgentId),
+            "target_agent_id" => target = value.parse::<u64>().ok().map(AgentId),
+            "scope_hex" => {
+                scope = decode_hex(value).and_then(|bytes| String::from_utf8(bytes).ok())
+            }
+            "pack_hash_hex" => {
+                pack_hash = decode_hex(value).and_then(|bytes| String::from_utf8(bytes).ok())
+            }
+            "pack_seq" => pack_seq = value.parse::<u64>().ok().map(CommitSeq),
+            "required_after_seq" => required_after_seq = value.parse::<u64>().ok().map(CommitSeq),
+            "visible_after_seq" => visible_after_seq = value.parse::<u64>().ok().map(CommitSeq),
+            "target_can_read" => target_can_read = value.parse::<bool>().ok(),
+            "idempotency_key_hex" => {
+                saw_idempotency_field = true;
+                if !value.is_empty() {
+                    idempotency_key =
+                        decode_hex(value).and_then(|bytes| String::from_utf8(bytes).ok());
+                }
+            }
+            _ => {}
+        }
+    }
+    // A well-formed record must carry the idempotency field (possibly empty).
+    saw_idempotency_field.then_some(())?;
+    let scope = scope?;
+    let scope_id = scope_id(&scope);
+    Some(AgentHandoffReport {
+        level: MemoryConsistencyLevel::SharedSequenced,
+        source_agent_id: source?,
+        target_agent_id: target?,
+        scope,
+        scope_id,
+        pack_hash: pack_hash?,
+        pack_seq: pack_seq?,
+        required_after_seq: required_after_seq?,
+        visible_after_seq: visible_after_seq?,
+        target_can_read: target_can_read?,
+        idempotency_key,
+    })
+}
+
+fn handoff_id_overflow() -> EngineError {
+    EngineError::StorageInvariant("agent handoff cell id space is exhausted".to_owned())
 }
 
 pub fn classify_memory_visibility(
@@ -124,6 +221,77 @@ impl Database {
             target_can_read: true,
             idempotency_key: request.idempotency_key,
         })
+    }
+
+    /// F08-B6.1: commit a `SharedSequenced` handoff to a durable, auditable ledger.
+    ///
+    /// Runs the same validation as [`Database::plan_agent_handoff`], then persists
+    /// the resulting report as a cell in a reserved namespace (`0xc`) with a scope
+    /// no `AgentView` can read — so the record is durable and re-readable via
+    /// [`Database::read_agent_handoff`] but never surfaces in retrieval and never
+    /// appears in a golden (the write only happens under the default-off
+    /// `agent_transactions` feature).
+    pub fn commit_agent_handoff(
+        &mut self,
+        source_view: &AgentView,
+        target_view: &AgentView,
+        request: AgentHandoffRequest,
+    ) -> EngineResult<CommittedAgentHandoff> {
+        if !self.agent_transactions.enabled {
+            return Err(EngineError::FeatureDisabled("agent_transactions"));
+        }
+        let report = self.plan_agent_handoff(source_view, target_view, request)?;
+        let handoff_cell_id = self.next_handoff_cell_id(report.source_agent_id)?;
+        let cell = KnowledgeCell::new(
+            KnowledgeCellMetadata {
+                scope: HANDOFF_LEDGER_SCOPE.to_owned(),
+                status: "ready".to_owned(),
+                cell_type: KnowledgeCellType::Feedback,
+                memory_type: None,
+                ttl_seconds: None,
+                created_unix_seconds: None,
+                source_trust_q16: None,
+                source: None,
+            },
+            encode_handoff(&report),
+        );
+        let committed_seq = self.put_knowledge_cell(handoff_cell_id, cell)?;
+        Ok(CommittedAgentHandoff {
+            report,
+            handoff_cell_id,
+            committed_seq,
+        })
+    }
+
+    /// F08-B6.1: read a persisted handoff record back for audit. Returns `None`
+    /// when no cell exists or the cell is not a well-formed handoff record.
+    pub fn read_agent_handoff(&self, cell_id: CellId) -> EngineResult<Option<AgentHandoffReport>> {
+        Ok(self
+            .get_latest_cell(cell_id)
+            .and_then(|payload| parse_handoff(&payload)))
+    }
+
+    fn next_handoff_cell_id(&self, agent_id: AgentId) -> EngineResult<CellId> {
+        let agent_slot = agent_cell_id_slot(agent_id).ok_or_else(handoff_id_overflow)?;
+        let mut sequence = self
+            .current_seq()
+            .0
+            .checked_add(1)
+            .ok_or_else(handoff_id_overflow)?;
+        // Probe for a free id, mirroring feedback/session allocation.
+        let mut attempts = 0u64;
+        loop {
+            let cell_id = namespaced_agent_cell_id(HANDOFF_CELL_NAMESPACE, agent_slot, sequence)
+                .ok_or_else(handoff_id_overflow)?;
+            if self.get_latest_cell_descriptor(cell_id).is_none() {
+                return Ok(cell_id);
+            }
+            attempts = attempts.checked_add(1).ok_or_else(handoff_id_overflow)?;
+            if attempts > u64::from(u32::MAX) {
+                return Err(handoff_id_overflow());
+            }
+            sequence = sequence.checked_add(1).ok_or_else(handoff_id_overflow)?;
+        }
     }
 
     /// F08-B6.2: read-after-seq enforcement (the engine primitive).

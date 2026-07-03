@@ -151,8 +151,8 @@ pub use legal::{
     LegalVerificationPolicy, LegalVerificationRequest, LegalVerificationReview,
 };
 pub use multi_agent_consistency::{
-    classify_memory_visibility, AgentHandoffReport, AgentHandoffRequest, MemoryConsistencyLevel,
-    MemoryVisibilityReport,
+    classify_memory_visibility, AgentHandoffReport, AgentHandoffRequest, CommittedAgentHandoff,
+    MemoryConsistencyLevel, MemoryVisibilityReport,
 };
 pub use operation::{
     decode_cell_core, decode_cell_id, decoded_operation_from_wal_record,

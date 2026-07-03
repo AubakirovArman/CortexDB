@@ -277,6 +277,100 @@ fn require_seq_visible_enforces_read_after_seq() {
     );
 }
 
+fn handoff_request(pack_seq: CommitSeq) -> AgentHandoffRequest {
+    AgentHandoffRequest {
+        source_agent_id: AgentId(1),
+        target_agent_id: AgentId(2),
+        scope: "shared:project".to_owned(),
+        pack_hash: "ctxpack:v1:gamma".to_owned(),
+        pack_seq,
+        required_after_seq: CommitSeq(0),
+        idempotency_key: Some("handoff-1-2".to_owned()),
+    }
+}
+
+#[test]
+fn commit_agent_handoff_requires_feature_flag() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    let source = view(1, &["shared:project"], &["shared:project"], None);
+    let target = view(2, &["shared:project"], &[], None);
+
+    let error = db
+        .commit_agent_handoff(&source, &target, handoff_request(db.current_seq()))
+        .unwrap_err();
+    assert!(matches!(
+        error,
+        EngineError::FeatureDisabled("agent_transactions")
+    ));
+}
+
+#[test]
+fn commit_agent_handoff_persists_reads_back_and_never_leaks() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open_with_options(dir.path(), options()).unwrap();
+    let source = view(1, &["shared:project"], &["shared:project"], None);
+    let target = view(2, &["shared:project"], &[], None);
+
+    // A normal shared cell that retrieval *should* return.
+    db.commit_agent_transaction(
+        &source,
+        request(
+            1,
+            "shared:project",
+            db.current_seq(),
+            WriteBatch::new().put_cell(CellId(2), payload("shared:project", "shared beta")),
+        ),
+    )
+    .unwrap();
+
+    let committed = db
+        .commit_agent_handoff(&source, &target, handoff_request(db.current_seq()))
+        .unwrap();
+    assert_eq!(
+        committed.report.level,
+        MemoryConsistencyLevel::SharedSequenced
+    );
+    assert_eq!(
+        committed.handoff_cell_id.0 & 0xf000_0000_0000_0000,
+        0xc000_0000_0000_0000,
+        "handoff record lands in the reserved 0xc namespace"
+    );
+
+    // Read the durable record back for audit.
+    let read_back = db
+        .read_agent_handoff(committed.handoff_cell_id)
+        .unwrap()
+        .unwrap();
+    assert_eq!(read_back, committed.report);
+
+    // Retrieval returns the normal cell but never the reserved handoff record.
+    let ids = retrieve_ids(&db, &source, beta_query());
+    assert_eq!(ids, vec![CellId(2)]);
+    assert!(ids
+        .iter()
+        .all(|cell| cell.0 & 0xf000_0000_0000_0000 != 0xc000_0000_0000_0000));
+}
+
+#[test]
+fn committed_agent_handoff_survives_restart() {
+    let dir = tempfile::tempdir().unwrap();
+    let source = view(1, &["shared:project"], &["shared:project"], None);
+    let target = view(2, &["shared:project"], &[], None);
+
+    let (cell_id, report) = {
+        let mut db = Database::open_with_options(dir.path(), options()).unwrap();
+        let committed = db
+            .commit_agent_handoff(&source, &target, handoff_request(db.current_seq()))
+            .unwrap();
+        (committed.handoff_cell_id, committed.report)
+    };
+
+    // Reopen: the persisted handoff record is still auditable.
+    let db = Database::open_with_options(dir.path(), options()).unwrap();
+    assert_eq!(db.read_agent_handoff(cell_id).unwrap().unwrap(), report);
+}
+
 fn keyed_request(
     agent_id: u64,
     scope: &str,
