@@ -70,18 +70,11 @@ fn ed25519_signature_matches_cross_language_vectors() {
 // committed pack_root for this minimal pack; here we build the *same* pack through
 // the real engine `canonical_context_pack_bytes` and assert the identical bytes +
 // root, so the pack canonicalization reproduces byte-for-byte in both languages.
-#[test]
-fn pack_root_matches_cross_language_vector() {
-    use crate::canonical::canonical_context_pack_bytes;
-    use cortex_crypto::hex_lower;
-
-    let vector: serde_json::Value = serde_json::from_str(include_str!(
-        "../../../../fixtures/canonical/pack_root_conformance_vector.v1.json"
-    ))
-    .expect("pack_root conformance vector parses");
-
-    // A plain payload: no `source_id=`/`source=`/`citation=` header line, so
-    // metadata.source_ref stays None (-> null), matching the Python mapping.
+// The minimal pack the pack_root + leaf-extraction cross-language vectors pin: a
+// one-cell ContextPack whose plain payload carries no `source_id=`/`source=`/
+// `citation=` header (so metadata.source_ref is None) with every optional +
+// anomaly absent, keeping the canonical mapping a total, reproducible function.
+fn minimal_cross_language_pack() -> ContextPack {
     let payload = b"cortex pack root cross-language fixture body".to_vec();
     let descriptor = CellDescriptor::from_payload_lossy(&payload);
     let retrieved = RetrievedCell {
@@ -95,7 +88,7 @@ fn pack_root_matches_cross_language_vector() {
         metadata.source_ref.is_none(),
         "fixture assumes a payload whose metadata carries no source_ref"
     );
-    let pack = ContextPack {
+    ContextPack {
         cells: vec![ContextPackCell {
             cell_id: CellId(1),
             payload,
@@ -115,7 +108,23 @@ fn pack_root_matches_cross_language_vector() {
         visible_conflict_count: 0,
         anomalies: vec![],
         grounding_report: None,
-    };
+    }
+}
+
+fn pack_root_vector() -> serde_json::Value {
+    serde_json::from_str(include_str!(
+        "../../../../fixtures/canonical/pack_root_conformance_vector.v1.json"
+    ))
+    .expect("pack_root conformance vector parses")
+}
+
+#[test]
+fn pack_root_matches_cross_language_vector() {
+    use crate::canonical::canonical_context_pack_bytes;
+    use cortex_crypto::hex_lower;
+
+    let vector = pack_root_vector();
+    let pack = minimal_cross_language_pack();
 
     let canonical = canonical_context_pack_bytes(&pack);
     let derived_root = super::receipt::hash_bytes(
@@ -132,6 +141,29 @@ fn pack_root_matches_cross_language_vector() {
         derived_root,
         vector["pack_root_blake3"].as_str().unwrap(),
         "Rust pack_root differs from the committed (Python) pack_root"
+    );
+}
+
+// C4-2 (leaf extraction): the receipt's Merkle roots are already verified
+// cross-language over committed leaves; this closes the *inputs -> leaves* half
+// for the two scalar-only leaf families (budget, conflict), whose extraction is a
+// pure function of the pack (no cell-content hash). The content-hash-bearing
+// families (access/provenance/cell_set/verification) need the CellDescriptor /
+// verification-report canonicalization mirrored too — spawned task_8f2c7c22.
+#[test]
+fn pack_leaf_families_match_cross_language_vector() {
+    let vector = pack_root_vector();
+    let pack = minimal_cross_language_pack();
+
+    assert_eq!(
+        serde_json::Value::Array(super::receipt_leaves::budget_leaves(&pack)),
+        vector["budget_leaves"],
+        "Rust budget_leaves extraction differs from the committed (Python) leaves"
+    );
+    assert_eq!(
+        serde_json::Value::Array(super::receipt_leaves::conflict_leaves(&pack)),
+        vector["conflict_leaves"],
+        "Rust conflict_leaves extraction differs from the committed (Python) leaves"
     );
 }
 

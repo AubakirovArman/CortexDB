@@ -218,6 +218,45 @@ def pack_root(pack_input: dict) -> tuple[str, str]:
     return canonical.hex(), hash_bytes(PACK_ROOT_DOMAIN, canonical)
 
 
+def budget_leaves(pack_input: dict) -> list:
+    """Mirror of receipt_leaves.rs::budget_leaves (pack-scalar leaf family): a
+    pack-wide leaf followed by one per cell. Pure scalars — no cell content hash."""
+    leaves = [
+        {
+            "token_budget_tokens": pack_input["token_budget_tokens"],
+            "estimated_tokens": pack_input["estimated_tokens"],
+            "truncated": pack_input["truncated"],
+            "cell_id": None,
+            "cell_estimated_tokens": None,
+        }
+    ]
+    for cell in pack_input["cells"]:
+        leaves.append(
+            {
+                "token_budget_tokens": pack_input["token_budget_tokens"],
+                "estimated_tokens": pack_input["estimated_tokens"],
+                "truncated": pack_input["truncated"],
+                "cell_id": cell["cell_id"],
+                "cell_estimated_tokens": cell["estimated_tokens"],
+            }
+        )
+    return leaves
+
+
+def conflict_leaves(pack_input: dict) -> list:
+    """Mirror of receipt_leaves.rs::conflict_leaves: a single leaf carrying the
+    conflict-visibility scalars + the sorted anomaly codes (empty for the minimal
+    pack, which has no anomalies)."""
+    anomalies = sorted(anomaly["code"] for anomaly in pack_input.get("anomalies", []))
+    return [
+        {
+            "conflict_visibility_q16": pack_input["conflict_visibility_q16"],
+            "visible_conflict_count": pack_input["visible_conflict_count"],
+            "anomalies": anomalies,
+        }
+    ]
+
+
 def build_pack_root() -> dict:
     canonical_hex, root = pack_root(PACK_ROOT_INPUT)
     return {
@@ -225,12 +264,26 @@ def build_pack_root() -> dict:
         "pack_input": PACK_ROOT_INPUT,
         "canonical_pack_bytes_hex": canonical_hex,
         "pack_root_blake3": root,
+        # Scalar-only leaf families (extraction verified cross-language; the
+        # content-hash-bearing families remain — see task_8f2c7c22).
+        "budget_leaves": budget_leaves(PACK_ROOT_INPUT),
+        "conflict_leaves": conflict_leaves(PACK_ROOT_INPUT),
     }
 
 
 def check_pack_root() -> list[str]:
     if not PACK_ROOT_FIXTURE.exists():
         return [f"missing fixture {PACK_ROOT_FIXTURE.relative_to(REPO)} (run with --generate)"]
+    committed = json.loads(PACK_ROOT_FIXTURE.read_text())
+    pack_input = committed["pack_input"]
+    errors = []
+    # Leaf-extraction families are hash-free structural maps — verifiable without
+    # blake3 (the Rust engine functions produce the same Values, asserted in
+    # receipt_tests.rs::pack_leaf_families_match_cross_language_vector).
+    if budget_leaves(pack_input) != committed["budget_leaves"]:
+        errors.append("budget_leaves: python extraction != committed")
+    if conflict_leaves(pack_input) != committed["conflict_leaves"]:
+        errors.append("conflict_leaves: python extraction != committed")
     try:
         import blake3  # noqa: F401
     except ImportError:
@@ -238,10 +291,8 @@ def check_pack_root() -> list[str]:
         # so the cross-language proof holds; Python re-derivation needs `pip
         # install blake3`.
         print("  note: blake3 not installed; skipping the Python pack_root re-derivation")
-        return []
-    committed = json.loads(PACK_ROOT_FIXTURE.read_text())
-    canonical_hex, root = pack_root(committed["pack_input"])
-    errors = []
+        return errors
+    canonical_hex, root = pack_root(pack_input)
     if canonical_hex != committed["canonical_pack_bytes_hex"]:
         errors.append("pack_root: python canonical pack bytes != committed")
     if root != committed["pack_root_blake3"]:
@@ -392,9 +443,10 @@ def main() -> int:
         f"canonical-jcs-cross-language-check passed: {len(committed)} JCS + "
         f"{len(MERKLE_VECTORS)} Merkle + {len(ED25519_VECTORS)} Ed25519 vector(s) + the "
         f"{len(RECEIPT_FAMILY_SPECS)} roots of a real committed receipt + the pack_root "
-        "of a minimal canonical ContextPack; python canonicalization + blake3 Merkle "
-        "roots + Ed25519 signatures + pack canonicalization reproduce the committed "
-        "values byte-for-byte"
+        "+ budget/conflict leaf extraction of a minimal canonical ContextPack; python "
+        "canonicalization + blake3 Merkle roots + Ed25519 signatures + pack "
+        "canonicalization + scalar leaf extraction reproduce the committed values "
+        "byte-for-byte"
     )
     return 0
 
