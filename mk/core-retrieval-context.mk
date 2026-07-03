@@ -40,6 +40,10 @@ aab-mini-score-check:
 benchmark-report-schema-check:
 	python3 scripts/benchmark_report_schema_check.py --report "target/benchmark-schema/report.json"
 
+.PHONY: learned-ranker-train-check
+learned-ranker-train-check:
+	python3 scripts/enterprise_rag_bench/train_learned_ranker.py --self-test
+
 .PHONY: ltr-corpus-check
 ltr-corpus-check:
 	python3 scripts/enterprise_rag_bench/build_ltr_corpus.py --self-test

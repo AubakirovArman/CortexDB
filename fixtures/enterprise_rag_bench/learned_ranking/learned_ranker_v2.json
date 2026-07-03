@@ -1,0 +1,14 @@
+{
+  "heldout_baseline_mrr": 0.5,
+  "heldout_mrr": 1.0,
+  "heldout_mrr_lift": 0.5,
+  "heldout_questions": 1,
+  "schema_version": "cortexdb.learned_ranker.v2",
+  "version": "learned-ranker-v2",
+  "weights_q16": {
+    "lexical": 0,
+    "recency": 0,
+    "semantic": 65535,
+    "trust": 0
+  }
+}
