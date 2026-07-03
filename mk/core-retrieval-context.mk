@@ -26,6 +26,10 @@ retrieval-two-stage-rerank-check:
 	cargo test -p cortex-engine --lib retrieval_rank::two_stage
 	cargo test -p cortex-engine --lib two_stage_rerank_
 
+.PHONY: retrieval-corpus-bm25-check
+retrieval-corpus-bm25-check:
+	cargo test -p cortex-engine --lib retrieval_rank::bm25_corpus_tests
+
 .PHONY: results-page-check
 results-page-check:
 	python3 scripts/results_page_check.py --report "target/results/results_page_report.json"

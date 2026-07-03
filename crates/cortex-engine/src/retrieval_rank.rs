@@ -46,7 +46,7 @@ pub(crate) fn rank_retrieved_cells_with_window(
         .iter()
         .map(RetrievedCell::metadata)
         .collect::<Vec<_>>();
-    let lexical_scores = lexical_bm25_scores_from_metadata(&metadata, task);
+    let lexical_scores = lexical_bm25_scores_from_metadata(&metadata, task, None);
     let query_vector = query_vector_from_task(task);
     let semantic_scores = cells
         .iter()
@@ -172,7 +172,24 @@ fn is_parent_context_metadata(metadata: &CellMetadata) -> bool {
         .unwrap_or(false)
 }
 
-fn lexical_bm25_scores_from_metadata(metadata: &[CellMetadata], query: &str) -> Vec<u64> {
+/// A1.2: corpus-wide BM25 statistics for IDF. Without it, IDF is computed from
+/// the candidate pool (`doc_count` = pool size, per-term doc-frequency counted
+/// within the pool), which under-weights a term that is rare in the corpus but
+/// common among the shortlisted candidates. When a `CorpusLexicalStats` is
+/// supplied, IDF uses the corpus `doc_count` and per-term corpus document
+/// frequency instead. Off by default (`None`), so the pool-local behavior — and
+/// its goldens — are byte-identical.
+#[derive(Clone, Debug, Default)]
+pub(crate) struct CorpusLexicalStats {
+    pub(crate) doc_count: usize,
+    pub(crate) doc_freq: BTreeMap<String, usize>,
+}
+
+fn lexical_bm25_scores_from_metadata(
+    metadata: &[CellMetadata],
+    query: &str,
+    corpus: Option<&CorpusLexicalStats>,
+) -> Vec<u64> {
     let query_terms = analyze_search_query(query).weighted_terms;
     if query_terms.is_empty() || metadata.is_empty() {
         return vec![0; metadata.len()];
@@ -187,10 +204,16 @@ fn lexical_bm25_scores_from_metadata(metadata: &[CellMetadata], query: &str) -> 
         .map(|terms| terms.values().copied().sum::<u32>().max(1))
         .collect::<Vec<_>>();
     let avg_len_q16 = average_len_q16(&doc_lengths);
-    let doc_count = docs.len();
+    // Corpus-wide doc_count when supplied (A1.2), else the candidate-pool size.
+    let doc_count = corpus.map_or(docs.len(), |stats| stats.doc_count.max(docs.len()));
     let mut doc_frequency = BTreeMap::<String, usize>::new();
     for term in query_terms.keys() {
-        let count = docs.iter().filter(|doc| doc.contains_key(term)).count();
+        let pool_df = docs.iter().filter(|doc| doc.contains_key(term)).count();
+        // Corpus df dominates when supplied, but never below the pool df (the
+        // pool is a subset of the corpus, so corpus df >= pool df must hold).
+        let count = corpus
+            .and_then(|stats| stats.doc_freq.get(term).copied())
+            .map_or(pool_df, |corpus_df| corpus_df.max(pool_df));
         doc_frequency.insert(term.clone(), count);
     }
 
@@ -360,5 +383,51 @@ mod temporal_tests {
         let relative = vec![20_000, 20_000, 10_000];
         let out = apply_recency_window(&created, relative, 500, 0);
         assert_eq!(out, vec![65_535, 65_535, 10_000]);
+    }
+}
+
+#[cfg(test)]
+mod bm25_corpus_tests {
+    use std::collections::BTreeMap;
+
+    use super::{lexical_bm25_scores_from_metadata, CorpusLexicalStats};
+    use crate::database::RetrievedCell;
+
+    fn meta(id: u64, body: &str) -> crate::query::CellMetadata {
+        RetrievedCell::from_payload(
+            cortex_core::CellId(id),
+            format!("scope=x\nstatus=ready\n\n{body}").into_bytes(),
+        )
+        .metadata()
+    }
+
+    #[test]
+    fn corpus_stats_raise_idf_for_a_pool_common_corpus_rare_term() {
+        // "apollo" is in every candidate (pool doc-frequency = 2 of 2 -> low
+        // pool IDF), but rare in the corpus (2 of 100000). Corpus stats must
+        // give it a much higher IDF, so the pool-local score is under-weighted.
+        let md = vec![meta(1, "apollo apollo apollo budget"), meta(2, "apollo")];
+        let pool = lexical_bm25_scores_from_metadata(&md, "apollo", None);
+        let corpus = CorpusLexicalStats {
+            doc_count: 100_000,
+            doc_freq: BTreeMap::from([("apollo".to_owned(), 2)]),
+        };
+        let with_corpus = lexical_bm25_scores_from_metadata(&md, "apollo", Some(&corpus));
+        assert!(
+            with_corpus[0] > pool[0],
+            "corpus IDF must raise the score of a pool-common/corpus-rare term: corpus={with_corpus:?} pool={pool:?}"
+        );
+        assert!(
+            with_corpus[0] > with_corpus[1],
+            "within the pool, the higher-tf doc still ranks first"
+        );
+    }
+
+    #[test]
+    fn no_corpus_stats_is_byte_identical_to_pool_local() {
+        let md = vec![meta(1, "alpha beta"), meta(2, "beta gamma")];
+        let a = lexical_bm25_scores_from_metadata(&md, "beta", None);
+        let b = lexical_bm25_scores_from_metadata(&md, "beta", None);
+        assert_eq!(a, b);
     }
 }
