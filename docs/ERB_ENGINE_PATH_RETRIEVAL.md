@@ -126,43 +126,46 @@ engine's own exact dense pass against the query vector. This is the honest
 end-to-end engine-native number, on the **same DB and same lexical shortlist**
 as its baseline:
 
-| Question type (count) | Lexical recall@10 | + engine `two_stage_rerank` | Δ |
-| --- | --- | --- | --- |
-| **Overall** | **54.40%** | **60.34%** | **+5.94** |
-| intra_document_reasoning (4) | 75.0% | 100.0% | +25.0 |
-| basic (17) | 58.8% | 70.6% | +11.8 |
-| **semantic (13)** | **38.5%** | **46.1%** | **+7.7** |
-| project_related (4) | 45.5% | 46.5% | +1.1 |
-| constrained (3) | 66.7% | 66.7% | +0.0 |
-| completeness (2) | 37.5% | 25.0% | −12.5 |
-| conflicting_info (2) | 100.0% | 50.0% | −50.0 |
+The engine's own two-stage rerank delivers a real, same-DB lift, and — with a
+deep enough candidate pool — **reproduces the float reranker's number to within
+1.6 points**. Reranking a deeper BM25 shortlist (`--candidate-limit`) closes the
+gap monotonically, because the shortlist's gold-doc coverage is what bounds
+achievable recall:
+
+| Configuration (same DB, engine-native, scored by the same `metrics_based_eval`) | recall@10 |
+| --- | --- |
+| Lexical shortlist, no rerank (baseline) | 54.40% |
+| engine `two_stage_rerank`, candidate pool 64 | 60.34% |
+| engine `two_stage_rerank`, candidate pool 256 | 64.33% |
+| **engine `two_stage_rerank`, candidate pool 1024** | **67.29%** |
+| _(reference: python float-cosine over a different top-50 pool)_ | _68.85%_ |
+
+Per question type at pool 1024 vs the lexical baseline: `basic` 58.8→82.3
+(+23.5), **`semantic` 38.5→53.9 (+15.4** — matching the float reranker's semantic
+lift exactly), `intra_document_reasoning` 75→100. The small-n regressions
+(`conflicting_info`, `completeness`, `project_related`) are single-question flips
+at n≤4.
 
 Reproduce: `enterprise_rag_bench_retrieval --retrieval-mode engine-aql --rerank
-two-stage --query-vectors <bge-m3 query vecs> --document-vectors
-target/enterprise-rag-bench/embeddings/corpus_bge_m3.jsonl` (release build;
-~2h — 20 min ingest + ~95 min checkpoint + retrieval). Scored with the same
-official `metrics_based_eval` used for the numbers above.
+two-stage --candidate-limit 1024 --query-vectors <bge-m3 query vecs>
+--document-vectors target/enterprise-rag-bench/embeddings/corpus_bge_m3.jsonl`
+(full ingest is release build, ~2h — 20 min ingest + ~95 min checkpoint; then
+each `--skip-ingest` retrieval sweep is ~20 min). Scored with the same official
+`metrics_based_eval` used for every number here.
 
-The engine's own reranker delivers a real, same-DB **+5.94** lift (and **+7.7**
-on the flagged `semantic` pool). The two small-pool regressions
-(`conflicting_info`, `completeness`, n=2 each) are single-question flips at that
-sample size.
-
-**A tested-and-rejected hypothesis for the gap (60.34% engine vs 68.85% python).**
-The engine's `semantic_dot_score` is an *un-normalized integer dot* over
-i16-quantized vectors; the python reranker uses float **cosine**. The natural
-hypothesis was that raw dot over-rewards large-magnitude vectors, so a
-cosine-normalized rerank (`dot/|doc|`) would recover the gap. That hypothesis was
-implemented (`semantic_cosine_score_q16` + `--rerank two-stage-cosine`) and
-measured — and it is **false here**: cosine produced a **byte-identical top-10 for
-all 50 questions**, so recall is unchanged at **60.34%**. bge-m3 vectors are
-L2-normalized *before* i16 quantization, which preserves near-equal magnitudes, so
-dot already ranks by direction and the normalization is a no-op. The residual gap
-to the float reranker is therefore **not** magnitude — it is the candidate pool
-(the float reranker scored the exported `candidates_top50` pool; engine-aql
-reranks its own BM25 top-64 shortlist, whose gold-doc coverage bounds the
-achievable recall) and **i16 quantization precision** vs float32. Those are the
-real levers, recorded here honestly rather than assumed.
+**Two hypotheses for the gap — one rejected, one confirmed, both tested.**
+*Rejected (magnitude/cosine):* the engine's `semantic_dot_score` is an
+un-normalized integer dot; the python uses float cosine. A cosine variant
+(`semantic_cosine_score_q16` + `--rerank two-stage-cosine`) was implemented and
+measured — it produced a **byte-identical top-10 for all 50 questions** (recall
+unchanged at 60.34%), because bge-m3 vectors are L2-normalized *before* i16
+quantization, so they are near-equal-magnitude and dot already ranks by
+direction. *Confirmed (candidate-pool coverage):* the depth sweep above shows the
+gap is the shortlist — deepening it 64→256→1024 lifts recall 60.34→64.33→67.29,
+converging on the float reranker's 68.85%. The last ~1.6 points is i16-vs-float32
+precision and the specific lexical pool. So the engine's own reranker does
+reproduce the dense-rerank lift; it is bounded only by how many gold documents
+its stage-1 shortlist surfaces.
 
 ## Exit-proof status
 
@@ -170,13 +173,13 @@ Honest verdict: the engine product path is **wired and reproducible end-to-end**
 including A7.2's two-stage rerank running **through the engine's own code**. The
 dense rerank measurably improves recall on the same full corpus:
 
-- Through the engine's own `two_stage_rerank` (integer dot, i16): **54.40% →
-  60.34%** recall@10 (**+5.94**; `semantic` **+7.7**) — the honest engine-native
-  number. The cosine variant lands identically (60.34%), so magnitude is not the
-  gap.
-- Through a float-cosine reranker over a different candidate pool: **56.35% →
-  68.85%** (`semantic` **+15.4**). The residual engine→float headroom is the
-  candidate-pool coverage + i16-vs-float precision, not the rerank formula.
+- Through the engine's own `two_stage_rerank` (integer dot, i16), same DB and
+  same lexical shortlist: **54.40% (lexical) → 60.34%** at candidate pool 64, and
+  **→ 67.29%** at pool 1024 — the honest engine-native number, within **1.6
+  points** of the float reranker.
+- The float-cosine reference reranker reaches **68.85%**. The engine converges on
+  it as the shortlist deepens; the cosine variant lands identically to dot
+  (magnitude is not the gap — candidate-pool coverage is).
 
 Neither reaches the retrieval exit bar (≥75% recall@10), and the answer-quality
 half of the exit-proof (Gemma answer + judge) is **not yet measured**. A6.4 is
