@@ -4,6 +4,7 @@ mod context;
 mod core;
 mod error;
 mod ingestion;
+mod memory_consolidation;
 mod search;
 mod verification;
 
@@ -11,6 +12,10 @@ pub use agent_transaction::{
     transaction_outcome_status, AgentHandoffRequestBody, AgentHandoffResponse,
     AgentTransactionConflictResponse, AgentTransactionRequestBody, AgentTransactionResponse,
     WriteOpRequest,
+};
+pub use memory_consolidation::{
+    ConsolidateCandidate, ConsolidateCommitRequestBody, ConsolidateCommitResponse,
+    ConsolidateGroup, ConsolidatePlanRequestBody, ConsolidatePlanResponse, ConsolidateSourceRef,
 };
 
 pub use aql::{

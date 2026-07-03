@@ -3,11 +3,32 @@ use super::CortexDbClient;
 use crate::http::path;
 use crate::{
     AgentHandoffRequestBody, AgentHandoffResponse, AgentTransactionRequestBody,
-    AgentTransactionResponse, AqlResponse, ContextPackResponse, GroundedAnswerRequest,
-    GroundedAnswerResponse, RememberResponse, SdkResult, VerificationReportResponse, VerifyRequest,
+    AgentTransactionResponse, AqlResponse, ConsolidateCommitRequestBody, ConsolidateCommitResponse,
+    ConsolidatePlanRequestBody, ConsolidatePlanResponse, ContextPackResponse,
+    GroundedAnswerRequest, GroundedAnswerResponse, RememberResponse, SdkResult,
+    VerificationReportResponse, VerifyRequest,
 };
 
 impl CortexDbClient {
+    /// Plan memory consolidation — the stale episodic groups to summarize
+    /// (F04-B4.4 / B4.2). Read-only.
+    pub fn consolidate_plan(
+        &self,
+        request: &ConsolidatePlanRequestBody,
+    ) -> SdkResult<ConsolidatePlanResponse> {
+        let body = serde_json::to_string(request)?;
+        decode_value(self.post(&path("/v1/memory/consolidate/plan", &[]), &body)?)
+    }
+
+    /// Commit an externally-generated consolidation summary (F04-B4.4 / B4.3).
+    pub fn consolidate_commit(
+        &self,
+        request: &ConsolidateCommitRequestBody,
+    ) -> SdkResult<ConsolidateCommitResponse> {
+        let body = serde_json::to_string(request)?;
+        decode_value(self.post(&path("/v1/memory/consolidate/commit", &[]), &body)?)
+    }
+
     pub fn aql(&self, scope: &str, statement: &str) -> SdkResult<serde_json::Value> {
         self.post(&path("/v1/aql", &[("scope", scope)]), statement)
     }

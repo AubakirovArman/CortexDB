@@ -2,6 +2,52 @@ use super::*;
 use crate::http::{append_query_param, path};
 
 #[test]
+fn memory_consolidation_wire_types_and_paths_are_stable() {
+    let plan = ConsolidatePlanRequestBody {
+        scope: "agent:one".to_owned(),
+        freshness_below_q16: 32_768,
+        max_groups: 4,
+        now_unix_seconds: Some(1_080),
+    };
+    let plan_json = serde_json::to_string(&plan).unwrap();
+    assert!(
+        plan_json.contains(r#""freshness_below_q16":32768"#),
+        "{plan_json}"
+    );
+
+    let response: ConsolidatePlanResponse = serde_json::from_value(serde_json::json!({
+        "groups": [{
+            "scope": "agent:one",
+            "memory_type": "observation",
+            "candidates": [{"cell_id": 10, "freshness_q16": 13107}],
+        }],
+    }))
+    .unwrap();
+    assert_eq!(response.groups[0].candidates[0].cell_id, 10);
+
+    let commit: ConsolidateCommitResponse = serde_json::from_value(serde_json::json!({
+        "summary_cell_id": 99,
+        "committed_seq": 5,
+        "source_cell_ids": [1, 2],
+        "source_ref_count": 2,
+        "answerability_q16": 60000,
+        "provenance_preserved": true,
+        "auditable": true,
+    }))
+    .unwrap();
+    assert!(commit.auditable);
+
+    assert_eq!(
+        path("/v1/memory/consolidate/plan", &[]),
+        "/v1/memory/consolidate/plan"
+    );
+    assert_eq!(
+        path("/v1/memory/consolidate/commit", &[]),
+        "/v1/memory/consolidate/commit"
+    );
+}
+
+#[test]
 fn agent_transaction_wire_types_and_paths_are_stable() {
     // The request serializes with the tagged `op` discriminator the server expects.
     let request = AgentTransactionRequestBody {

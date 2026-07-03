@@ -47,6 +47,8 @@ pub use types::{
     AnswerGroundingReportResponse, AnswerGroundingSpanResponse, AqlCandidateCounts,
     AqlCellResponse, AqlExecutionOperator, AqlExecutionTrace, AqlExplainFilter, AqlExplainResponse,
     AqlLogicalPlan, AqlLogicalPlanNode, AqlResponse, CellLookupResponse, CellResponse,
+    ConsolidateCandidate, ConsolidateCommitRequestBody, ConsolidateCommitResponse,
+    ConsolidateGroup, ConsolidatePlanRequestBody, ConsolidatePlanResponse, ConsolidateSourceRef,
     ContextPackAnomalyResponse, ContextPackCellResponse, ContextPackResponse,
     ContextSpanProvenanceResponse, DeleteJobResponse, ErrorCode, ErrorResponse, EvidenceResponse,
     ExplainResponse, GuardResponse, HealthResponse, HnswNoFallbackProfileResponse, IngestResponse,
