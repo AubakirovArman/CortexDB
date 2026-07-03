@@ -327,6 +327,30 @@ mod tests {
     // red-test fails if a canonical field is added/removed/renamed without going
     // through the additive-minor procedure (bump the schema version, add a new
     // fixture entry, re-baseline goldens) — so an un-versioned change can never
+    // C4-2 (foundation): the canonical JSON layer is language-independent. This
+    // asserts the SAME committed digests that scripts/canonical_jcs_cross_language_check.py
+    // (a pure-Python re-implementation) asserts — both languages agreeing on the
+    // sha256 of the canonical bytes proves the bytes are identical, so the
+    // receipt's canonicalization can be reproduced from the spec in any language.
+    #[test]
+    fn jcs_cross_language_vectors_match() {
+        let vectors: Vec<Value> = serde_json::from_str(include_str!(
+            "../../../fixtures/canonical/jcs_conformance_vectors.v1.json"
+        ))
+        .expect("jcs conformance vectors parse");
+        assert!(!vectors.is_empty());
+        for (index, entry) in vectors.iter().enumerate() {
+            let bytes = canonical_json_bytes(&entry["value"]);
+            let digest = cortex_crypto::hex_lower(&cortex_crypto::sha256(&bytes));
+            let expected = entry["canonical_sha256"].as_str().expect("digest string");
+            assert_eq!(
+                digest, expected,
+                "vector {index}: Rust canonical digest differs from the committed \
+                 (Python-derived) digest — canonicalization is not cross-language stable"
+            );
+        }
+    }
+
     // silently alter what the accountability receipt signs. See
     // docs/RECEIPT_SCHEMA_VERSIONING.md.
     #[test]

@@ -64,6 +64,9 @@ jobs:
       - run: make gce-spec-doc-check
       - run: make receipt-threat-model-check
       - run: make receipt-emission-budget-check
+      # C4-2 (foundation): the receipt's canonical-JSON layer is reproducible
+      # cross-language (Rust == Python) byte-for-byte.
+      - run: make canonical-jcs-cross-language-check
       - name: Upload validation reports
         if: always()
         uses: actions/upload-artifact@v7

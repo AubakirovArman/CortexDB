@@ -148,6 +148,11 @@ memory-consolidate-route-check:
 	cargo test -p cortex-server memory_consolidation::tests
 	python3 scripts/check_openapi_coverage.py
 
+.PHONY: canonical-jcs-cross-language-check
+canonical-jcs-cross-language-check:
+	cargo test -p cortex-engine --lib canonical::tests::jcs_cross_language_vectors_match
+	python3 scripts/canonical_jcs_cross_language_check.py
+
 accountability-receipt-schema-check:
 	cargo test -p cortexdb-sdk context_pack_v1_deserializes_optional_accountability_receipt
 	python3 scripts/accountability_receipt_schema_check.py --root "." --report "$(ACCOUNTABILITY_RECEIPT_SCHEMA_REPORT)"

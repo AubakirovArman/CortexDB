@@ -28,7 +28,8 @@
         {"target": "aab-conformance-check", "purpose": "C4-3 thin-wrapper reference fails >=3 AAB axes"},
         {"target": "gce-spec-doc-check", "purpose": "C4-3 governed-context-engine spec doc present"},
         {"target": "receipt-threat-model-check", "purpose": "C4-3 receipt threat-model doc present"},
-        {"target": "receipt-emission-budget-check", "purpose": "C4-1 p99 receipt-emission within budget"}
+        {"target": "receipt-emission-budget-check", "purpose": "C4-1 p99 receipt-emission within budget"},
+        {"target": "canonical-jcs-cross-language-check", "purpose": "C4-2 canonical JSON layer reproduces cross-language (Rust == Python)"}
       ]
     },
     {

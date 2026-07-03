@@ -1,0 +1,62 @@
+[
+  {
+    "value": {
+      "b": 1,
+      "a": 2
+    },
+    "canonical_sha256": "d3626ac30a87e6f7a6428233b3c68299976865fa5508e4267c5415c76af7a772"
+  },
+  {
+    "value": [
+      3,
+      1,
+      2
+    ],
+    "canonical_sha256": "51bda7ab4e44726cde71fcb6e4b515357059bb6b6dd5146d1fc50f73f11678c6"
+  },
+  {
+    "value": {
+      "nested": {
+        "z": true,
+        "a": null
+      },
+      "arr": [
+        1,
+        {
+          "y": 2,
+          "x": 1
+        }
+      ]
+    },
+    "canonical_sha256": "e1a9c857e9787740992e5f18fc64cac6bd474f34bb6e415067b4f7ddf08ba5a9"
+  },
+  {
+    "value": {
+      "empty_obj": {},
+      "empty_arr": []
+    },
+    "canonical_sha256": "f41079191d354d8f29da00810acc909b27b42c69fe31d1a8ed5ff7b715055f08"
+  },
+  {
+    "value": 42,
+    "canonical_sha256": "73475cb40a568e8da8a045ced110137e159f890ac4da883b6b17dc651b3a8049"
+  },
+  {
+    "value": "café",
+    "canonical_sha256": "28380feb8724d669bc8d4cf5b5a5bb1adbdc61b81ebd06f3fabc567b4f3b0fc5"
+  },
+  {
+    "value": {
+      "s": "he said \"hi\"\nand \\ backslash",
+      "t": "\t\r\b\f"
+    },
+    "canonical_sha256": "c99e7c57a384b4a1ea87de122166b579d1825b9fa5d0e75b159ee998d0eeb4eb"
+  },
+  {
+    "value": {
+      "schema_version": "context_pack.canonical.v1",
+      "answerability_q16": 65535
+    },
+    "canonical_sha256": "5c5bcb0907f7dd15f01fc3e0f0205c8e5643eeab18e00872584eba23facf3962"
+  }
+]
