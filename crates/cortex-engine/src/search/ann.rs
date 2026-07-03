@@ -12,6 +12,8 @@ use super::hnsw::{DistanceMetric, HnswIndex};
 use std::collections::{BTreeMap, BTreeSet};
 
 #[cfg(test)]
+mod guarded_latency_tests;
+#[cfg(test)]
 mod sparse_scope_tests;
 #[cfg(test)]
 mod tests;

@@ -310,3 +310,9 @@ ann-release-evidence-check:
 	$(MAKE) ann-demo-domain-package-baseline
 	$(MAKE) ann-demo-domain-validate-baseline-package
 	@echo "=== ANN release evidence check passed ==="
+
+.PHONY: ann-guarded-sampling-latency-bench
+ann-guarded-sampling-latency-bench:
+	cargo test -p cortex-engine --release --lib \
+	  search::ann::guarded_latency_tests::unsampled_guarded_query_p50_speedup_bench \
+	  -- --ignored --nocapture
