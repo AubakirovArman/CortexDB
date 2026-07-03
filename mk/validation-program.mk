@@ -17,6 +17,8 @@ validation-nightly:
 	$(MAKE) erb-category-regression-check
 	$(MAKE) multihop-retrieval-regression-check
 	$(MAKE) locomo-retrieval-adapter-check
+	$(MAKE) locomo-retrieval-regression-check
+	$(MAKE) erb-official-rejudge-ready-check
 	$(MAKE) aab-mini-score-check
 	$(MAKE) quick-retrieval-eval-check
 	$(MAKE) benchmark-trend-check

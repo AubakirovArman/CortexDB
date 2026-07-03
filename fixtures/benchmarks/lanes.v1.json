@@ -19,6 +19,7 @@
         {"target": "multihop-retrieval-regression-check", "purpose": "F3.3 MultiHop-RAG retrieval regression gate; Hits@10/4 + MAP@10 + MRR@10 vs locked balanced_50 baseline, degraded-log catch"},
         {"target": "longmemeval-per-type-report-check", "purpose": "F2.3 LongMemEval per-type score packaging; per-type QA accuracy + recall_all@10/ndcg_any@10, all-types-present + overall-matches asserts"},
         {"target": "erb-official-rejudge-ready-check", "purpose": "F2.1 ERB gpt-5.4 re-judge ready/blocked gate; answers.jsonl SHA integrity + passes-as-blocked with no judge key (no tokens spent)"},
+        {"target": "locomo-retrieval-regression-check", "purpose": "F3.4 (retrieval half) LoCoMo hit@1/hit@10 regression gate vs locked baseline; degraded-log catch (QA half is key-gated)"},
         {"target": "erb-compare-runs-check", "purpose": "F2.2 ERB run comparisons refuse across-judge deltas"},
         {"target": "results-page-check", "purpose": "F5.1 RESULTS.md figures trace to committed reports"},
         {"target": "aab-mini-score-check", "purpose": "F4.2 6-axis AAB mini-score (structural axes unranked)"},

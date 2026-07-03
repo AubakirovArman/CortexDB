@@ -22,3 +22,7 @@ locomo-retrieval-adapter-check: locomo-cortexdb-retrieval
 	  --retrieval-report "$(LOCOMO_RETRIEVAL_REPORT)" \
 	  --retrieval-output "$(LOCOMO_RETRIEVAL_OUTPUT)" \
 	  --output "$(LOCOMO_ADAPTER_REPORT)"
+
+.PHONY: locomo-retrieval-regression-check
+locomo-retrieval-regression-check:
+	python3 scripts/locomo/retrieval_regression_gate.py --self-test

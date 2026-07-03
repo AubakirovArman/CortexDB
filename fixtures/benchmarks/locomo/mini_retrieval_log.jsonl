@@ -1,0 +1,15 @@
+{"question_id": "lc_00", "retrieved_ids": ["g_0", "d_00", "d_01", "d_02", "d_03", "d_04", "d_05", "d_06", "d_07", "d_08"]}
+{"question_id": "lc_01", "retrieved_ids": ["d_00", "d_01", "g_1", "d_02", "d_03", "d_04", "d_05", "d_06", "d_07", "d_08"]}
+{"question_id": "lc_02", "retrieved_ids": ["d_00", "d_01", "d_02", "g_2", "d_03", "d_04", "d_05", "d_06", "d_07", "d_08"]}
+{"question_id": "lc_03", "retrieved_ids": ["g_3", "d_00", "d_01", "d_02", "d_03", "d_04", "d_05", "d_06", "d_07", "d_08"]}
+{"question_id": "lc_04", "retrieved_ids": ["d_00", "d_01", "d_02", "d_03", "d_04", "g_4", "d_05", "d_06", "d_07", "d_08"]}
+{"question_id": "lc_05", "retrieved_ids": ["d_00", "d_01", "d_02", "d_03", "d_04", "d_05", "g_5", "d_06", "d_07", "d_08"]}
+{"question_id": "lc_06", "retrieved_ids": ["g_6", "d_00", "d_01", "d_02", "d_03", "d_04", "d_05", "d_06", "d_07", "d_08"]}
+{"question_id": "lc_07", "retrieved_ids": ["d_00", "g_7", "d_01", "d_02", "d_03", "d_04", "d_05", "d_06", "d_07", "d_08"]}
+{"question_id": "lc_08", "retrieved_ids": ["d_00", "d_01", "g_8", "d_02", "d_03", "d_04", "d_05", "d_06", "d_07", "d_08"]}
+{"question_id": "lc_09", "retrieved_ids": ["g_9", "d_00", "d_01", "d_02", "d_03", "d_04", "d_05", "d_06", "d_07", "d_08"]}
+{"question_id": "lc_10", "retrieved_ids": ["d_00", "d_01", "d_02", "d_03", "g_10", "d_04", "d_05", "d_06", "d_07", "d_08"]}
+{"question_id": "lc_11", "retrieved_ids": ["d_00", "d_01", "d_02", "d_03", "d_04", "g_11", "d_05", "d_06", "d_07", "d_08"]}
+{"question_id": "lc_12", "retrieved_ids": ["g_12", "d_00", "d_01", "d_02", "d_03", "d_04", "d_05", "d_06", "d_07", "d_08"]}
+{"question_id": "lc_13", "retrieved_ids": ["d_00", "d_01", "d_02", "d_03", "d_04", "d_05", "d_06", "g_13", "d_07", "d_08"]}
+{"question_id": "lc_14", "retrieved_ids": ["d_00", "g_14", "d_01", "d_02", "d_03", "d_04", "d_05", "d_06", "d_07", "d_08"]}

@@ -1,0 +1,6 @@
+{
+  "schema_version": "cortexdb.locomo.retrieval_baseline.v1",
+  "source": "F3.4 committed LoCoMo retrieval baseline",
+  "hit@1": 0.3199,
+  "hit@10": 0.6312
+}

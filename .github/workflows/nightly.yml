@@ -51,6 +51,7 @@ jobs:
       - run: make multihop-retrieval-regression-check
       - run: make longmemeval-per-type-report-check
       - run: make erb-official-rejudge-ready-check
+      - run: make locomo-retrieval-regression-check
       - run: make erb-compare-runs-check
       - run: make results-page-check
       - run: make aab-mini-score-check
