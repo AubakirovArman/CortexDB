@@ -123,7 +123,7 @@ impl Args {
                 "--output" => parsed.output = Some(PathBuf::from(next_value(&mut args, &arg)?)),
                 "--report" => parsed.report = Some(PathBuf::from(next_value(&mut args, &arg)?)),
                 "--top-k" => parsed.top_k = parse_usize(&next_value(&mut args, &arg)?, &arg)?,
-                "--candidate-limit" => {
+                "--candidate-limit" | "--candidate-pool" => {
                     parsed.candidate_limit = parse_usize(&next_value(&mut args, &arg)?, &arg)?
                 }
                 "--batch-size" => {
@@ -204,7 +204,7 @@ impl Default for PartialArgs {
             output: None,
             report: None,
             top_k: 10,
-            candidate_limit: 64,
+            candidate_limit: 512,
             batch_size: 1_000,
             progress_every: 10_000,
             max_documents: None,
@@ -280,10 +280,10 @@ fn usage() -> String {
         "usage: enterprise_rag_bench_retrieval ",
         "--questions <jsonl> --uuid-index <json> --sources-dir <dir> ",
         "--db-root <path> --output <jsonl> [--report <json>] ",
-        "[--top-k <n>] [--batch-size <n>] [--max-documents <n>] ",
+        "[--top-k <n>] [--candidate-pool <n>] [--batch-size <n>] [--max-documents <n>] ",
         "[--reset-db] [--skip-ingest] [--skip-checkpoint] [--official-clean] ",
         "[--retrieval-mode <cached-lexical|engine-aql|engine-keyword|engine-hybrid|engine-hybrid-rerank>] ",
-        "[--rerank <none|weighted>] ",
+        "[--rerank <none|weighted|two-stage|two-stage-cosine>] ",
         "[--query-vectors <jsonl>] [--document-vectors <jsonl>] ",
         "[--prefilter-retrieval <clean-jsonl>] [--disable-search-prefilter] ",
         "[--log-file <path>] [--status-file <path>]"

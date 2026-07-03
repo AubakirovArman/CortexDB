@@ -26,6 +26,11 @@ retrieval-two-stage-rerank-check:
 	cargo test -p cortex-engine --lib retrieval_rank::two_stage
 	cargo test -p cortex-engine --lib two_stage_rerank_
 
+.PHONY: retrieval-candidate-pool-check
+retrieval-candidate-pool-check:
+	cargo test -p cortex-bench --bin enterprise_rag_bench_retrieval args::tests::candidate_pool_defaults_to_512
+	cargo test -p cortex-bench --bin enterprise_rag_bench_retrieval args::tests::parses_candidate_pool_and_limit_aliases
+
 .PHONY: retrieval-temporal-supersede-check
 retrieval-temporal-supersede-check:
 	cargo test -p cortex-engine --lib retrieval_rank::supersede

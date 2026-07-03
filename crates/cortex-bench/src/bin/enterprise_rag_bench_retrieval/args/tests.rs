@@ -36,6 +36,25 @@ fn official_clean_is_off_by_default() {
 }
 
 #[test]
+fn candidate_pool_defaults_to_512() {
+    // A1.4: the rerank shortlist depth is a first-class knob with a deep default
+    // (was a hardcoded top_k.max(64)).
+    let parsed = Args::parse(required_args()).expect("parse args");
+    assert_eq!(parsed.candidate_limit, 512);
+}
+
+#[test]
+fn parses_candidate_pool_and_limit_aliases() {
+    for flag in ["--candidate-pool", "--candidate-limit"] {
+        let mut args = required_args();
+        args.push(flag.to_owned());
+        args.push("1024".to_owned());
+        let parsed = Args::parse(args).expect("parse args");
+        assert_eq!(parsed.candidate_limit, 1024, "flag {flag}");
+    }
+}
+
+#[test]
 fn parses_skip_checkpoint_flag() {
     let mut args = required_args();
     args.push("--skip-checkpoint".to_owned());

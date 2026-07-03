@@ -29,6 +29,7 @@ pub(crate) fn report_payload(
         "questions": questions.len(),
         "documents_indexed": args.max_documents.unwrap_or(uuid_index.len()),
         "top_k": args.top_k,
+        "candidate_pool": args.candidate_limit,
         "batch_size": args.batch_size,
         "official_clean": args.official_clean,
         "retrieval_mode": args.retrieval_mode.as_str(),
