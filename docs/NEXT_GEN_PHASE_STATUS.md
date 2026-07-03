@@ -122,11 +122,28 @@ scorer), **F5.1** (machine-verifiable `RESULTS.md`), plus the phase-status map a
 the F3.2/C3-2 already-landed corrections. A8.1/A8.2/A5.1 are complete engine/
 tooling features; A1.2 is a golden-safe slice pending engine-path wiring.
 
-Extended sweep (24 phases this cycle) — added on top of the six above: **A5.1**
+Extended sweep (27 phases this cycle) — added on top of the six above: **A5.1**
 (LTR corpus builder), **A8.1/A8.2** (structure + table chunking), **F1.1/F4.1/F4.2**
 (benchmark + AAB schemas/scorer), and the **entire AQL-surface cluster golden-safe**
 — `USING DIVERSITY` (A5/A7.3), `USING RERANK` (A7.2), `SUPPRESS SUPERSEDED` (A4.2),
-`RECENCY WINDOW` (A4.1) — plus **A3.2** (ANN sparse-fallback ratio in telemetry), **A5.2-training** (learned-ranker trainer + held-out lift), **C4-1** (p99 receipt-emission budget), **C4-3** (anti-absorption proof wired into nightly), and **F5.2/F5.3** (benchmark floor gate + nightly validation job).
+`RECENCY WINDOW` (A4.1) — plus **A3.2** (ANN sparse-fallback ratio in telemetry),
+**A5.2-training** (learned-ranker trainer + held-out lift), **C4-1** (p99
+receipt-emission budget), **C4-3** (anti-absorption proof wired into nightly), and
+**F5.2/F5.3** (benchmark floor gate + nightly validation job).
+
+**Benchmark-honesty cluster closed (F1.2/F1.3/F2.2).** On top of F1.1's schema and
+F5.1's `RESULTS.md`, the final three interlock into one anti-overclaim system:
+**F1.2** — `fixtures/benchmarks/registry/*.json`, one immutable snapshot per
+benchmark whose ERB numbers are machine-verified against
+`erb-submission/official_results.json` (drift fails CI, proven by a negative test)
+and where no entry may claim `leaderboard_official` without an official judge
+(LoCoMo/MultiHop honestly `no_headline_claimed`); **F2.2** — the run comparator
+that *refuses* a cross-judge delta (`refused_cross_judge_comparison`, no delta
+leaked); **F1.3** — the machine-readable CI lane map (`lanes.v1.json`, 29 gates /
+3 lanes) whose audit fails if any gate is defined-but-unscheduled or
+scheduled-but-unmapped, checked **bidirectionally** against the real
+`nightly.yml`. Every one of these is dependency-free, deterministic, and wired
+into the nightly `benchmark-validation` job.
 
 **Key reclassification:** the AQL-surface bucket was *not* a golden-rebaseline. The
 canonical receipt hashes the *resulting pack* (`CONTEXT_PACK_HASHED_FIELDS`), not
