@@ -31,6 +31,37 @@ fn merkle_root_matches_cross_language_vectors() {
     }
 }
 
+// C4-2: the receipt's Ed25519 signing (over a domain-wrapped message) is
+// language-independent. Ed25519 (RFC 8032) is deterministic, so a Python
+// `cryptography` re-derivation must produce the identical signature + public key;
+// this asserts the Rust ReceiptSigningKey matches the committed Python-derived
+// vectors byte-for-byte.
+#[test]
+fn ed25519_signature_matches_cross_language_vectors() {
+    use cortex_crypto::ReceiptSigningKey;
+    let vectors: Vec<serde_json::Value> = serde_json::from_str(include_str!(
+        "../../../../fixtures/canonical/ed25519_conformance_vectors.v1.json"
+    ))
+    .expect("ed25519 conformance vectors parse");
+    assert!(!vectors.is_empty());
+    for (index, entry) in vectors.iter().enumerate() {
+        let seed_hex = entry["seed_hex"].as_str().expect("seed");
+        let message = entry["message"].as_str().expect("message");
+        let key = ReceiptSigningKey::from_seed_hex("cross-lang-test", seed_hex)
+            .expect("seed decodes");
+        assert_eq!(
+            key.public_key().to_hex(),
+            entry["public_key_hex"].as_str().unwrap(),
+            "ed25519 vector {index}: public key differs cross-language"
+        );
+        assert_eq!(
+            key.sign(message.as_bytes()).to_hex(),
+            entry["signature_hex"].as_str().unwrap(),
+            "ed25519 vector {index}: signature differs cross-language"
+        );
+    }
+}
+
 #[test]
 fn accountability_receipt_body_roots_are_deterministic_and_schema_aligned() {
     let (pack, retrieved_cells, denials, input) = sample_receipt_inputs();

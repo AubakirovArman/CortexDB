@@ -85,6 +85,67 @@ def build_merkle() -> list[dict]:
     ]
 
 
+# Mirror of cortex-crypto receipt_key.rs: Ed25519 over a domain-wrapped message.
+RECEIPT_SIGNING_DOMAIN = "cortexdb.accountability_receipt.sign.v1"
+ED25519_FIXTURE = REPO / "fixtures" / "canonical" / "ed25519_conformance_vectors.v1.json"
+ED25519_VECTORS = [
+    ("0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20", "receipt body one"),
+    ("0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20", ""),
+    ("fedcba98765432100123456789abcdeffedcba98765432100123456789abcdef", "another receipt header"),
+]
+
+
+def receipt_signing_bytes(message: bytes) -> bytes:
+    return RECEIPT_SIGNING_DOMAIN.encode("utf-8") + b"\x00" + message
+
+
+def ed25519_sign_and_pubkey(seed_hex: str, message: str) -> tuple[str, str]:
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+    key = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(seed_hex))
+    signature = key.sign(receipt_signing_bytes(message.encode("utf-8")))
+    public = key.public_key().public_bytes(
+        serialization.Encoding.Raw, serialization.PublicFormat.Raw
+    )
+    return signature.hex(), public.hex()
+
+
+def build_ed25519() -> list[dict]:
+    out = []
+    for seed_hex, message in ED25519_VECTORS:
+        signature_hex, public_key_hex = ed25519_sign_and_pubkey(seed_hex, message)
+        out.append(
+            {
+                "seed_hex": seed_hex,
+                "message": message,
+                "signature_hex": signature_hex,
+                "public_key_hex": public_key_hex,
+            }
+        )
+    return out
+
+
+def check_ed25519() -> list[str]:
+    if not ED25519_FIXTURE.exists():
+        return [f"missing fixture {ED25519_FIXTURE.relative_to(REPO)} (run with --generate)"]
+    try:
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import (  # noqa: F401
+            Ed25519PrivateKey,
+        )
+    except ImportError:
+        print("  note: cryptography not installed; skipping the Python Ed25519 re-derivation")
+        return []
+    errors = []
+    for index, entry in enumerate(json.loads(ED25519_FIXTURE.read_text())):
+        signature_hex, public_key_hex = ed25519_sign_and_pubkey(entry["seed_hex"], entry["message"])
+        if signature_hex != entry["signature_hex"]:
+            errors.append(f"ed25519 vector {index}: python signature != committed")
+        if public_key_hex != entry["public_key_hex"]:
+            errors.append(f"ed25519 vector {index}: python public key != committed")
+    return errors
+
+
 def check_merkle() -> list[str]:
     if not MERKLE_FIXTURE.exists():
         return [f"missing fixture {MERKLE_FIXTURE.relative_to(REPO)} (run with --generate)"]
@@ -146,9 +207,11 @@ def main() -> int:
         FIXTURE.parent.mkdir(parents=True, exist_ok=True)
         FIXTURE.write_text(json.dumps(build(), indent=2, ensure_ascii=False) + "\n")
         MERKLE_FIXTURE.write_text(json.dumps(build_merkle(), indent=2, ensure_ascii=False) + "\n")
+        ED25519_FIXTURE.write_text(json.dumps(build_ed25519(), indent=2) + "\n")
         print(
-            f"wrote {FIXTURE.relative_to(REPO)} ({len(VECTORS)} vectors) + "
-            f"{MERKLE_FIXTURE.relative_to(REPO)} ({len(MERKLE_VECTORS)} vectors)"
+            f"wrote {FIXTURE.relative_to(REPO)} ({len(VECTORS)}) + "
+            f"{MERKLE_FIXTURE.relative_to(REPO)} ({len(MERKLE_VECTORS)}) + "
+            f"{ED25519_FIXTURE.relative_to(REPO)} ({len(ED25519_VECTORS)})"
         )
         return 0
 
@@ -165,6 +228,7 @@ def main() -> int:
                 f"{entry['canonical_sha256']}"
             )
     errors.extend(check_merkle())
+    errors.extend(check_ed25519())
     if errors:
         print("canonical-jcs-cross-language-check FAILED")
         for error in errors:
@@ -172,8 +236,9 @@ def main() -> int:
         return 1
     print(
         f"canonical-jcs-cross-language-check passed: {len(committed)} JCS + "
-        f"{len(MERKLE_VECTORS)} Merkle vector(s); python canonicalization + blake3 "
-        "Merkle roots match the committed digests byte-for-byte"
+        f"{len(MERKLE_VECTORS)} Merkle + {len(ED25519_VECTORS)} Ed25519 vector(s); "
+        "python canonicalization + blake3 Merkle roots + Ed25519 signatures match the "
+        "committed values byte-for-byte"
     )
     return 0
 
