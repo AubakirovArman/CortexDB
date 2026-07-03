@@ -1,8 +1,64 @@
 use cortex_storage::manifest::{
-    ManifestCount, ManifestEmbeddingProfile, ManifestHnswNoFallbackProfile, ManifestHnswProfile,
-    ManifestMemoryCellCursor, ManifestSegment, ManifestSegmentStats, ManifestTermDocumentFrequency,
-    ManifestTextAnalyzerProfile, ManifestVectorProfile, StorageManifest,
+    ManifestCount, ManifestEmbeddingProfile, ManifestGuardedRecallState,
+    ManifestHnswNoFallbackProfile, ManifestHnswProfile, ManifestMemoryCellCursor, ManifestSegment,
+    ManifestSegmentStats, ManifestTermDocumentFrequency, ManifestTextAnalyzerProfile,
+    ManifestVectorProfile, StorageManifest,
 };
+
+// A3.3: the persisted guarded-recall state round-trips through the manifest, and
+// its absence (None, the default) is byte-identical to a pre-A3.3 manifest
+// (guarded by storage-format-freeze-check separately).
+#[test]
+fn manifest_guarded_recall_state_roundtrips() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("manifest.acm");
+    let manifest = StorageManifest {
+        guarded_recall_state: Some(ManifestGuardedRecallState {
+            generation: 7,
+            queries_since_rebuild: 129,
+            serving_epoch: 3,
+            degraded: true,
+            window_recalls: vec![65_535, 40_000, 12_345, 0],
+        }),
+        ..StorageManifest::default()
+    };
+
+    manifest.store(&path).unwrap();
+    assert_eq!(StorageManifest::load(&path).unwrap(), manifest);
+}
+
+#[test]
+fn manifest_without_guarded_recall_state_omits_the_section() {
+    let dir = tempfile::tempdir().unwrap();
+    let with_path = dir.path().join("with.acm");
+    let without_path = dir.path().join("without.acm");
+
+    let base = StorageManifest {
+        embedding_profile: Some(ManifestEmbeddingProfile {
+            model: "m".to_owned(),
+            dimension: 8,
+            metric: 1,
+        }),
+        ..StorageManifest::default()
+    };
+    base.store(&without_path).unwrap();
+
+    let with_state = StorageManifest {
+        guarded_recall_state: Some(ManifestGuardedRecallState::default()),
+        ..base.clone()
+    };
+    with_state.store(&with_path).unwrap();
+
+    // The None manifest's bytes are a strict prefix (minus CRC) shorter than the
+    // Some manifest's — i.e. the section is genuinely absent when None.
+    let without = std::fs::read(&without_path).unwrap();
+    let with = std::fs::read(&with_path).unwrap();
+    assert!(
+        with.len() > without.len(),
+        "AGRS section must add bytes only when present"
+    );
+    assert_eq!(StorageManifest::load(&without_path).unwrap(), base);
+}
 
 #[test]
 fn manifest_hnsw_profile_roundtrips() {

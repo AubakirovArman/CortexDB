@@ -95,6 +95,22 @@ impl RecallWindow {
     pub fn is_degraded(&self, floor_q16: u16) -> bool {
         self.windowed_min().is_some_and(|min| min < floor_q16)
     }
+
+    /// The current window contents (for manifest persistence). Order is not
+    /// significant to `windowed_min`, so a round-trip through `from_recalls`
+    /// preserves the degradation verdict.
+    pub fn recalls(&self) -> Vec<u16> {
+        self.values.iter().take(self.len).copied().collect()
+    }
+
+    /// Rebuild a window from persisted contents (keeps the most recent WINDOW).
+    pub fn from_recalls(recalls: &[u16]) -> Self {
+        let mut window = Self::new();
+        for &recall in recalls {
+            window.push(recall);
+        }
+        window
+    }
 }
 
 /// The serving mode a collection is currently in. `Ann` serves budgeted HNSW

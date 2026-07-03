@@ -2,10 +2,10 @@ use crate::atomic::{append_crc32c, verify_crc32c};
 use crate::error::{StorageError, StorageResult};
 use crate::format::MANIFEST_MAGIC;
 use crate::manifest::{
-    CompactionMetadata, ManifestCount, ManifestEmbeddingProfile, ManifestHnswNoFallbackProfile,
-    ManifestHnswProfile, ManifestMemoryCellCursor, ManifestSegment, ManifestSegmentStats,
-    ManifestTermDocumentFrequency, ManifestTextAnalyzerProfile, ManifestVectorProfile,
-    StorageManifest,
+    CompactionMetadata, ManifestCount, ManifestEmbeddingProfile, ManifestGuardedRecallState,
+    ManifestHnswNoFallbackProfile, ManifestHnswProfile, ManifestMemoryCellCursor, ManifestSegment,
+    ManifestSegmentStats, ManifestTermDocumentFrequency, ManifestTextAnalyzerProfile,
+    ManifestVectorProfile, StorageManifest,
 };
 
 pub(super) fn encode_manifest(manifest: &StorageManifest) -> Vec<u8> {
@@ -70,6 +70,19 @@ pub(super) fn encode_manifest(manifest: &StorageManifest) -> Vec<u8> {
         put_u32(&mut out, profile.dimension);
         put_u32(&mut out, profile.metric);
     }
+    // A3.3: appended after EMBD (still last), so a manifest written before this
+    // section decodes it as `None` and prior offsets are unchanged.
+    if let Some(state) = &manifest.guarded_recall_state {
+        out.extend_from_slice(b"AGRS");
+        put_u64(&mut out, state.generation);
+        put_u64(&mut out, state.queries_since_rebuild);
+        put_u64(&mut out, state.serving_epoch);
+        put_u32(&mut out, u32::from(state.degraded));
+        put_u32(&mut out, state.window_recalls.len() as u32);
+        for recall in &state.window_recalls {
+            put_u32(&mut out, u32::from(*recall));
+        }
+    }
     append_crc32c(&mut out);
     out
 }
@@ -92,6 +105,7 @@ pub(super) fn decode_manifest(bytes: &[u8]) -> StorageResult<StorageManifest> {
     let compaction_metadata = read_compaction_metadata(bytes, &mut cursor)?;
     let (next_cell_id, memory_cell_cursors) = read_cell_id_allocator(bytes, &mut cursor)?;
     let embedding_profile = read_embedding_profile(bytes, &mut cursor)?;
+    let guarded_recall_state = read_guarded_recall_state(bytes, &mut cursor)?;
     if cursor > bytes.len() {
         return Err(StorageError::InvalidManifestFile);
     }
@@ -108,8 +122,35 @@ pub(super) fn decode_manifest(bytes: &[u8]) -> StorageResult<StorageManifest> {
         text_analyzer_profile,
         segment_stats,
         hnsw_no_fallback_profile,
+        guarded_recall_state,
         compaction_metadata,
     })
+}
+
+fn read_guarded_recall_state(
+    bytes: &[u8],
+    cursor: &mut usize,
+) -> StorageResult<Option<ManifestGuardedRecallState>> {
+    if bytes.len().saturating_sub(*cursor) < 4 || &bytes[*cursor..*cursor + 4] != b"AGRS" {
+        return Ok(None);
+    }
+    *cursor += 4;
+    let generation = read_u64(bytes, cursor)?;
+    let queries_since_rebuild = read_u64(bytes, cursor)?;
+    let serving_epoch = read_u64(bytes, cursor)?;
+    let degraded = read_u32(bytes, cursor)? != 0;
+    let len = read_u32(bytes, cursor)? as usize;
+    let mut window_recalls = Vec::with_capacity(len);
+    for _ in 0..len {
+        window_recalls.push(u16::try_from(read_u32(bytes, cursor)?).unwrap_or(u16::MAX));
+    }
+    Ok(Some(ManifestGuardedRecallState {
+        generation,
+        queries_since_rebuild,
+        serving_epoch,
+        degraded,
+        window_recalls,
+    }))
 }
 
 fn put_segments(out: &mut Vec<u8>, segments: &[ManifestSegment]) {

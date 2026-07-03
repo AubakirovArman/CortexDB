@@ -83,6 +83,26 @@ impl Database {
             .map(|state| state.serving_epoch())
     }
 
+    /// A3.3: snapshot the guarded-recall state for manifest persistence, so the
+    /// sampled-recall window survives a restart. `None` (guarded sampling off /
+    /// unarmed) leaves the manifest section absent — byte-identical to pre-A3.3.
+    pub(crate) fn current_guarded_recall_manifest(
+        &self,
+    ) -> Option<cortex_storage::manifest::ManifestGuardedRecallState> {
+        if !self.ann_guarded_sampling.enabled {
+            return None;
+        }
+        let guard = self.guarded_recall.lock().ok()?;
+        let state = guard.as_ref()?;
+        Some(cortex_storage::manifest::ManifestGuardedRecallState {
+            generation: state.generation(),
+            queries_since_rebuild: state.queries_since_rebuild(),
+            serving_epoch: state.serving_epoch(),
+            degraded: state.serving_mode() == crate::search::GuardedServingMode::ExactDegraded,
+            window_recalls: state.window().recalls(),
+        })
+    }
+
     pub(crate) fn require_feature(&self, feature: EngineFeature) -> EngineResult<()> {
         if self.feature_flags.is_enabled(feature) {
             Ok(())
@@ -145,6 +165,9 @@ impl Database {
             ReadTxn::at(current_seq),
             options.payload_residency,
         );
+        // A3.3: restore the persisted guarded-recall window (if any) before the
+        // manifest is moved into the Database.
+        let restored_guarded_recall = checkpoint.manifest.guarded_recall_state.clone();
         let mut database = Self {
             root_path,
             wal_path,
@@ -164,14 +187,27 @@ impl Database {
             learned_ranking: options.learned_ranking,
             semantic_compression: options.semantic_compression,
             ann_guarded_sampling: options.ann_guarded_sampling,
-            // A3.3: arm the per-database guarded-recall state only when opted in;
-            // `None` keeps the ANN read path byte-identical to pre-A3.3.
-            guarded_recall: std::sync::Mutex::new(
-                options
-                    .ann_guarded_sampling
-                    .enabled
-                    .then(|| crate::search::GuardedRecallState::new(0)),
-            ),
+            // A3.3: arm the per-database guarded-recall state only when opted in,
+            // restoring the persisted window if the manifest carries one; `None`
+            // keeps the ANN read path byte-identical to pre-A3.3.
+            guarded_recall: std::sync::Mutex::new(options.ann_guarded_sampling.enabled.then(
+                || {
+                    restored_guarded_recall.as_ref().map_or_else(
+                        || crate::search::GuardedRecallState::new(0),
+                        |persisted| {
+                            crate::search::GuardedRecallState::from_parts(
+                                crate::search::RecallWindow::from_recalls(
+                                    &persisted.window_recalls,
+                                ),
+                                persisted.generation,
+                                persisted.queries_since_rebuild,
+                                persisted.serving_epoch,
+                                persisted.degraded,
+                            )
+                        },
+                    )
+                },
+            )),
             hnsw_build_config: options.hnsw_build_config.normalized(),
             embedding_profile: options.embedding_profile.clone(),
             retrieval_diversify_lambda_q16: options.retrieval_diversify_lambda_q16,

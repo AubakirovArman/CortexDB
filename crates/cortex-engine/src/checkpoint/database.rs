@@ -110,6 +110,9 @@ impl Database {
         // Written in lockstep with the vector profile so a stale label can
         // never outlive or misdescribe the vectors (see next_embedding_profile).
         self.manifest.embedding_profile = embedding_profile;
+        // A3.3: persist the sampled-recall window so it survives a restart
+        // (absent -> byte-identical manifest when guarded sampling is off).
+        self.manifest.guarded_recall_state = self.current_guarded_recall_manifest();
         self.manifest.store(&self.manifest_path)?;
         self.finish_rotated_wal(&archived_wal)?;
         self.memtable.gc_versions_before(self.gc_horizon());

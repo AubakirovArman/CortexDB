@@ -44,6 +44,18 @@ pub struct ManifestEmbeddingProfile {
     pub metric: u32,
 }
 
+/// A3.3: persisted per-collection guarded-recall state, so sampled-recall history
+/// survives a restart. Primitive-only (the engine owns the `RecallWindow`
+/// semantics); `window_recalls` is the current window contents.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ManifestGuardedRecallState {
+    pub generation: u64,
+    pub queries_since_rebuild: u64,
+    pub serving_epoch: u64,
+    pub degraded: bool,
+    pub window_recalls: Vec<u16>,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ManifestTextAnalyzerProfile {
     pub version: u32,
@@ -111,6 +123,7 @@ pub struct StorageManifest {
     pub text_analyzer_profile: Option<ManifestTextAnalyzerProfile>,
     pub segment_stats: Vec<ManifestSegmentStats>,
     pub hnsw_no_fallback_profile: Option<ManifestHnswNoFallbackProfile>,
+    pub guarded_recall_state: Option<ManifestGuardedRecallState>,
     pub compaction_metadata: CompactionMetadata,
 }
 
