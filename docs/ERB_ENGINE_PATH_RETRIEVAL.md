@@ -160,12 +160,31 @@ un-normalized integer dot; the python uses float cosine. A cosine variant
 measured — it produced a **byte-identical top-10 for all 50 questions** (recall
 unchanged at 60.34%), because bge-m3 vectors are L2-normalized *before* i16
 quantization, so they are near-equal-magnitude and dot already ranks by
-direction. *Confirmed (candidate-pool coverage):* the depth sweep above shows the
-gap is the shortlist — deepening it 64→256→1024 lifts recall 60.34→64.33→67.29,
-converging on the float reranker's 68.85%. The last ~1.6 points is i16-vs-float32
-precision and the specific lexical pool. So the engine's own reranker does
-reproduce the dense-rerank lift; it is bounded only by how many gold documents
-its stage-1 shortlist surfaces.
+direction. *Partly confirmed (candidate-pool depth):* the depth sweep above shows deepening
+the pool 64→256→1024 lifts recall 60.34→64.33→67.29, converging on the float
+reranker's 68.85%. The engine's own reranker reproduces the dense-rerank lift.
+
+**What actually bounds recall@10 (the shortlist ceiling).** The raw top-1024 BM25
+shortlist *contains* **91.25%** of the gold documents (recall@1024, no rerank).
+So stage-1 coverage is *not* the binding constraint — the dense rerank surfaces
+only ~67% of gold into the top 10 even though ~91% are present in the pool it
+reranks. Both the engine (67.29%) and the float reranker (68.85%) leave ~24
+points of in-pool gold below the top-10 cutoff. Therefore the path to the ≥75%
+retrieval exit bar is a **stronger reranker** (a cross-encoder, or higher-fidelity
+than i16-quantized bge-m3 dot), not deeper pools, not cosine normalization, and
+not a better stage-1. That is the honest, measured diagnosis.
+
+## Answer-quality half of the exit-proof — currently blocked
+
+A6.4's exit-proof also has an answer-generation + judge half (retrieve → generate
+an answer over the retrieved context → judge correctness/completeness). It is
+**not runnable in the current environment**: the Gemma/vLLM chat endpoint is no
+longer configured in `.env` (only the embedding endpoint remains), and the
+DeepSeek answer-gen key (`ENTERPRISE_RAG_BENCH_QA_BASE_URL=api.deepseek.com`,
+key at `.deepseek`) returns **HTTP 401** (well-formed but unauthorized). With no
+working LLM chat endpoint, the combined correctness/completeness score cannot be
+measured, so it is left unmeasured rather than fabricated. Restoring a working
+chat endpoint (Gemma env var, or a valid DeepSeek key) unblocks it.
 
 ## Exit-proof status
 
@@ -178,12 +197,15 @@ dense rerank measurably improves recall on the same full corpus:
   **→ 67.29%** at pool 1024 — the honest engine-native number, within **1.6
   points** of the float reranker.
 - The float-cosine reference reranker reaches **68.85%**. The engine converges on
-  it as the shortlist deepens; the cosine variant lands identically to dot
-  (magnitude is not the gap — candidate-pool coverage is).
+  it as the shortlist deepens; the cosine variant lands identically to dot.
+- The raw top-1024 shortlist already contains **91.25%** of gold docs, so the
+  binding constraint is the reranker's top-10 precision, not stage-1 coverage.
 
-Neither reaches the retrieval exit bar (≥75% recall@10), and the answer-quality
-half of the exit-proof (Gemma answer + judge) is **not yet measured**. A6.4 is
-therefore recorded as *measured end-to-end, materially improved by A7.2, not yet
-passing* — the honest outcome the task exists to surface. The clear next lever is
-cosine-normalizing the engine's dense-rerank score to recover the 60.34→68.85
-headroom.
+Neither reaches the retrieval exit bar (≥75% recall@10). The retrieval half is
+fully measured; the answer-quality half (answer + judge) is **blocked** — no
+working LLM chat endpoint in this environment (Gemma env var absent, DeepSeek key
+401). A6.4 is therefore *measured end-to-end on retrieval, materially improved by
+A7.2, not yet passing; answer half blocked on credentials*. The clear next lever
+for retrieval is a **stronger reranker** (cross-encoder / higher-fidelity than
+i16 bge-m3 dot) — the 91.25% shortlist ceiling shows the headroom is real and
+sits in the rerank, not in stage-1 or the score formula.
