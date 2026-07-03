@@ -99,6 +99,151 @@ fn semantic_compression_rejects_low_answerability() {
     assert!(matches!(error, EngineError::InvalidSemanticCompression(_)));
 }
 
+#[test]
+fn semantic_compression_candidates_require_feature_flag() {
+    let dir = tempfile::tempdir().unwrap();
+    let db = Database::open(dir.path()).unwrap();
+
+    let error = db
+        .semantic_compression_candidates(&view("project:alpha"), "project:alpha", 1_080, 32_768, 8)
+        .unwrap_err();
+
+    assert!(matches!(
+        error,
+        EngineError::FeatureDisabled("semantic_compression")
+    ));
+}
+
+#[test]
+fn semantic_compression_candidates_reject_unreadable_scope() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = open_enabled(dir.path());
+    seed_consolidation_memories(&mut db);
+
+    // view("project:alpha") cannot read tenant:private.
+    let error = db
+        .semantic_compression_candidates(&view("project:alpha"), "tenant:private", 1_080, 32_768, 8)
+        .unwrap_err();
+
+    assert!(matches!(error, EngineError::AqlBind(_)));
+}
+
+#[test]
+fn semantic_compression_candidates_select_stale_episodic_grouped_by_subtype() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = open_enabled(dir.path());
+    seed_consolidation_memories(&mut db);
+
+    let groups = db
+        .semantic_compression_candidates(&view("project:alpha"), "project:alpha", 1_080, 32_768, 8)
+        .unwrap();
+
+    // Deterministic: groups by subtype key (observation < workflow_result); within a
+    // group, stalest first then cell id. Only stale episodic non-summary,
+    // non-already-sourced cells appear.
+    let flat: Vec<(Option<String>, Vec<CellId>)> = groups
+        .iter()
+        .map(|group| {
+            (
+                group.memory_type.clone(),
+                group.candidates.iter().map(|c| c.cell_id).collect(),
+            )
+        })
+        .collect();
+    assert_eq!(
+        flat,
+        vec![
+            (Some("observation".to_owned()), vec![CellId(10), CellId(14)]),
+            (Some("workflow_result".to_owned()), vec![CellId(11)]),
+        ]
+    );
+
+    // Excluded: fresh (12), semantic decision (13), the summary itself (20), and the
+    // cell already consolidated into that summary (30).
+    let selected: BTreeSet<CellId> = groups
+        .iter()
+        .flat_map(|group| group.candidates.iter().map(|c| c.cell_id))
+        .collect();
+    for excluded in [CellId(12), CellId(13), CellId(20), CellId(30)] {
+        assert!(
+            !selected.contains(&excluded),
+            "{excluded:?} must be excluded"
+        );
+    }
+}
+
+#[test]
+fn semantic_compression_candidates_are_deterministic_and_respect_max_groups() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = open_enabled(dir.path());
+    seed_consolidation_memories(&mut db);
+
+    let first = db
+        .semantic_compression_candidates(&view("project:alpha"), "project:alpha", 1_080, 32_768, 8)
+        .unwrap();
+    let second = db
+        .semantic_compression_candidates(&view("project:alpha"), "project:alpha", 1_080, 32_768, 8)
+        .unwrap();
+    assert_eq!(first, second, "candidate selection must be deterministic");
+
+    // Capping at one group keeps only the first subtype (observation).
+    let capped = db
+        .semantic_compression_candidates(&view("project:alpha"), "project:alpha", 1_080, 32_768, 1)
+        .unwrap();
+    assert_eq!(capped.len(), 1);
+    assert_eq!(capped[0].memory_type.as_deref(), Some("observation"));
+
+    // max_groups = 0 selects nothing.
+    let none = db
+        .semantic_compression_candidates(&view("project:alpha"), "project:alpha", 1_080, 32_768, 0)
+        .unwrap();
+    assert!(none.is_empty());
+}
+
+fn seed_consolidation_memories(db: &mut Database) {
+    let mem = |cell: u64, memory_type: &str, created: u64, ttl: u64, body: &str| -> Vec<u8> {
+        format!(
+            "scope=project:alpha\nstatus=ready\ntype=memory\nmemory_type={memory_type}\ncreated_unix_seconds={created}\nttl_seconds={ttl}\nsource=test\n\n{body} {cell}"
+        )
+        .into_bytes()
+    };
+    // Stale episodic (freshness 13107 < 32768 at now=1080, ttl=100).
+    db.put_cell(CellId(10), mem(10, "observation", 1_000, 100, "stale obs"))
+        .unwrap();
+    db.put_cell(
+        CellId(11),
+        mem(11, "workflow_result", 1_000, 100, "stale wf"),
+    )
+    .unwrap();
+    db.put_cell(CellId(14), mem(14, "observation", 1_000, 100, "stale obs"))
+        .unwrap();
+    // Fresh episodic (freshness 60292 >= 32768) — excluded.
+    db.put_cell(
+        CellId(12),
+        mem(12, "observation", 1_000, 1_000, "fresh obs"),
+    )
+    .unwrap();
+    // Stale but semantic — excluded by class.
+    db.put_cell(
+        CellId(13),
+        mem(13, "decision", 1_000, 100, "semantic decision"),
+    )
+    .unwrap();
+    // Stale episodic that is already consolidated into the summary below — excluded.
+    db.put_cell(
+        CellId(30),
+        mem(30, "observation", 1_000, 100, "already sourced"),
+    )
+    .unwrap();
+    // A summary consolidating cell 30 (compression_kind set) — excluded as a summary.
+    db.put_cell(
+        CellId(20),
+        b"scope=project:alpha\nstatus=ready\ntype=memory\nmemory_type=observation\ncompression_kind=semantic_summary\ncompression_source_cells=30\ncompression_answerability_q16=60000\ncompression_worker=mcp-summary-v1\nsource=mcp-summary-v1\n\nSummary of observation 30."
+            .to_vec(),
+    )
+    .unwrap();
+}
+
 fn open_enabled(path: &std::path::Path) -> Database {
     Database::open_with_options(
         path,

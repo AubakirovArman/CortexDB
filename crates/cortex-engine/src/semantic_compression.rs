@@ -1,6 +1,6 @@
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
-use cortex_aql::{AgentId, AgentView, BindError, PolicyError};
+use cortex_aql::{AgentId, AgentView, BindError, PolicyError, Q16, Q16_ONE};
 use cortex_core::{CellDescriptor, CellId, CommitSeq, KnowledgeCellType};
 
 use crate::database::Database;
@@ -25,6 +25,53 @@ pub struct SemanticCompressionRequest {
     pub answerability_q16: u16,
     pub external_worker: String,
     pub idempotency_key: Option<String>,
+}
+
+/// B4.1: the memory class of a cell for consolidation purposes.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum MemoryClass {
+    /// Session/observational memory that decays and is a consolidation source:
+    /// untyped session memory plus `observation` / `workflow_result` / `error_log`.
+    Episodic,
+    /// Durable memory that is never auto-consolidated away: `decision` / `preference`.
+    Semantic,
+}
+
+/// B4.1: classify a cell's memory class. Pure and deterministic. Returns `None`
+/// for non-memory cells and for memory cells whose `memory_type` is an unknown
+/// explicit subtype (unclassified — never a consolidation candidate).
+pub fn memory_class(descriptor: &CellDescriptor) -> Option<MemoryClass> {
+    if descriptor.cell_type != KnowledgeCellType::Memory {
+        return None;
+    }
+    match descriptor.memory_type.as_deref() {
+        // Untyped memory is treated as an episodic session cell.
+        None => Some(MemoryClass::Episodic),
+        Some(raw) => match raw.to_ascii_lowercase().as_str() {
+            "decision" | "preference" => Some(MemoryClass::Semantic),
+            "observation" | "workflow_result" | "workflowresult" | "error_log" | "errorlog" => {
+                Some(MemoryClass::Episodic)
+            }
+            _ => None,
+        },
+    }
+}
+
+/// B4.2: a single episodic cell eligible for semantic consolidation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct SemanticCompressionCandidate {
+    pub cell_id: CellId,
+    pub freshness_q16: Q16,
+}
+
+/// B4.2: a deterministic group of consolidation candidates sharing an episodic
+/// subtype within one scope.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SemanticCompressionCandidateGroup {
+    pub scope: String,
+    /// The episodic subtype key (`None` = untyped session memory).
+    pub memory_type: Option<String>,
+    pub candidates: Vec<SemanticCompressionCandidate>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -79,6 +126,113 @@ impl Database {
             external_worker: request.external_worker,
             idempotency_key: request.idempotency_key,
         })
+    }
+
+    /// B4.2: deterministically select readable episodic cells in `scope` that have
+    /// decayed below `freshness_below_q16` and are not already a compression summary
+    /// or a cell already consolidated into one. Grouped by episodic subtype, capped
+    /// at `max_groups`. Read-only and behind the default-off feature flag, so it can
+    /// never change default behaviour or goldens.
+    ///
+    /// This is the selection half that the existing
+    /// [`Database::commit_semantic_memory_compression`] commit half consumes: the
+    /// consolidation worker (B4.4) asks here for what to summarize, then commits.
+    pub fn semantic_compression_candidates(
+        &self,
+        view: &AgentView,
+        scope: &str,
+        now_unix_seconds: u64,
+        freshness_below_q16: Q16,
+        max_groups: usize,
+    ) -> EngineResult<Vec<SemanticCompressionCandidateGroup>> {
+        if !self.semantic_compression.enabled {
+            return Err(EngineError::FeatureDisabled("semantic_compression"));
+        }
+        if !PolicyRewrite::allows_scope(view, scope_id(scope)) {
+            return Err(EngineError::AqlBind(BindError::PolicyDenied(
+                PolicyError::ScopeNotReadable,
+            )));
+        }
+        if max_groups == 0 {
+            return Ok(Vec::new());
+        }
+
+        let freshness: BTreeMap<CellId, Q16> = self
+            .memory_decay_scores(now_unix_seconds)
+            .into_iter()
+            .map(|score| (score.cell_id, score.freshness_q16))
+            .collect();
+
+        // Read each visible memory cell's payload once: collect the set of cells
+        // already consolidated into a summary, and the per-cell metadata.
+        let txn = self.read_txn();
+        let memory_cells: Vec<(CellId, CellDescriptor)> = self
+            .memtable
+            .visible_iter(txn)
+            .filter(|version| version.descriptor.cell_type == KnowledgeCellType::Memory)
+            .map(|version| (version.cell_id, version.descriptor.clone()))
+            .collect();
+
+        let mut already_sourced: BTreeSet<CellId> = BTreeSet::new();
+        let mut enriched: Vec<(CellId, CellDescriptor, bool)> =
+            Vec::with_capacity(memory_cells.len());
+        for (cell_id, descriptor) in memory_cells {
+            let Some(payload) = self.get_cell(txn, cell_id) else {
+                continue;
+            };
+            let metadata = CellMetadata::from_payload(&payload);
+            let is_summary = metadata.compression_kind.is_some();
+            if is_summary {
+                for source in metadata.compression_source_cells {
+                    already_sourced.insert(source);
+                }
+            }
+            enriched.push((cell_id, descriptor, is_summary));
+        }
+
+        let mut grouped: BTreeMap<String, Vec<SemanticCompressionCandidate>> = BTreeMap::new();
+        for (cell_id, descriptor, is_summary) in &enriched {
+            if descriptor.scope != scope {
+                continue;
+            }
+            if *is_summary || already_sourced.contains(cell_id) {
+                continue;
+            }
+            if memory_class(descriptor) != Some(MemoryClass::Episodic) {
+                continue;
+            }
+            let fresh = freshness.get(cell_id).copied().unwrap_or(Q16_ONE);
+            if fresh >= freshness_below_q16 {
+                continue;
+            }
+            let key = descriptor.memory_type.clone().unwrap_or_default();
+            grouped
+                .entry(key)
+                .or_default()
+                .push(SemanticCompressionCandidate {
+                    cell_id: *cell_id,
+                    freshness_q16: fresh,
+                });
+        }
+
+        let mut groups: Vec<SemanticCompressionCandidateGroup> = grouped
+            .into_iter()
+            .map(|(key, mut candidates)| {
+                // Stalest first, then by cell id — fully deterministic.
+                candidates.sort_by(|a, b| {
+                    a.freshness_q16
+                        .cmp(&b.freshness_q16)
+                        .then(a.cell_id.cmp(&b.cell_id))
+                });
+                SemanticCompressionCandidateGroup {
+                    scope: scope.to_owned(),
+                    memory_type: if key.is_empty() { None } else { Some(key) },
+                    candidates,
+                }
+            })
+            .collect();
+        groups.truncate(max_groups);
+        Ok(groups)
     }
 
     fn validate_semantic_compression_request(
@@ -190,4 +344,67 @@ fn provenance_preserved(metadata: &CellMetadata, source_cell_ids: &[CellId]) -> 
 
 fn invalid<T>(message: &str) -> EngineResult<T> {
     Err(EngineError::InvalidSemanticCompression(message.to_owned()))
+}
+
+#[cfg(test)]
+mod memory_class_tests {
+    use super::{memory_class, MemoryClass};
+    use cortex_core::{CellDescriptor, KnowledgeCellType};
+
+    fn memory(memory_type: Option<&str>) -> CellDescriptor {
+        CellDescriptor {
+            cell_type: KnowledgeCellType::Memory,
+            memory_type: memory_type.map(str::to_owned),
+            ..CellDescriptor::default()
+        }
+    }
+
+    #[test]
+    fn decision_and_preference_are_semantic() {
+        assert_eq!(
+            memory_class(&memory(Some("decision"))),
+            Some(MemoryClass::Semantic)
+        );
+        assert_eq!(
+            memory_class(&memory(Some("preference"))),
+            Some(MemoryClass::Semantic)
+        );
+        // Case-insensitive, matching MemoryType::from_str.
+        assert_eq!(
+            memory_class(&memory(Some("Decision"))),
+            Some(MemoryClass::Semantic)
+        );
+    }
+
+    #[test]
+    fn observations_workflow_errors_and_untyped_are_episodic() {
+        for raw in [
+            "observation",
+            "workflow_result",
+            "workflowresult",
+            "error_log",
+            "errorlog",
+        ] {
+            assert_eq!(
+                memory_class(&memory(Some(raw))),
+                Some(MemoryClass::Episodic),
+                "{raw} should be episodic"
+            );
+        }
+        // Untyped memory is an episodic session cell.
+        assert_eq!(memory_class(&memory(None)), Some(MemoryClass::Episodic));
+    }
+
+    #[test]
+    fn non_memory_and_unknown_subtypes_are_unclassified() {
+        // Not a memory cell.
+        let fact = CellDescriptor {
+            cell_type: KnowledgeCellType::Fact,
+            memory_type: Some("decision".to_owned()),
+            ..CellDescriptor::default()
+        };
+        assert_eq!(memory_class(&fact), None);
+        // Unknown explicit subtype: never a consolidation candidate.
+        assert_eq!(memory_class(&memory(Some("mystery"))), None);
+    }
 }

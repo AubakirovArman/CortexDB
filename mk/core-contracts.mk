@@ -115,6 +115,11 @@ context-access-decision-capture-check:
 receipt-emission-budget-check:
 	CORTEX_RECEIPT_EMISSION_BUDGET_REPORT="$(CURDIR)/target/receipt-emission-budget/report.json" cargo test -p cortex-engine --lib receipt_emission_p99_is_within_budget --release
 
+.PHONY: memory-consolidation-check
+memory-consolidation-check:
+	cargo test -p cortex-engine --lib semantic_compression::memory_class_tests
+	cargo test -p cortex-engine --test semantic_compression --all-features
+
 accountability-receipt-schema-check:
 	cargo test -p cortexdb-sdk context_pack_v1_deserializes_optional_accountability_receipt
 	python3 scripts/accountability_receipt_schema_check.py --root "." --report "$(ACCOUNTABILITY_RECEIPT_SCHEMA_REPORT)"
