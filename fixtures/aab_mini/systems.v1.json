@@ -1,0 +1,30 @@
+{
+  "systems": [
+    {
+      "name": "cortexdb",
+      "emits_signed_replayable_receipt": true,
+      "deterministic_by_design": true,
+      "axes": {
+        "scope_leak_at_budget": 1.0,
+        "citation_pr": 0.82,
+        "conflict_recall": 0.9,
+        "tokens_to_answer": 0.8,
+        "receipt_verifiability": 1.0,
+        "determinism": 1.0
+      }
+    },
+    {
+      "name": "thin-pgvector-opa",
+      "emits_signed_replayable_receipt": false,
+      "deterministic_by_design": false,
+      "axes": {
+        "scope_leak_at_budget": 0.9,
+        "citation_pr": 0.7,
+        "conflict_recall": 0.55,
+        "tokens_to_answer": 0.75,
+        "receipt_verifiability": 0.0,
+        "determinism": 0.0
+      }
+    }
+  ]
+}

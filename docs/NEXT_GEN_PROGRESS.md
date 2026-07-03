@@ -62,6 +62,8 @@ profile provenance in the manifest and the CLI-side query embedder.
 
 | F1.1 Benchmark-report schema freeze | Landed | Frozen `schemas/benchmark_report.v1.schema.json` (schema_version, `aggregate_stats` with required question counts + recall/correctness/completeness in `[0,100]`, per-type `question_type_stats`, judge model/provider) + a dependency-free validator `scripts/benchmark_report_schema_check.py` that fails if a committed benchmark report is not well-formed. Verified against the committed `erb-submission/official_results.json`. Gate `benchmark-report-schema-check`. | Extend the target list as more benchmark families (LME, LoCoMo) commit results. | `benchmark-report-schema-check` |
 
+| F4.2 AAB-mini six-axis scorer | Landed | `scripts/aab_mini_score.py` + committed `fixtures/aab_mini/systems.v1.json`: the quantitative anti-absorption benchmark on six axes (scope-leak@budget, citation P·R, conflict recall, tokens-to-answer, receipt-verifiability, determinism). The two structural axes are scored **UNRANKED** (not zero) for a system that cannot emit a plan-bound signed receipt / guarantee determinism — the moat's honest argument. Self-test asserts CortexDB is RANKED 6/6 and a thin pgvector+OPA wrapper is UNRANKED on exactly receipt-verifiability + determinism, RANKED on the four imitable axes; deterministic scorer. Gate `aab-mini-score-check`. | Wire a live pgvector+OPA baseline capture (F4.3, needs a docker operator machine) to fill the imitable-axis numbers from a real run. | `aab-mini-score-check` |
+
 ## Cross-cutting landings
 
 | Item | State | Notes | Gate |

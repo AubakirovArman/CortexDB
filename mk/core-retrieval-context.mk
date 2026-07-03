@@ -26,6 +26,10 @@ retrieval-two-stage-rerank-check:
 	cargo test -p cortex-engine --lib retrieval_rank::two_stage
 	cargo test -p cortex-engine --lib two_stage_rerank_
 
+.PHONY: aab-mini-score-check
+aab-mini-score-check:
+	python3 scripts/aab_mini_score.py --self-test
+
 .PHONY: benchmark-report-schema-check
 benchmark-report-schema-check:
 	python3 scripts/benchmark_report_schema_check.py --report "target/benchmark-schema/report.json"
