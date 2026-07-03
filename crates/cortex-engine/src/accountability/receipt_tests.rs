@@ -187,6 +187,105 @@ fn access_leaves_match_cross_language_vector() {
     );
 }
 
+// C4-2 (cell-content leaf extraction): cell_set + provenance leaves carry
+// cell_content_hash = blake3(CELL_HASH_DOMAIN || canonical_cell_bytes), where
+// canonical_cell_bytes wraps cell_id + payload_hex + descriptor_value(descriptor).
+// We pin an *explicit* CellDescriptor (every field known) rather than reproduce
+// the descriptor *parser* (upstream of the receipt): the Python mirror hashes the
+// same fields, and here the real engine cell_content_hash + the two leaf
+// extractions must produce the identical Values. Closes 5 of the 6 leaf families.
+#[test]
+fn cell_content_leaf_families_match_cross_language_vector() {
+    use crate::accountability::retrieved_cell_content_hash;
+    use cortex_core::KnowledgeCellType;
+    use std::collections::BTreeMap;
+
+    let vector = pack_root_vector();
+
+    let payload = b"cortex cell hash cross-language fixture body".to_vec();
+    let descriptor = CellDescriptor {
+        scope: "project:xlang".to_owned(),
+        status: "ready".to_owned(),
+        cell_type: KnowledgeCellType::Fact,
+        memory_type: None,
+        ttl_seconds: None,
+        created_unix_seconds: None,
+        source_trust_q16: None,
+        source: None,
+        citation: Some("fixture:xlang#L1".to_owned()),
+        content_hash: Some("d".repeat(64)),
+        source_id: None,
+        source_url: None,
+        document_id: None,
+        page: None,
+        row: None,
+        cell_range: None,
+        json_path: None,
+        confidence_q16: None,
+        parent_id: None,
+        valid_from: None,
+        valid_to: None,
+        session_id: None,
+        session_kind: None,
+    };
+    let retrieved = RetrievedCell {
+        cell_id: CellId(1),
+        payload: payload.clone(),
+        descriptor,
+        captured_access_decision: None,
+    };
+    let mut cell_hashes = BTreeMap::new();
+    cell_hashes.insert(CellId(1), retrieved_cell_content_hash(&retrieved));
+    assert_eq!(
+        cell_hashes[&CellId(1)],
+        vector["cell_content_hash"].as_str().unwrap(),
+        "Rust cell_content_hash differs from the committed (Python) hash"
+    );
+
+    let pack = ContextPack {
+        cells: vec![ContextPackCell {
+            cell_id: CellId(1),
+            payload,
+            metadata: retrieved.metadata(),
+            estimated_tokens: 5,
+            citation: Some("fixture:xlang#L1".to_owned()),
+            provenance: Some(ContextSpanProvenance {
+                source_cell_id: CellId(1),
+                source_byte_start: 0,
+                source_byte_end: 12,
+                source_line_start: 1,
+                source_line_end: 1,
+                source_ref: None,
+            }),
+            explain: None,
+            access_decision: None,
+        }],
+        token_budget_tokens: 128,
+        estimated_tokens: 5,
+        truncated: false,
+        citations_required: false,
+        answerability_q16: 0,
+        conflict_visibility_q16: 0,
+        visible_conflict_count: 0,
+        anomalies: vec![],
+        grounding_report: None,
+    };
+
+    assert_eq!(
+        serde_json::Value::Array(super::receipt_leaves::cell_set_leaves(&pack, &cell_hashes)),
+        vector["cell_set_leaves"],
+        "Rust cell_set_leaves extraction differs from the committed (Python) leaves"
+    );
+    assert_eq!(
+        serde_json::Value::Array(super::receipt_leaves::provenance_leaves(
+            &pack,
+            &cell_hashes
+        )),
+        vector["provenance_leaves"],
+        "Rust provenance_leaves extraction differs from the committed (Python) leaves"
+    );
+}
+
 #[test]
 fn accountability_receipt_body_roots_are_deterministic_and_schema_aligned() {
     let (pack, retrieved_cells, denials, input) = sample_receipt_inputs();

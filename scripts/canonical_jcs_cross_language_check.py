@@ -293,6 +293,98 @@ ACCESS_LEAVES_INPUT = {
 }
 
 
+# Cell-content-hash leaf families. cell_content_hash = blake3(CELL_HASH_DOMAIN ||
+# 0x00 || canonical_cell_bytes), where canonical_cell_bytes wraps the cell_id, the
+# payload hex, and the descriptor (canonical.rs::descriptor_value — a 1:1 field
+# copy). We pin an *explicit* descriptor (every field known in both languages)
+# rather than reproduce the CellDescriptor *parser* (which is upstream of the
+# receipt); the Rust test builds the same descriptor and runs the real engine
+# cell_content_hash, so descriptor_value's key mapping + the canonicalization +
+# the blake3 are all exercised.
+CELL_BYTES_SCHEMA = "cortexdb.accountability.cell.v1"
+CELL_HASH_DOMAIN = "cortexdb.accountability.cell_hash.v1"
+CELL_CONTENT_INPUT = {
+    "cell_id": 1,
+    "payload_utf8": "cortex cell hash cross-language fixture body",
+    # In canonical.rs::descriptor_value key order/shape (values are ours to pin).
+    "descriptor": {
+        "scope": "project:xlang",
+        "status": "ready",
+        "cell_type": "fact",
+        "memory_type": None,
+        "ttl_seconds": None,
+        "created_unix_seconds": None,
+        "source_trust_q16": None,
+        "source": None,
+        "citation": "fixture:xlang#L1",
+        "content_hash": "d" * 64,
+        "source_id": None,
+        "source_url": None,
+        "document_id": None,
+        "page": None,
+        "row": None,
+        "cell_range": None,
+        "json_path": None,
+        "confidence_q16": None,
+        "parent_id": None,
+        "valid_from": None,
+        "valid_to": None,
+        "session_id": None,
+        "session_kind": None,
+    },
+    "provenance": {
+        "source_cell_id": 1,
+        "source_byte_start": 0,
+        "source_byte_end": 12,
+        "source_line_start": 1,
+        "source_line_end": 1,
+        "source_ref": None,
+    },
+    "citation": "fixture:xlang#L1",
+}
+
+
+def cell_content_hash(cell_input: dict) -> str:
+    """Mirror of accountability.rs::cell_content_hash (canonical_cell_bytes then
+    blake3 over CELL_HASH_DOMAIN)."""
+    canonical_cell = {
+        "schema_version": CELL_BYTES_SCHEMA,
+        "cell_id": cell_input["cell_id"],
+        "payload_hex": cell_input["payload_utf8"].encode("utf-8").hex(),
+        "descriptor": cell_input["descriptor"],
+    }
+    return hash_bytes(CELL_HASH_DOMAIN, canonical_json_bytes(canonical_cell))
+
+
+def cell_set_leaves(cell_input: dict) -> list:
+    """Mirror of receipt_leaves.rs::cell_set_leaves (cell_id + content hash)."""
+    return [
+        {
+            "cell_id": cell_input["cell_id"],
+            "cell_content_hash": cell_content_hash(cell_input),
+        }
+    ]
+
+
+def provenance_leaves(cell_input: dict) -> list:
+    """Mirror of receipt_leaves.rs::provenance_leaves for a cell with provenance
+    present and no source_ref (-> null) — content hash + span fields + citation."""
+    prov = cell_input["provenance"]
+    return [
+        {
+            "cell_id": cell_input["cell_id"],
+            "cell_content_hash": cell_content_hash(cell_input),
+            "source_cell_id": prov["source_cell_id"],
+            "source_byte_start": prov["source_byte_start"],
+            "source_byte_end": prov["source_byte_end"],
+            "source_line_start": prov["source_line_start"],
+            "source_line_end": prov["source_line_end"],
+            "source_ref": None if prov["source_ref"] is None else prov["source_ref"]["source_id"],
+            "citation": cell_input["citation"],
+        }
+    ]
+
+
 def access_leaves(access_input: dict) -> list:
     """Mirror of receipt_leaves.rs::access_leaves (+ admitted_access_leaf): the
     admitted cells (each with an evidence_digest = hash_value over the access
@@ -361,6 +453,11 @@ def build_pack_root() -> dict:
         # access evidence, no cell-content hash). Input mirrors sample_receipt_inputs.
         "access_leaves_input": ACCESS_LEAVES_INPUT,
         "access_leaves": access_leaves(ACCESS_LEAVES_INPUT),
+        # Cell-content-hash leaf families (explicit descriptor pinned in both langs).
+        "cell_content_input": CELL_CONTENT_INPUT,
+        "cell_content_hash": cell_content_hash(CELL_CONTENT_INPUT),
+        "cell_set_leaves": cell_set_leaves(CELL_CONTENT_INPUT),
+        "provenance_leaves": provenance_leaves(CELL_CONTENT_INPUT),
     }
 
 
@@ -395,6 +492,14 @@ def check_pack_root() -> list[str]:
     # access_leaves carries a blake3 evidence_digest, so it lives in the gated block.
     if access_leaves(committed["access_leaves_input"]) != committed["access_leaves"]:
         errors.append("access_leaves: python extraction != committed")
+    # Cell-content-hash families (blake3 over canonical_cell_bytes).
+    cell_input = committed["cell_content_input"]
+    if cell_content_hash(cell_input) != committed["cell_content_hash"]:
+        errors.append("cell_content_hash: python hash != committed")
+    if cell_set_leaves(cell_input) != committed["cell_set_leaves"]:
+        errors.append("cell_set_leaves: python extraction != committed")
+    if provenance_leaves(cell_input) != committed["provenance_leaves"]:
+        errors.append("provenance_leaves: python extraction != committed")
     return errors
 
 
@@ -539,10 +644,10 @@ def main() -> int:
         f"canonical-jcs-cross-language-check passed: {len(committed)} JCS + "
         f"{len(MERKLE_VECTORS)} Merkle + {len(ED25519_VECTORS)} Ed25519 vector(s) + the "
         f"{len(RECEIPT_FAMILY_SPECS)} roots of a real committed receipt + the pack_root "
-        "+ budget/conflict/access leaf extraction (3 of 6 families); python "
-        "canonicalization + blake3 Merkle roots + Ed25519 signatures + pack "
-        "canonicalization + leaf extraction reproduce the committed values "
-        "byte-for-byte"
+        "+ 5 of 6 leaf-family extractions (budget/conflict/access/cell_set/"
+        "provenance, incl. cell_content_hash); python canonicalization + blake3 "
+        "Merkle roots + Ed25519 signatures + pack canonicalization + leaf "
+        "extraction reproduce the committed values byte-for-byte"
     )
     return 0
 
