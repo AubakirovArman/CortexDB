@@ -158,7 +158,7 @@ fn sorted_values(mut values: Vec<Value>) -> Vec<Value> {
     values
 }
 
-fn merkle_root(domain: &str, leaves: &[Value]) -> String {
+pub(super) fn merkle_root(domain: &str, leaves: &[Value]) -> String {
     if leaves.is_empty() {
         return hash_value(
             domain,

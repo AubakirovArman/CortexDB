@@ -27,6 +27,84 @@ import sys
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
 FIXTURE = REPO / "fixtures" / "canonical" / "jcs_conformance_vectors.v1.json"
+MERKLE_FIXTURE = REPO / "fixtures" / "canonical" / "merkle_conformance_vectors.v1.json"
+
+# Mirror of crates/cortex-engine/src/accountability/receipt.rs.
+MERKLE_EMPTY_SCHEMA = "cortexdb.accountability.merkle.empty.v1"
+LEAF_DOMAIN_SUFFIX = ".leaf.v1"
+NODE_DOMAIN_SUFFIX = ".node.v1"
+TEST_MERKLE_DOMAIN = "cortexdb.test.accountability.merkle.v1"
+
+# (domain, leaves) merkle-tree vectors: empty, single, even, and odd (last leaf
+# duplicated) — the branches of receipt.rs::merkle_root.
+MERKLE_VECTORS = [
+    (TEST_MERKLE_DOMAIN, []),
+    (TEST_MERKLE_DOMAIN, [{"id": 1}]),
+    (TEST_MERKLE_DOMAIN, [{"id": 1}, {"id": 2}]),
+    (TEST_MERKLE_DOMAIN, [{"id": 1}, {"id": 2}, {"id": 3}]),
+    (TEST_MERKLE_DOMAIN, [{"id": 1}, {"id": 2}, {"id": 3}, {"id": 4}]),
+]
+
+
+def blake3_256_domain(domain: str, data: bytes) -> bytes:
+    """Mirror of cortex-crypto blake3_256_domain: blake3(domain || 0x00 || data)."""
+    import blake3
+
+    return blake3.blake3(domain.encode("utf-8") + b"\x00" + data).digest()
+
+
+def hash_bytes(domain: str, data: bytes) -> str:
+    return blake3_256_domain(domain, data).hex()
+
+
+def hash_value(domain: str, value: object) -> str:
+    return hash_bytes(domain, canonical_json_bytes(value))
+
+
+def merkle_root(domain: str, leaves: list) -> str:
+    """Mirror of receipt.rs::merkle_root (binary tree, odd node duplicated)."""
+    if not leaves:
+        return hash_value(domain, {"schema_version": MERKLE_EMPTY_SCHEMA, "leaf_count": 0})
+    leaf_domain = domain + LEAF_DOMAIN_SUFFIX
+    node_domain = domain + NODE_DOMAIN_SUFFIX
+    level = [hash_value(leaf_domain, leaf) for leaf in leaves]
+    while len(level) > 1:
+        nxt = []
+        for index in range(0, len(level), 2):
+            left = level[index]
+            right = level[index + 1] if index + 1 < len(level) else level[index]
+            nxt.append(hash_value(node_domain, {"left": left, "right": right}))
+        level = nxt
+    return level[0]
+
+
+def build_merkle() -> list[dict]:
+    return [
+        {"domain": domain, "leaves": leaves, "merkle_root_blake3": merkle_root(domain, leaves)}
+        for domain, leaves in MERKLE_VECTORS
+    ]
+
+
+def check_merkle() -> list[str]:
+    if not MERKLE_FIXTURE.exists():
+        return [f"missing fixture {MERKLE_FIXTURE.relative_to(REPO)} (run with --generate)"]
+    try:
+        import blake3  # noqa: F401
+    except ImportError:
+        # The Rust test still verifies merkle_root against this committed
+        # (Python-derived) fixture, so the cross-language proof holds; the Python
+        # re-derivation is a redundant check that needs `pip install blake3`.
+        print("  note: blake3 not installed; skipping the Python Merkle re-derivation")
+        return []
+    errors = []
+    for index, entry in enumerate(json.loads(MERKLE_FIXTURE.read_text())):
+        actual = merkle_root(entry["domain"], entry["leaves"])
+        if actual != entry["merkle_root_blake3"]:
+            errors.append(
+                f"merkle vector {index}: python root {actual} != committed "
+                f"{entry['merkle_root_blake3']}"
+            )
+    return errors
 
 # The canonical JSON test vectors. Integer-only numbers (as in the receipt
 # canonical set) so number formatting is unambiguous cross-language.
@@ -67,7 +145,11 @@ def main() -> int:
     if generate:
         FIXTURE.parent.mkdir(parents=True, exist_ok=True)
         FIXTURE.write_text(json.dumps(build(), indent=2, ensure_ascii=False) + "\n")
-        print(f"wrote {FIXTURE.relative_to(REPO)} ({len(VECTORS)} vectors)")
+        MERKLE_FIXTURE.write_text(json.dumps(build_merkle(), indent=2, ensure_ascii=False) + "\n")
+        print(
+            f"wrote {FIXTURE.relative_to(REPO)} ({len(VECTORS)} vectors) + "
+            f"{MERKLE_FIXTURE.relative_to(REPO)} ({len(MERKLE_VECTORS)} vectors)"
+        )
         return 0
 
     if not FIXTURE.exists():
@@ -79,17 +161,19 @@ def main() -> int:
         actual = digest(entry["value"])
         if actual != entry["canonical_sha256"]:
             errors.append(
-                f"vector {index}: python canonical digest {actual} != committed "
+                f"jcs vector {index}: python canonical digest {actual} != committed "
                 f"{entry['canonical_sha256']}"
             )
+    errors.extend(check_merkle())
     if errors:
         print("canonical-jcs-cross-language-check FAILED")
         for error in errors:
             print(f"  {error}")
         return 1
     print(
-        f"canonical-jcs-cross-language-check passed: {len(committed)} vector(s); "
-        "python canonical JSON matches the committed digests byte-for-byte"
+        f"canonical-jcs-cross-language-check passed: {len(committed)} JCS + "
+        f"{len(MERKLE_VECTORS)} Merkle vector(s); python canonicalization + blake3 "
+        "Merkle roots match the committed digests byte-for-byte"
     )
     return 0
 

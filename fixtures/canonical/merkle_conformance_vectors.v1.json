@@ -1,0 +1,61 @@
+[
+  {
+    "domain": "cortexdb.test.accountability.merkle.v1",
+    "leaves": [],
+    "merkle_root_blake3": "312bad304d3fc970c75c1e0886d4213f71c93125c23172091505123dac83120c"
+  },
+  {
+    "domain": "cortexdb.test.accountability.merkle.v1",
+    "leaves": [
+      {
+        "id": 1
+      }
+    ],
+    "merkle_root_blake3": "b1b94dac56936e75d7f663d028ebe5e730ecd333cda448d4a9021786ca68a376"
+  },
+  {
+    "domain": "cortexdb.test.accountability.merkle.v1",
+    "leaves": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      }
+    ],
+    "merkle_root_blake3": "510798be2ef7a40f0ed8ed77e8b5f3a14a96dd5caffa27ddc02bab94f8064c81"
+  },
+  {
+    "domain": "cortexdb.test.accountability.merkle.v1",
+    "leaves": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      },
+      {
+        "id": 3
+      }
+    ],
+    "merkle_root_blake3": "141e574de45f4515328b2efed2b5fd75f844b18c477e0f866484da66ccd39577"
+  },
+  {
+    "domain": "cortexdb.test.accountability.merkle.v1",
+    "leaves": [
+      {
+        "id": 1
+      },
+      {
+        "id": 2
+      },
+      {
+        "id": 3
+      },
+      {
+        "id": 4
+      }
+    ],
+    "merkle_root_blake3": "aeb02a919d2a25a61c50dea8ce13afeeb8035b4260db1381fc8b00a58214ad38"
+  }
+]

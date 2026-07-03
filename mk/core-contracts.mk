@@ -151,6 +151,7 @@ memory-consolidate-route-check:
 .PHONY: canonical-jcs-cross-language-check
 canonical-jcs-cross-language-check:
 	cargo test -p cortex-engine --lib canonical::tests::jcs_cross_language_vectors_match
+	cargo test -p cortex-engine --lib accountability::receipt_tests::merkle_root_matches_cross_language_vectors
 	python3 scripts/canonical_jcs_cross_language_check.py
 
 accountability-receipt-schema-check:

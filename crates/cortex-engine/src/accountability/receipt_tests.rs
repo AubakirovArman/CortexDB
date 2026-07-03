@@ -8,6 +8,29 @@ use crate::context::{
 use crate::database::{CapturedAccessDenial, CapturedAccessDenialSet, RetrievedCell};
 use crate::error::EngineError;
 
+// C4-2: the receipt's blake3 Merkle-root construction is language-independent.
+// A pure-Python re-implementation (scripts/canonical_jcs_cross_language_check.py)
+// committed these roots; this asserts the Rust merkle_root produces the same
+// bytes, so the tree construction + domain hashing reproduce cross-language.
+#[test]
+fn merkle_root_matches_cross_language_vectors() {
+    let vectors: Vec<serde_json::Value> = serde_json::from_str(include_str!(
+        "../../../../fixtures/canonical/merkle_conformance_vectors.v1.json"
+    ))
+    .expect("merkle conformance vectors parse");
+    assert!(!vectors.is_empty());
+    for (index, entry) in vectors.iter().enumerate() {
+        let domain = entry["domain"].as_str().expect("domain");
+        let leaves: Vec<serde_json::Value> = entry["leaves"].as_array().expect("leaves").clone();
+        let expected = entry["merkle_root_blake3"].as_str().expect("root");
+        let root = super::receipt::merkle_root(domain, &leaves);
+        assert_eq!(
+            root, expected,
+            "merkle vector {index}: Rust root differs from the committed (Python) root"
+        );
+    }
+}
+
 #[test]
 fn accountability_receipt_body_roots_are_deterministic_and_schema_aligned() {
     let (pack, retrieved_cells, denials, input) = sample_receipt_inputs();
