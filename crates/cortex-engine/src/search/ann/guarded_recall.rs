@@ -129,6 +129,12 @@ pub struct GuardedRecallState {
     queries_since_rebuild: u64,
     serving_epoch: u64,
     degraded: bool,
+    // Lifetime telemetry (not persisted; reset on restart). `exact_serves` counts
+    // queries that paid an exact scan — sampled recall-recomputes + degraded
+    // exact-serving — so `exact_serves / queries` is the exact-scan rate A3.3
+    // caps at <=15%.
+    lifetime_queries: u64,
+    lifetime_exact_serves: u64,
 }
 
 impl GuardedRecallState {
@@ -140,10 +146,13 @@ impl GuardedRecallState {
             queries_since_rebuild: 0,
             serving_epoch: 0,
             degraded: false,
+            lifetime_queries: 0,
+            lifetime_exact_serves: 0,
         }
     }
 
-    /// Reconstruct persisted state (for manifest round-trips).
+    /// Reconstruct persisted state (for manifest round-trips). Lifetime telemetry
+    /// counters are runtime-only and start at zero.
     pub fn from_parts(
         window: RecallWindow,
         generation: u64,
@@ -157,7 +166,25 @@ impl GuardedRecallState {
             queries_since_rebuild,
             serving_epoch,
             degraded,
+            lifetime_queries: 0,
+            lifetime_exact_serves: 0,
         }
+    }
+
+    pub fn lifetime_queries(&self) -> u64 {
+        self.lifetime_queries
+    }
+    pub fn lifetime_exact_serves(&self) -> u64 {
+        self.lifetime_exact_serves
+    }
+
+    /// The exact-scan rate in basis points (`exact_serves * 10000 / queries`), or 0
+    /// before any query. A3.3 caps this at 1500 bps (15%) on a healthy index.
+    pub fn exact_serve_rate_bps(&self) -> u64 {
+        if self.lifetime_queries == 0 {
+            return 0;
+        }
+        self.lifetime_exact_serves.saturating_mul(10_000) / self.lifetime_queries
     }
 
     pub fn generation(&self) -> u64 {
@@ -199,11 +226,19 @@ impl GuardedRecallState {
             self.serving_epoch += 1;
         }
         self.queries_since_rebuild = self.queries_since_rebuild.saturating_add(1);
+        // A sampled query always pays an exact scan.
+        self.lifetime_queries = self.lifetime_queries.saturating_add(1);
+        self.lifetime_exact_serves = self.lifetime_exact_serves.saturating_add(1);
     }
 
-    /// Record an unsampled query (served without an exact recompute).
+    /// Record an unsampled query. It skips the exact scan when serving ANN, but a
+    /// degraded collection serves exact — so count the exact scan only then.
     pub fn record_unsampled(&mut self) {
         self.queries_since_rebuild = self.queries_since_rebuild.saturating_add(1);
+        self.lifetime_queries = self.lifetime_queries.saturating_add(1);
+        if self.degraded {
+            self.lifetime_exact_serves = self.lifetime_exact_serves.saturating_add(1);
+        }
     }
 
     /// A graph rebuild: clear the window and re-arm sampling at the new
@@ -382,5 +417,65 @@ mod tests {
             )
         };
         assert_eq!(run(), run());
+    }
+
+    // A3.3 DoD: on a healthy index the exact-scan rate stays <= 15% (1500 bps) —
+    // the warm-up (32) plus 1-in-8 steady sampling, amortized over enough queries,
+    // versus the pre-A3.3 baseline of an exact scan on 100% of queries (10000 bps).
+    #[test]
+    fn healthy_index_exact_scan_rate_under_15_percent() {
+        let mut state = GuardedRecallState::new(1);
+        let n = 5_000u64;
+        for i in 0..n {
+            let query = format!("query-{i}");
+            if state.should_sample(query.as_bytes()) {
+                state.record_sampled(60_000, FLOOR); // healthy: never degrades
+            } else {
+                state.record_unsampled();
+            }
+        }
+        assert_eq!(state.lifetime_queries(), n);
+        assert_eq!(state.serving_mode(), GuardedServingMode::Ann);
+        assert!(
+            state.exact_serve_rate_bps() <= 1_500,
+            "exact-scan rate {} bps must be <= 1500 (15%)",
+            state.exact_serve_rate_bps()
+        );
+        // A large, real reduction from the exact-every-query baseline (10000 bps).
+        assert!(state.exact_serve_rate_bps() < 2_000);
+    }
+
+    // A degraded collection serves exact for every query (rate climbs), until a
+    // rebuild recovers ANN serving and the rate falls again.
+    #[test]
+    fn degraded_then_rebuilt_exact_scan_rate_tracks_serving_mode() {
+        let mut state = GuardedRecallState::new(1);
+        // Warm-up samples all degrade the window immediately.
+        for _ in 0..40 {
+            state.record_sampled(5_000, FLOOR);
+        }
+        assert_eq!(state.serving_mode(), GuardedServingMode::ExactDegraded);
+        // While degraded, unsampled queries still serve exact.
+        for _ in 0..100 {
+            state.record_unsampled();
+        }
+        assert!(
+            state.exact_serve_rate_bps() >= 9_000,
+            "a fully-degraded collection serves ~all exact"
+        );
+        // A rebuild recovers ANN serving; subsequent unsampled queries skip exact.
+        state.on_rebuild(2);
+        for i in 0..5_000 {
+            let query = format!("post-rebuild-{i}");
+            if state.should_sample(query.as_bytes()) {
+                state.record_sampled(60_000, FLOOR);
+            } else {
+                state.record_unsampled();
+            }
+        }
+        // The healthy post-rebuild window dominates: rate falls back well under 15%
+        // over the lifetime is not guaranteed (the degraded prefix counts), but the
+        // collection is serving ANN again.
+        assert_eq!(state.serving_mode(), GuardedServingMode::Ann);
     }
 }
