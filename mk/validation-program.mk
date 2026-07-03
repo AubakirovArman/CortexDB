@@ -14,10 +14,13 @@ validation-nightly:
 	$(MAKE) benchmark-registry-check
 	$(MAKE) longmemeval-per-type-regression-check
 	$(MAKE) longmemeval-per-type-report-check
+	$(MAKE) longmemeval-v1-typeaware-check
 	$(MAKE) erb-category-regression-check
 	$(MAKE) multihop-retrieval-regression-check
 	$(MAKE) locomo-retrieval-adapter-check
 	$(MAKE) locomo-retrieval-regression-check
+	$(MAKE) locomo-qa-reader-check
+	$(MAKE) locomo-qa-evidence-check
 	$(MAKE) erb-official-rejudge-ready-check
 	$(MAKE) aab-mini-score-check
 	$(MAKE) quick-retrieval-eval-check

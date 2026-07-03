@@ -51,6 +51,12 @@ jobs:
       - run: make longmemeval-per-type-regression-check
       - run: make multihop-retrieval-regression-check
       - run: make longmemeval-per-type-report-check
+      # A6.2 / F3.4 QA-harness self-tests: prompt branching + evaluate_qa-compatible
+      # JSONL schema + determinism (offline; the metered runs plug into the same
+      # generators).
+      - run: make longmemeval-v1-typeaware-check
+      - run: make locomo-qa-reader-check
+      - run: make locomo-qa-evidence-check
       - run: make erb-official-rejudge-ready-check
       - run: make locomo-retrieval-regression-check
       - run: make erb-compare-runs-check
