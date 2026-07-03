@@ -571,8 +571,14 @@ mod structured_tests {
             vec!["pear".to_owned(), "5".to_owned()],
             vec!["plum".to_owned(), "7".to_owned()],
         ];
-        split_table_rows_structured("t", &header, &rows, rows_per_group, TableChunkPolicy::default())
-            .unwrap()
+        split_table_rows_structured(
+            "t",
+            &header,
+            &rows,
+            rows_per_group,
+            TableChunkPolicy::default(),
+        )
+        .unwrap()
     }
 
     #[test]
@@ -619,13 +625,17 @@ mod structured_tests {
             .find(|c| c.text.contains("do the thing"))
             .expect("steps chunk");
         assert_eq!(steps.role, StructuredChunkRole::Child);
-        assert_eq!(steps.parent_id.as_deref(), Some(chunks[0].chunk_id.as_str()));
+        assert_eq!(
+            steps.parent_id.as_deref(),
+            Some(chunks[0].chunk_id.as_str())
+        );
         assert_eq!(steps.breadcrumb, "Runbook > Recovery > Steps");
     }
 
     #[test]
     fn a_fenced_code_block_is_never_split_and_hashes_inside_are_not_headings() {
-        let doc = "# Code\n\n```\nfn main() {\n    # not a heading\n\n    let x = 1;\n}\n```\n\nafter";
+        let doc =
+            "# Code\n\n```\nfn main() {\n    # not a heading\n\n    let x = 1;\n}\n```\n\nafter";
         let chunks = structured(doc);
         let code = chunks
             .iter()
@@ -660,6 +670,9 @@ mod structured_tests {
         let chunks = structured(doc);
         assert_eq!(chunks[0].role, StructuredChunkRole::Parent);
         assert!(chunks[0].text.contains("just some prose"));
-        assert!(chunks.iter().skip(1).all(|c| c.role == StructuredChunkRole::Child));
+        assert!(chunks
+            .iter()
+            .skip(1)
+            .all(|c| c.role == StructuredChunkRole::Child));
     }
 }

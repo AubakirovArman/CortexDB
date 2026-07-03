@@ -26,7 +26,9 @@ use std::collections::BTreeMap;
 use cortex_core::CellId;
 
 use crate::database::RetrievedCell;
-use crate::verification::{temporal_date_for_record, temporal_fact_key, TemporalDate, TemporalFactKey};
+use crate::verification::{
+    temporal_date_for_record, temporal_fact_key, TemporalDate, TemporalFactKey,
+};
 
 /// The index's "latest wins" ordering: greater is newer.
 type SupersedeSortKey = (Option<TemporalDate>, Option<u64>, CellId);
@@ -72,9 +74,7 @@ pub(crate) fn suppress_superseded_cells(cells: Vec<RetrievedCell>) -> Vec<Retrie
         .into_iter()
         .zip(keyed)
         .filter(|(cell, keyed)| match keyed {
-            Some((key, _)) => winner
-                .get(key)
-                .is_none_or(|best| best.2 == cell.cell_id),
+            Some((key, _)) => winner.get(key).is_none_or(|best| best.2 == cell.cell_id),
             None => true,
         })
         .map(|(cell, _)| cell)
@@ -123,7 +123,11 @@ mod tests {
             fact(1, "2025-01-01", "12000"),
         ]);
         let ids: Vec<u64> = out.iter().map(|c| c.cell_id.0).collect();
-        assert_eq!(ids, vec![2, 9], "winner + unrelated kept, in original order");
+        assert_eq!(
+            ids,
+            vec![2, 9],
+            "winner + unrelated kept, in original order"
+        );
     }
 
     #[test]
@@ -144,10 +148,7 @@ mod tests {
 
     #[test]
     fn cells_without_a_fact_key_are_kept() {
-        let out = suppress_superseded_cells(vec![
-            plain(1, "just prose"),
-            plain(2, "more prose"),
-        ]);
+        let out = suppress_superseded_cells(vec![plain(1, "just prose"), plain(2, "more prose")]);
         assert_eq!(out.len(), 2, "no temporal key -> no supersession");
     }
 
@@ -177,6 +178,10 @@ mod tests {
             .map(|c| c.cell_id.0)
             .collect();
         assert_eq!(a, b);
-        assert_eq!(a, vec![2], "only the newest of three same-key facts survives");
+        assert_eq!(
+            a,
+            vec![2],
+            "only the newest of three same-key facts survives"
+        );
     }
 }

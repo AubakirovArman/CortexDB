@@ -686,5 +686,9 @@ fn aql_suppress_superseded_clause_returns_only_the_newest_fact() {
         )
         .unwrap();
     let ids = results.iter().map(|c| c.cell_id.0).collect::<Vec<_>>();
-    assert_eq!(ids, vec![2], "SUPPRESS SUPERSEDED keeps only the newest fact: {ids:?}");
+    assert_eq!(
+        ids,
+        vec![2],
+        "SUPPRESS SUPERSEDED keeps only the newest fact: {ids:?}"
+    );
 }

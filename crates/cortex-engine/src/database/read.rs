@@ -16,9 +16,9 @@ use crate::exec::{execute_retrieve, RetrieveExecutionReport};
 use crate::feedback::current_unix_seconds;
 #[cfg(test)]
 use crate::retrieval_quality::cell_version_meets_quality_thresholds;
-use crate::retrieval_rank::{rank_retrieved_cells, two_stage_rerank, two_stage_rerank_cosine};
 #[cfg(test)]
 use crate::retrieval_rank::{expand_parent_context, suppress_duplicate_content};
+use crate::retrieval_rank::{rank_retrieved_cells, two_stage_rerank, two_stage_rerank_cosine};
 
 impl Database {
     pub fn read_txn(&self) -> ReadTxn {

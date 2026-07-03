@@ -145,7 +145,10 @@ mod tests {
         let before: Vec<u64> = cells.iter().map(|c| c.cell_id.0).collect();
         // weight 0 -> off -> identity even though a query vector is present.
         let after = two_stage_rerank(cells, "find\nvector=0,10\n", 0);
-        assert_eq!(after.iter().map(|c| c.cell_id.0).collect::<Vec<_>>(), before);
+        assert_eq!(
+            after.iter().map(|c| c.cell_id.0).collect::<Vec<_>>(),
+            before
+        );
     }
 
     #[test]
@@ -154,7 +157,10 @@ mod tests {
         let before: Vec<u64> = cells.iter().map(|c| c.cell_id.0).collect();
         // No `vector=` line in the task -> no-op even at full weight.
         let after = two_stage_rerank(cells, "just a text query", Q16_ONE);
-        assert_eq!(after.iter().map(|c| c.cell_id.0).collect::<Vec<_>>(), before);
+        assert_eq!(
+            after.iter().map(|c| c.cell_id.0).collect::<Vec<_>>(),
+            before
+        );
     }
 
     #[test]
@@ -177,7 +183,10 @@ mod tests {
         let cells = vec![cell(1, "10,0", "alpha"), cell(2, "0,10", "beta")];
         let before: Vec<u64> = cells.iter().map(|c| c.cell_id.0).collect();
         let after = two_stage_rerank(cells, "q\nvector=1,1,1\n", Q16_ONE);
-        assert_eq!(after.iter().map(|c| c.cell_id.0).collect::<Vec<_>>(), before);
+        assert_eq!(
+            after.iter().map(|c| c.cell_id.0).collect::<Vec<_>>(),
+            before
+        );
     }
 
     #[test]
@@ -192,7 +201,11 @@ mod tests {
         assert_eq!(ids_a, ids_b, "must be deterministic");
         let mut sorted = ids_a.clone();
         sorted.sort_unstable();
-        assert_eq!(sorted, vec![1, 2, 3, 4], "must be a permutation of all inputs");
+        assert_eq!(
+            sorted,
+            vec![1, 2, 3, 4],
+            "must be a permutation of all inputs"
+        );
     }
 
     #[test]
