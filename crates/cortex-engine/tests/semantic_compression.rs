@@ -280,6 +280,52 @@ fn compression_sources_fail_closed_on_unreadable_source() {
     assert!(matches!(error, EngineError::AqlBind(_)));
 }
 
+#[test]
+fn retire_compression_sources_requires_feature_flag() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+
+    let error = db
+        .retire_compression_sources(&view("project:alpha"), CellId(99), 10, 2_000_000_000)
+        .unwrap_err();
+    assert!(matches!(
+        error,
+        EngineError::FeatureDisabled("semantic_compression")
+    ));
+}
+
+#[test]
+fn retire_compression_sources_demotes_episodic_only() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = open_enabled(dir.path());
+    // seed_source_memories: cell 1 = memory_type=decision (semantic),
+    // cell 2 = memory_type=observation (episodic). request() summarizes both.
+    seed_source_memories(&mut db);
+    db.commit_semantic_memory_compression(&view("project:alpha"), request())
+        .unwrap();
+
+    let now = 2_000_000_000;
+    let report = db
+        .retire_compression_sources(&view("project:alpha"), CellId(99), 10, now)
+        .unwrap();
+
+    // The episodic source (2) is demoted; the semantic source (1) is skipped.
+    let retired: Vec<CellId> = report.retired.iter().map(|r| r.cell_id).collect();
+    assert_eq!(retired, vec![CellId(2)]);
+    assert!(report.skipped.contains(&CellId(1)));
+
+    // The demoted source now expires at now + demote_ttl, with its body intact.
+    let payload = db.get_latest_cell(CellId(2)).unwrap();
+    let metadata = CellMetadata::from_payload(&payload);
+    let created = metadata.created_unix_seconds.unwrap();
+    let ttl = metadata.ttl_seconds.unwrap();
+    assert_eq!(created + ttl, now + 10, "expires at now + demote_ttl");
+    assert!(
+        String::from_utf8_lossy(&payload).contains("Mitigation is to split"),
+        "body must be preserved"
+    );
+}
+
 fn seed_consolidation_memories(db: &mut Database) {
     let mem = |cell: u64, memory_type: &str, created: u64, ttl: u64, body: &str| -> Vec<u8> {
         format!(

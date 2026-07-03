@@ -86,6 +86,25 @@ pub struct CompressionSourcesReport {
     pub all_sources_present: bool,
 }
 
+/// B4.5 (retire): one episodic source cell that was demoted after consolidation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct RetiredSource {
+    pub cell_id: CellId,
+    /// The new `ttl_seconds` written so the cell expires `demote_ttl` from `now`.
+    pub new_ttl_seconds: u64,
+}
+
+/// B4.5 (retire): the result of demoting a summary's episodic sources.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RetireCompressionReport {
+    pub summary_cell_id: CellId,
+    /// Episodic sources whose TTL was shortened to expire `demote_ttl` from now.
+    pub retired: Vec<RetiredSource>,
+    /// Sources left untouched because they are semantic (never auto-retired), no
+    /// longer present, or already expire at or before the demote horizon.
+    pub skipped: Vec<CellId>,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SemanticCompressionReport {
     pub agent_id: AgentId,
@@ -299,6 +318,92 @@ impl Database {
         })
     }
 
+    /// B4.5 (retire): demote a summary's EPISODIC source cells by shortening their
+    /// TTL so they expire `demote_ttl_seconds` from `now` — consolidated sources
+    /// age out naturally instead of lingering. Never tombstones, never touches
+    /// semantic sources, and requires the summary readable + each demoted source
+    /// writable. Read-modify-write of an existing metadata field (no new canonical
+    /// fields), behind the default-off feature flag → golden-safe.
+    pub fn retire_compression_sources(
+        &mut self,
+        view: &AgentView,
+        summary_cell_id: CellId,
+        demote_ttl_seconds: u64,
+        now_unix_seconds: u64,
+    ) -> EngineResult<RetireCompressionReport> {
+        if !self.semantic_compression.enabled {
+            return Err(EngineError::FeatureDisabled("semantic_compression"));
+        }
+        let (payload, descriptor) = self
+            .get_latest_cell_with_descriptor(summary_cell_id)
+            .ok_or(cortex_core::CoreError::CellNotFound(summary_cell_id))?;
+        if !PolicyRewrite::allows_scope(view, scope_id(&descriptor.scope)) {
+            return Err(EngineError::AqlBind(BindError::PolicyDenied(
+                PolicyError::ScopeNotReadable,
+            )));
+        }
+        let metadata = CellMetadata::from_payload(&payload);
+        if metadata.compression_kind.as_deref() != Some("semantic_summary") {
+            return invalid("cell is not a semantic summary");
+        }
+
+        // Read-only pass: decide which sources to demote (and to what TTL).
+        let target_expiry = now_unix_seconds.saturating_add(demote_ttl_seconds);
+        let mut demotions: Vec<(CellId, Vec<u8>, u64, u64)> = Vec::new();
+        let mut skipped = Vec::new();
+        for source in &metadata.compression_source_cells {
+            let Some((source_payload, source_descriptor)) =
+                self.get_latest_cell_with_descriptor(*source)
+            else {
+                skipped.push(*source);
+                continue;
+            };
+            if memory_class(&source_descriptor) != Some(MemoryClass::Episodic) {
+                skipped.push(*source);
+                continue;
+            }
+            if !view.can_write_scope(scope_id(&source_descriptor.scope)) {
+                return Err(EngineError::AqlBind(BindError::PolicyDenied(
+                    PolicyError::ScopeNotWritable,
+                )));
+            }
+            let current_expiry = source_descriptor
+                .created_unix_seconds
+                .zip(source_descriptor.ttl_seconds)
+                .map(|(created, ttl)| created.saturating_add(ttl));
+            // Only demote sources that would otherwise outlive the demote horizon.
+            if current_expiry.is_some_and(|expiry| expiry <= target_expiry) {
+                skipped.push(*source);
+                continue;
+            }
+            let created = source_descriptor
+                .created_unix_seconds
+                .unwrap_or(now_unix_seconds);
+            let new_ttl = now_unix_seconds
+                .saturating_sub(created)
+                .saturating_add(demote_ttl_seconds);
+            demotions.push((*source, source_payload, created, new_ttl));
+        }
+
+        // Write pass: rewrite each demoted source's TTL, preserving body + all other
+        // metadata (created is kept, so provenance is intact).
+        let mut retired = Vec::new();
+        for (cell_id, source_payload, created, new_ttl) in demotions {
+            let new_payload = rewrite_ttl(&source_payload, created, new_ttl);
+            self.put_cell(cell_id, new_payload)?;
+            retired.push(RetiredSource {
+                cell_id,
+                new_ttl_seconds: new_ttl,
+            });
+        }
+
+        Ok(RetireCompressionReport {
+            summary_cell_id,
+            retired,
+            skipped,
+        })
+    }
+
     fn validate_semantic_compression_request(
         &self,
         view: &AgentView,
@@ -404,6 +509,31 @@ fn unique_source_cell_ids(source_refs: &[SemanticCompressionSourceRef]) -> Vec<C
 
 fn provenance_preserved(metadata: &CellMetadata, source_cell_ids: &[CellId]) -> bool {
     metadata.compression_source_cells == source_cell_ids
+}
+
+/// Rewrite a cell payload's `created_unix_seconds` + `ttl_seconds` header lines,
+/// preserving every other header line and the body exactly (cell metadata is
+/// order-independent key=value, so re-appending these two lines is safe).
+fn rewrite_ttl(payload: &[u8], created: u64, new_ttl: u64) -> Vec<u8> {
+    let text = String::from_utf8_lossy(payload);
+    let (header, body) = text
+        .split_once("\n\n")
+        .map(|(h, b)| (h, Some(b)))
+        .unwrap_or((text.as_ref(), None));
+    let mut lines: Vec<String> = header
+        .lines()
+        .filter(|line| {
+            !line.starts_with("ttl_seconds=") && !line.starts_with("created_unix_seconds=")
+        })
+        .map(str::to_owned)
+        .collect();
+    lines.push(format!("created_unix_seconds={created}"));
+    lines.push(format!("ttl_seconds={new_ttl}"));
+    let header = lines.join("\n");
+    match body {
+        Some(body) => format!("{header}\n\n{body}").into_bytes(),
+        None => header.into_bytes(),
+    }
 }
 
 fn invalid<T>(message: &str) -> EngineResult<T> {
