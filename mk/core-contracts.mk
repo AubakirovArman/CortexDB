@@ -137,6 +137,11 @@ handoff-ledger-check:
 agent-transactions-contract-check:
 	cargo test -p cortex-api-types agent_transaction
 
+.PHONY: agent-handoff-route-check
+agent-handoff-route-check:
+	cargo test -p cortex-server handoff
+	python3 scripts/check_openapi_coverage.py
+
 accountability-receipt-schema-check:
 	cargo test -p cortexdb-sdk context_pack_v1_deserializes_optional_accountability_receipt
 	python3 scripts/accountability_receipt_schema_check.py --root "." --report "$(ACCOUNTABILITY_RECEIPT_SCHEMA_REPORT)"

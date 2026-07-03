@@ -838,6 +838,73 @@ paths:
         '400': *id001
         '403': *id005
         '500': *id002
+  /v1/handoff:
+    post:
+      summary: Commit a durable SharedSequenced agent handoff
+      description: |
+        Validates and durably records a SharedSequenced handoff (F08-B6.1). The
+        caller must be authenticated as the source agent; the target agent view is
+        resolved from the agent-view store. Requires the agent_transactions feature.
+      parameters:
+      - $ref: '#/components/parameters/Tenant'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - source_agent_id
+              - target_agent_id
+              - scope
+              - pack_hash
+              - pack_seq
+              - required_after_seq
+              properties:
+                source_agent_id:
+                  type: integer
+                  format: uint64
+                target_agent_id:
+                  type: integer
+                  format: uint64
+                scope:
+                  type: string
+                pack_hash:
+                  type: string
+                pack_seq:
+                  type: integer
+                  format: uint64
+                required_after_seq:
+                  type: integer
+                  format: uint64
+                idempotency_key:
+                  type: string
+                  nullable: true
+      responses:
+        '200':
+          description: Committed handoff record
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  handoff_cell_id:
+                    type: integer
+                    format: uint64
+                  committed_seq:
+                    type: integer
+                    format: uint64
+                  level:
+                    type: string
+                  visible_after_seq:
+                    type: integer
+                    format: uint64
+                  target_can_read:
+                    type: boolean
+        '400':
+          description: Invalid handoff request or unknown target agent
+        '500':
+          description: Internal error
   /v1/remember:
     post:
       summary: Execute AQL REMEMBER
