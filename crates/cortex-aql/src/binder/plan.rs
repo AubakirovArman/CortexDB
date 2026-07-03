@@ -30,6 +30,9 @@ pub struct BoundRetrievePlan {
     /// A7.2: per-query two-stage dense rerank weight (Q16) from `USING RERANK`.
     /// `None` defers to the database default (off).
     pub rerank_weight_q16: Option<u64>,
+    /// A4.2: per-query temporal supersession from `SUPPRESS SUPERSEDED`. `false`
+    /// defers to the database default (off).
+    pub suppress_superseded: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

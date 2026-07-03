@@ -185,6 +185,22 @@ fn using_rerank_binds_the_weight() {
 }
 
 #[test]
+fn suppress_superseded_binds_and_is_off_by_default() {
+    // A4.2: temporal supersession is a per-query AQL flag.
+    let raw = retrieve(
+        r#"RETRIEVE CONTEXT FOR TASK "x" IN BRAIN brain SUPPRESS SUPERSEDED LIMIT 5 CANDIDATES;"#,
+    );
+    assert!(raw.suppress_superseded);
+    let plan = Binder::new(&catalog(), &view(BTreeSet::from([ScopeId(10)]), true))
+        .bind_retrieve(&raw)
+        .unwrap();
+    assert!(plan.suppress_superseded);
+
+    let plain = retrieve(r#"RETRIEVE CONTEXT FOR TASK "x" IN BRAIN brain;"#);
+    assert!(!plain.suppress_superseded);
+}
+
+#[test]
 fn bind_where_scope_and_status_to_bitmap_program() {
     let raw = retrieve(
         r#"RETRIEVE CONTEXT FOR TASK "x" IN BRAIN brain USING MODE balanced BUDGET 100 TOKENS

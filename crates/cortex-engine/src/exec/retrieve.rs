@@ -158,7 +158,7 @@ pub fn execute_retrieve<P: CandidateResolver>(
     // no-op unless the knob is on, so default output and its goldens are
     // unchanged. Runs alongside DedupOp (before parent expansion): like dedup,
     // an enabled pass can drop a cell that is another cell's parent source.
-    let deduped = if database.retrieval_suppress_superseded {
+    let deduped = if plan.suppress_superseded || database.retrieval_suppress_superseded {
         let started = Instant::now();
         let input_count = deduped.len();
         let superseded = suppress_superseded_cells(deduped);

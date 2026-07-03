@@ -289,6 +289,7 @@ fn plan(
         weights: default_weights(mode),
         diversity_lambda_q16: None,
         rerank_weight_q16: None,
+        suppress_superseded: false,
     }
 }
 

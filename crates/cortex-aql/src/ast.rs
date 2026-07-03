@@ -102,6 +102,9 @@ pub struct RawRetrieveContext<'a> {
     /// A7.2: optional per-query two-stage dense rerank weight in Q16
     /// (`USING RERANK <n>`). `None` defers to the database default (off).
     pub rerank_weight_q16: Option<Spanned<u64>>,
+    /// A4.2: per-query temporal supersession (`SUPPRESS SUPERSEDED`). `false`
+    /// defers to the database default (off).
+    pub suppress_superseded: bool,
     pub where_clause: Option<Spanned<Condition<'a>>>,
     pub requirements: Vec<Spanned<Requirement<'a>>>,
     pub strategy: Option<Spanned<Strategy>>,

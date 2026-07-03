@@ -671,3 +671,20 @@ fn aql_using_diversity_demotes_near_duplicate_through_retrieve_aql() {
         diversified.iter().map(|c| c.cell_id.0).collect::<Vec<_>>()
     );
 }
+
+#[test]
+fn aql_suppress_superseded_clause_returns_only_the_newest_fact() {
+    // A4.2 as a per-query AQL flag (no DatabaseOptions knob set).
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    seed_superseded_facts(&mut db);
+    let view = test_view([RetrievalMode::Balanced]);
+    let results = db
+        .retrieve_aql(
+            r#"RETRIEVE CONTEXT FOR TASK "Apollo budget" IN BRAIN default SUPPRESS SUPERSEDED LIMIT 10 CANDIDATES;"#,
+            &view,
+        )
+        .unwrap();
+    let ids = results.iter().map(|c| c.cell_id.0).collect::<Vec<_>>();
+    assert_eq!(ids, vec![2], "SUPPRESS SUPERSEDED keeps only the newest fact: {ids:?}");
+}

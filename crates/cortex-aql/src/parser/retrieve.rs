@@ -56,6 +56,7 @@ pub(super) fn parse_retrieve_context(input: Span<'_>) -> PResult<'_, RawRetrieve
             candidate_limit: clauses.candidate_limit,
             diversity_lambda_q16: clauses.diversity_lambda_q16,
             rerank_weight_q16: clauses.rerank_weight_q16,
+            suppress_superseded: clauses.suppress_superseded,
             where_clause: clauses.where_clause,
             requirements: clauses.requirements,
             strategy: None,
@@ -70,6 +71,7 @@ struct RetrieveClauses<'a> {
     candidate_limit: Option<Spanned<u32>>,
     diversity_lambda_q16: Option<Spanned<u64>>,
     rerank_weight_q16: Option<Spanned<u64>>,
+    suppress_superseded: bool,
     where_clause: Option<Spanned<crate::ast::Condition<'a>>>,
     requirements: Vec<Spanned<Requirement<'a>>>,
 }
@@ -114,6 +116,18 @@ fn parse_next_clause<'a>(
     } else if starts_with_keyword(input, "REQUIRE") {
         let (input, mut requirements) = parse_require(input)?;
         clauses.requirements.append(&mut requirements);
+        Ok(input)
+    } else if starts_with_keyword(input, "SUPPRESS") {
+        let (input, _) = kw("SUPPRESS")(input)?;
+        let (input, _) = ws1(input)?;
+        let (input, _) = kw("SUPERSEDED")(input)?;
+        if clauses.suppress_superseded {
+            return Err(Err::Failure(ParseFailure::new(
+                input,
+                AqlParseErrorKind::Unexpected,
+            )));
+        }
+        clauses.suppress_superseded = true;
         Ok(input)
     } else {
         Err(Err::Error(ParseFailure::new(

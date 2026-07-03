@@ -73,6 +73,7 @@ fn bound_retrieve_plan_has_inspectable_logical_nodes_before_and_after_policy() {
         weights: cortex_aql::default_weights(RetrievalMode::Balanced),
         diversity_lambda_q16: None,
         rerank_weight_q16: None,
+        suppress_superseded: false,
     }));
 
     let logical = LogicalPlan::from_bound_plan(&bound, Some("status = \"ready\""));
