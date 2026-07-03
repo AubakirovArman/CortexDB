@@ -1,0 +1,12 @@
+{
+  "schema_version": "cortexdb.benchmark_registry_entry.v1",
+  "benchmark_id": "locomo",
+  "title": "LoCoMo (retrieval-only adapter)",
+  "dataset": {"name": "LoCoMo", "split": "official"},
+  "judge": {"model": null, "official": false},
+  "leaderboard_official": false,
+  "status": "no_headline_claimed",
+  "note": "A retrieval-only LoCoMo adapter exists; no headline QA score is claimed until CortexDB produces an official-compatible answer run. See docs/BENCHMARKS.md.",
+  "source": {"kind": "doc", "file": "docs/BENCHMARKS.md"},
+  "metrics": []
+}

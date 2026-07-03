@@ -1,0 +1,12 @@
+{
+  "schema_version": "cortexdb.benchmark_registry_entry.v1",
+  "benchmark_id": "multihop_rag",
+  "title": "MultiHop-RAG (preparation scaffold)",
+  "dataset": {"name": "yixuantt/MultiHopRAG", "split": "official"},
+  "judge": {"model": null, "official": false},
+  "leaderboard_official": false,
+  "status": "no_headline_claimed",
+  "note": "A MultiHop-RAG preparation scaffold exists; per the same tuning rule as LongMemEval, no public MultiHop-RAG score is claimed until CortexDB produces an official-compatible run. See docs/BENCHMARKS.md.",
+  "source": {"kind": "doc", "file": "docs/BENCHMARKS.md"},
+  "metrics": []
+}

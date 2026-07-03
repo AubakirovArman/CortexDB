@@ -1,0 +1,17 @@
+{
+  "schema_version": "cortexdb.benchmark_registry_entry.v1",
+  "benchmark_id": "enterprise_rag_bench_official_500",
+  "title": "EnterpriseRAG-Bench (official 500)",
+  "dataset": {"name": "EnterpriseRAG-Bench", "split": "official", "questions": 500},
+  "judge": {"model": "gemini-3.5-flash", "official": false},
+  "leaderboard_official": false,
+  "status": "interim_non_official_judge",
+  "note": "Scored with a Gemini judge, not the gpt-5.4 judge-of-record; an interim in-house number, not leaderboard-comparable. See docs/RESULTS.md and docs/PUBLIC_CLAIMS_POLICY.md.",
+  "source": {"kind": "json", "file": "erb-submission/official_results.json"},
+  "metrics": [
+    {"name": "combined_correctness_completeness", "value": 47.74, "path": "aggregate_stats.combined_correctness_completeness_score"},
+    {"name": "document_recall_pct", "value": 55.71, "path": "aggregate_stats.average_recall_pct"},
+    {"name": "answer_correctness_pct", "value": 50.0, "path": "aggregate_stats.average_correctness_pct"},
+    {"name": "answer_completeness_pct", "value": 53.7, "path": "aggregate_stats.average_completeness_pct"}
+  ]
+}

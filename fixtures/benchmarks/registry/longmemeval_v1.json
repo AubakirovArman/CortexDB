@@ -1,0 +1,18 @@
+{
+  "schema_version": "cortexdb.benchmark_registry_entry.v1",
+  "benchmark_id": "longmemeval_v1",
+  "title": "LongMemEval v1 (official data)",
+  "dataset": {"name": "LongMemEval", "split": "v1-official", "questions": 500},
+  "judge": {"model": null, "official": false},
+  "leaderboard_official": false,
+  "status": "official_data_in_house_run",
+  "note": "Run on the official LongMemEval v1 data through CortexDB's retrieval + QA harness; retrieval metrics validated against the official print_retrieval_metrics.py. Doc-anchored (the per-run result files are build artifacts, not committed). See docs/BENCHMARKS.md.",
+  "source": {"kind": "doc", "file": "docs/BENCHMARKS.md"},
+  "metrics": [
+    {"name": "qa_accuracy", "value": 0.7660},
+    {"name": "session_recall_all@5", "value": 0.8468},
+    {"name": "session_recall_all@10", "value": 0.9021},
+    {"name": "session_ndcg_any@5", "value": 0.7752},
+    {"name": "session_ndcg_any@10", "value": 0.7873}
+  ]
+}
