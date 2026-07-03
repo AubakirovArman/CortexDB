@@ -26,6 +26,10 @@ retrieval-two-stage-rerank-check:
 	cargo test -p cortex-engine --lib retrieval_rank::two_stage
 	cargo test -p cortex-engine --lib two_stage_rerank_
 
+.PHONY: results-page-check
+results-page-check:
+	python3 scripts/results_page_check.py --report "target/results/results_page_report.json"
+
 .PHONY: vector-metric-allowlist-check
 vector-metric-allowlist-check:
 	python3 scripts/vector_metric_allowlist_check.py --report "target/vector-metric/allowlist_report.json"
