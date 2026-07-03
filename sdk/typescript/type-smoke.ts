@@ -35,4 +35,29 @@ if (context.schema_version !== "context_pack.v1") {
   throw new Error("unexpected context schema");
 }
 
+const txClient = new CortexDBClient("http://127.0.0.1:8181").withOptions({
+  timeoutMs: 2500,
+  fetch: async () =>
+    new Response(JSON.stringify({ outcome: "committed", idempotent_replay: false })),
+});
+const tx = await txClient.agentTransaction({ scope: "agent:one", base_seq: 0, operations: [] });
+if (tx.outcome !== "committed") throw new Error("unexpected transaction outcome");
+txClient.close();
+
+const handoffClient = new CortexDBClient("http://127.0.0.1:8181").withOptions({
+  timeoutMs: 2500,
+  fetch: async () =>
+    new Response(JSON.stringify({ level: "shared_sequenced", handoff_cell_id: 1 })),
+});
+const handoff = await handoffClient.agentHandoff({
+  source_agent_id: 1,
+  target_agent_id: 2,
+  scope: "shared:project",
+  pack_hash: "h",
+  pack_seq: 0,
+  required_after_seq: 0,
+});
+if (handoff.level !== "shared_sequenced") throw new Error("unexpected handoff level");
+handoffClient.close();
+
 client.close();

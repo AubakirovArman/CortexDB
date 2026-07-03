@@ -79,6 +79,20 @@ export class CortexDBClient {
     return this.request("POST", "/v1/compact");
   }
 
+  /**
+   * Commit an optimistic-concurrency agent transaction (F04-B6.3). A conflict is
+   * a normal response with `outcome === "conflict"`, not an HTTP error — read
+   * `outcome` rather than relying on the status code.
+   */
+  agentTransaction(request: JsonObject): Promise<JsonObject> {
+    return this.request("POST", "/v1/transactions", JSON.stringify(request));
+  }
+
+  /** Commit a durable SharedSequenced agent handoff (F04-B6.3 / F08-B6.1). */
+  agentHandoff(request: JsonObject): Promise<JsonObject> {
+    return this.request("POST", "/v1/handoff", JSON.stringify(request));
+  }
+
   search(scope: string, query: string, limit = 20): Promise<SearchResponse> {
     return this.request("POST", this.path("/v1/search", {
       scope,

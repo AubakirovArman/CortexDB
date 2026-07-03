@@ -381,6 +381,18 @@ var CortexDBClient = class _CortexDBClient {
   compact() {
     return this.request("POST", "/v1/compact");
   }
+  /**
+   * Commit an optimistic-concurrency agent transaction (F04-B6.3). A conflict is
+   * a normal response with `outcome === "conflict"`, not an HTTP error — read
+   * `outcome` rather than relying on the status code.
+   */
+  agentTransaction(request) {
+    return this.request("POST", "/v1/transactions", JSON.stringify(request));
+  }
+  /** Commit a durable SharedSequenced agent handoff (F04-B6.3 / F08-B6.1). */
+  agentHandoff(request) {
+    return this.request("POST", "/v1/handoff", JSON.stringify(request));
+  }
   search(scope, query, limit = 20) {
     return this.request("POST", this.path("/v1/search", {
       scope,
