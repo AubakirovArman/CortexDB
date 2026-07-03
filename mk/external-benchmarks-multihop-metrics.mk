@@ -127,3 +127,7 @@ multihop-rag-temporal-subtype-analysis-v6:
 	  --qa-file "$(MULTIHOP_RAG_QA_HYBRID_FULL_RETRY_V6_ROOT)/deepseek_qa.json" \
 	  --output-json "$(MULTIHOP_RAG_QA_HYBRID_FULL_RETRY_V6_ROOT)/temporal_subtype_analysis.json" \
 	  --output-md "$(MULTIHOP_RAG_QA_HYBRID_FULL_RETRY_V6_ROOT)/temporal_subtype_analysis.md"
+
+.PHONY: multihop-retrieval-regression-check
+multihop-retrieval-regression-check:
+	python3 scripts/multihop_rag/retrieval_regression_gate.py --self-test

@@ -48,6 +48,7 @@ jobs:
       - run: make quick-retrieval-eval-check
       - run: make benchmark-trend-check
       - run: make longmemeval-per-type-regression-check
+      - run: make multihop-retrieval-regression-check
       - run: make erb-compare-runs-check
       - run: make results-page-check
       - run: make aab-mini-score-check

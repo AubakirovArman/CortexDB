@@ -1,0 +1,9 @@
+{
+  "schema_version": "cortexdb.multihop_rag.retrieval_baseline.v1",
+  "split": "balanced_50",
+  "source": "F1.2 v7 official retrieval snapshot",
+  "hits@10": 1.0,
+  "hits@4": 0.9545,
+  "map@10": 0.4396,
+  "mrr@10": 0.776
+}
