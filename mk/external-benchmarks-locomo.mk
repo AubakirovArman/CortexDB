@@ -54,3 +54,19 @@ locomo-qa:
 	  --output "$(LOCOMO_QA_OUTPUT)" \
 	  --api-key-file "$(DEEPSEEK_KEY_FILE)" \
 	  --model "$(LOCOMO_QA_READER_MODEL)"
+
+# F3.4 (QA evidence, manual-evidence lane): the fast/offline gate proves the
+# scored-artifact -> benchmark_report.v1 snapshot mapping (leaderboard_comparable
+# false, schema-valid, deterministic, blocked-exit-0 when absent). The real
+# snapshot (locomo-qa-evidence-snapshot) validates + emits from a metered run's
+# scored artifact; a missing artifact exits 0 without fabricating numbers.
+.PHONY: locomo-qa-evidence-check
+locomo-qa-evidence-check:
+	python3 scripts/locomo/check_qa_evidence.py --self-test
+
+LOCOMO_QA_SCORED ?= $(LOCOMO_ROOT)/qa/scored.json
+LOCOMO_QA_SNAPSHOT ?= $(LOCOMO_ROOT)/qa/benchmark_report.v1.json
+locomo-qa-evidence-snapshot:
+	python3 scripts/locomo/check_qa_evidence.py \
+	  --scored "$(LOCOMO_QA_SCORED)" \
+	  --output "$(LOCOMO_QA_SNAPSHOT)"

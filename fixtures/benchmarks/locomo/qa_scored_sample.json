@@ -1,0 +1,13 @@
+{
+  "reader_model": "deepseek-v4-flash",
+  "judge_protocol": "snap-research/locomo per-category F1 (illustrative sample, not a real run)",
+  "total_questions": 4,
+  "completed_questions": 4,
+  "overall_f1": 0.5,
+  "per_category": {
+    "multi-hop": {"count": 1, "f1": 0.6},
+    "temporal-reasoning": {"count": 1, "f1": 0.4},
+    "open-domain": {"count": 1, "f1": 0.8},
+    "adversarial": {"count": 1, "f1": 0.2}
+  }
+}
