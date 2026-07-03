@@ -70,6 +70,8 @@ profile provenance in the manifest and the CLI-side query embedder.
 
 | A5.2 Learned-ranker trainer (training half) | Slice | `scripts/enterprise_rag_bench/train_learned_ranker.py`: trains a deterministic Q16 ranker on the A5.1 corpus (Fisher-style per-feature weight ∝ positive/negative mean gap, normalized to sum 65535), and **proves a non-negative held-out MRR lift vs a uniform baseline** — the evidence the C3-1 frozen-weights protocol requires before any ranking weight changes. Deterministic (no RNG/wall-clock). Committed `learned_ranker_v2.json`; `--self-test` asserts Q16 sum, determinism, and held-out non-regression. Gate `learned-ranker-train-check`. *(Weights are coarse on the tiny committed corpus — the value is the deterministic train→freeze→held-out-lift pipeline.)* | Serve the frozen ranker as a **default-off** `DatabaseOptions` profile (golden-safe opt-in) that overrides `plan.weights` when enabled + a larger real-trace corpus. | `learned-ranker-train-check` |
 
+| F5.3 Nightly validation workflow | Landed | Added a `benchmark-validation` job to `.github/workflows/nightly.yml` that runs — nightly + on-dispatch — the 12 benchmark/moat/retrieval/AQL gates landed this cycle (benchmark-report-schema, results-page, aab-mini-score, ltr-corpus, learned-ranker-train, candidate-pool, corpus-bm25, vector-metric-allowlist, two-stage-rerank, temporal-supersede, aql-diversity-option, structure-chunking) and uploads the validation reports as an artifact. YAML validated; every referenced gate exists and passes locally. | Extend as more benchmark families commit committed evidence. | nightly `benchmark-validation` job |
+
 ## Cross-cutting landings
 
 | Item | State | Notes | Gate |

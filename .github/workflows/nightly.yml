@@ -30,6 +30,41 @@ jobs:
       - run: cargo fmt --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
 
+  benchmark-validation:
+    name: Benchmark and retrieval validation gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: beta
+      # Benchmark/moat contract gates (schemas verified against committed evidence).
+      - run: make benchmark-report-schema-check
+      - run: make results-page-check
+      - run: make aab-mini-score-check
+      # Learned-ranking pipeline (deterministic corpus + trainer, held-out lift).
+      - run: make ltr-corpus-check
+      - run: make learned-ranker-train-check
+      # Retrieval-quality + AQL-surface gates landed this cycle.
+      - run: make retrieval-candidate-pool-check
+      - run: make retrieval-corpus-bm25-check
+      - run: make vector-metric-allowlist-check
+      - run: make retrieval-two-stage-rerank-check
+      - run: make retrieval-temporal-supersede-check
+      - run: make aql-diversity-option-check
+      - run: make structure-chunking-check
+      - name: Upload validation reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: benchmark-validation-reports
+          path: |
+            target/benchmark-schema/report.json
+            target/results/results_page_report.json
+            target/vector-metric/allowlist_report.json
+          if-no-files-found: ignore
+
   heavy-gates:
     name: Heavy reliability and dashboard gates
     runs-on: ubuntu-latest
