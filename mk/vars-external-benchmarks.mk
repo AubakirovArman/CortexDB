@@ -70,6 +70,11 @@ LOCOMO_RETRIEVAL_REPORT ?= $(LOCOMO_ROOT)/retrieval/cortexdb_locomo_report.json
 LOCOMO_ADAPTER_REPORT ?= $(LOCOMO_ROOT)/retrieval-adapter/report.json
 LOCOMO_TOPK ?= 10
 LOCOMO_MAX_QUESTIONS ?=
+# F3.4 QA reader: the retrieved-with-text QA input log + reader model. The default
+# input path is produced by the (metered) LoCoMo QA pipeline; the offline reader
+# self-test (locomo-qa-reader-check) uses the committed fixture instead.
+LOCOMO_QA_INPUT_LOG_DEFAULT ?= $(LOCOMO_ROOT)/qa/qa_input_log.jsonl
+LOCOMO_QA_READER_MODEL ?= $(LONGMEMEVAL_V1_DEEPSEEK_MODEL)
 MULTIHOP_RAG_ROOT ?= target/multihop-rag
 MULTIHOP_RAG_DATA_ROOT ?= $(MULTIHOP_RAG_ROOT)/data
 MULTIHOP_RAG_QUERY_FILE ?= $(MULTIHOP_RAG_DATA_ROOT)/MultiHopRAG.json
