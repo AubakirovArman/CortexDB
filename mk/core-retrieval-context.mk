@@ -26,6 +26,10 @@ retrieval-two-stage-rerank-check:
 	cargo test -p cortex-engine --lib retrieval_rank::two_stage
 	cargo test -p cortex-engine --lib two_stage_rerank_
 
+.PHONY: vector-metric-allowlist-check
+vector-metric-allowlist-check:
+	python3 scripts/vector_metric_allowlist_check.py --report "target/vector-metric/allowlist_report.json"
+
 .PHONY: retrieval-candidate-pool-check
 retrieval-candidate-pool-check:
 	cargo test -p cortex-bench --bin enterprise_rag_bench_retrieval args::tests::candidate_pool_defaults_to_512
