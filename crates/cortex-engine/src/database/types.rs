@@ -49,6 +49,11 @@ pub struct Database {
     pub(crate) agent_transactions: AgentTransactionOptions,
     pub(crate) learned_ranking: LearnedRankingOptions,
     pub(crate) semantic_compression: SemanticCompressionOptions,
+    pub(crate) ann_guarded_sampling: crate::options::AnnGuardedSamplingOptions,
+    /// A3.3: per-database sampled guarded-recall state, behind interior mutability
+    /// (the read path is `&self`). `None` when the opt-in knob is off — in which
+    /// case the ANN read path is byte-identical to pre-A3.3.
+    pub(crate) guarded_recall: Mutex<Option<crate::search::GuardedRecallState>>,
     pub(crate) hnsw_build_config: HnswBuildConfig,
     pub(crate) embedding_profile: Option<crate::embedding_pipeline::EmbeddingProfile>,
     pub(crate) retrieval_diversify_lambda_q16: Option<u64>,

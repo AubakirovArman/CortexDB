@@ -39,8 +39,9 @@ pub use analyzer::{
 };
 pub use ann::{
     should_sample_recall, AnnEvaluationReport, AnnFallbackReason, AnnMetrics, AnnSearchPath,
-    AnnSearchPolicy, AnnSearchReport, AnnSloViolation, RecallWindow, GUARDED_RECALL_SAMPLE_RATE,
-    GUARDED_RECALL_WARMUP_QUERIES, GUARDED_RECALL_WINDOW, MIN_ANN_RECALL_Q16,
+    AnnSearchPolicy, AnnSearchReport, AnnSloViolation, GuardedRecallState, GuardedServingMode,
+    RecallWindow, GUARDED_RECALL_SAMPLE_RATE, GUARDED_RECALL_WARMUP_QUERIES, GUARDED_RECALL_WINDOW,
+    MIN_ANN_RECALL_Q16,
 };
 pub use ann_corpus::{
     evaluate_ann_corpus, metric_name, parse_ann_metric, AnnCorpusGroundTruth, AnnCorpusOptions,

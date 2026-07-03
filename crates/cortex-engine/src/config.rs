@@ -56,6 +56,9 @@ impl EngineConfig {
             agent_transactions: parse_agent_transaction_options(&vars)?,
             learned_ranking: parse_learned_ranking_options(&vars)?,
             semantic_compression: parse_semantic_compression_options(&vars)?,
+            ann_guarded_sampling: crate::options::AnnGuardedSamplingOptions {
+                enabled: parse_bool_var(&vars, "CORTEXDB_ANN_GUARDED_SAMPLING", false)?,
+            },
             aql_query_cache_max_entries: parse_usize_var(
                 &vars,
                 "CORTEXDB_AQL_QUERY_CACHE_MAX_ENTRIES",

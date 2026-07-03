@@ -149,6 +149,15 @@ impl Database {
             agent_transactions: options.agent_transactions,
             learned_ranking: options.learned_ranking,
             semantic_compression: options.semantic_compression,
+            ann_guarded_sampling: options.ann_guarded_sampling,
+            // A3.3: arm the per-database guarded-recall state only when opted in;
+            // `None` keeps the ANN read path byte-identical to pre-A3.3.
+            guarded_recall: std::sync::Mutex::new(
+                options
+                    .ann_guarded_sampling
+                    .enabled
+                    .then(|| crate::search::GuardedRecallState::new(0)),
+            ),
             hnsw_build_config: options.hnsw_build_config.normalized(),
             embedding_profile: options.embedding_profile.clone(),
             retrieval_diversify_lambda_q16: options.retrieval_diversify_lambda_q16,

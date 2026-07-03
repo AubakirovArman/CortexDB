@@ -84,6 +84,17 @@ pub struct LearnedRankingOptions {
     pub enabled: bool,
 }
 
+/// A3.3: opt-in sampled guarded-ANN recall. Default off, so the ANN read path is
+/// byte-identical to pre-A3.3 (exact recall recomputed on every query, no
+/// per-collection window, no receipt `serving_epoch`). When enabled, a
+/// deterministic sample of queries recomputes exact recall into a persisted
+/// window; unsampled queries serve ANN with the windowed recall, and a
+/// recall-floor breach degrades the collection to exact serving until a rebuild.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct AnnGuardedSamplingOptions {
+    pub enabled: bool,
+}
+
 pub const DEFAULT_SEMANTIC_COMPRESSION_MIN_ANSWERABILITY_Q16: u16 = 32_768;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -188,6 +199,7 @@ pub struct DatabaseOptions {
     pub agent_transactions: AgentTransactionOptions,
     pub learned_ranking: LearnedRankingOptions,
     pub semantic_compression: SemanticCompressionOptions,
+    pub ann_guarded_sampling: AnnGuardedSamplingOptions,
     pub aql_query_cache_max_entries: usize,
     pub wal_archive_enabled: bool,
     pub wal_archive_max_files: usize,
@@ -238,6 +250,7 @@ impl Default for DatabaseOptions {
             agent_transactions: AgentTransactionOptions::default(),
             learned_ranking: LearnedRankingOptions::default(),
             semantic_compression: SemanticCompressionOptions::default(),
+            ann_guarded_sampling: AnnGuardedSamplingOptions::default(),
             aql_query_cache_max_entries: DEFAULT_AQL_QUERY_CACHE_MAX_ENTRIES,
             wal_archive_enabled: false,
             wal_archive_max_files: DEFAULT_WAL_ARCHIVE_MAX_FILES,
