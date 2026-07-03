@@ -238,3 +238,52 @@ fn sample_body() -> AccountabilityReceiptBody {
         },
     }
 }
+
+#[test]
+fn receipt_emission_p99_is_within_budget() {
+    // C4-1: the receipt emission hot path (canonicalize + Ed25519 sign the
+    // header) is measured and frozen under a budget. If emission ever became
+    // expensive, operators would be tempted to flag the receipt off — and the
+    // moat evaporates. The budget is deliberately generous (never flakes on CI
+    // timing noise); the measured p50/p99 are recorded for tracking.
+    let body = sample_body();
+    let key = ReceiptSigningKey::from_seed_hex("receipt-key-a", TEST_SEED_A).unwrap();
+    for _ in 0..64 {
+        let signed =
+            sign_accountability_receipt_header(&body, "fixture-db", 0, TEST_AUDIT_CHAIN_HEAD, &key);
+        std::hint::black_box(&signed);
+    }
+    const ITERS: usize = 400;
+    let mut nanos = Vec::with_capacity(ITERS);
+    for _ in 0..ITERS {
+        let start = std::time::Instant::now();
+        let signed =
+            sign_accountability_receipt_header(&body, "fixture-db", 0, TEST_AUDIT_CHAIN_HEAD, &key);
+        nanos.push(u64::try_from(start.elapsed().as_nanos()).unwrap_or(u64::MAX));
+        std::hint::black_box(&signed);
+    }
+    nanos.sort_unstable();
+    let p50 = nanos[ITERS / 2];
+    let p99 = nanos[(ITERS * 99 / 100).min(ITERS - 1)];
+    const BUDGET_NANOS: u64 = 50_000_000; // 50 ms/emit — catches catastrophic regressions only.
+
+    let report = serde_json::json!({
+        "schema_version": "cortexdb.receipt_emission_budget.report.v1",
+        "iterations": ITERS,
+        "p50_nanos": p50,
+        "p99_nanos": p99,
+        "budget_nanos": BUDGET_NANOS,
+        "within_budget": p99 <= BUDGET_NANOS,
+    });
+    if let Ok(path) = std::env::var("CORTEX_RECEIPT_EMISSION_BUDGET_REPORT") {
+        let path = std::path::PathBuf::from(path);
+        if let Some(parent) = path.parent() {
+            let _ = std::fs::create_dir_all(parent);
+        }
+        let _ = std::fs::write(&path, serde_json::to_string_pretty(&report).unwrap());
+    }
+    assert!(
+        p99 <= BUDGET_NANOS,
+        "receipt emission p99 {p99}ns exceeds budget {BUDGET_NANOS}ns (p50 {p50}ns)"
+    );
+}

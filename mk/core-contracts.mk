@@ -111,6 +111,10 @@ context-access-decision-capture-check:
 	cargo test -p cortex-engine --test context_access_decision_capture --all-features
 	python3 scripts/context_access_decision_capture_check.py --root "." --report "$(CONTEXT_ACCESS_DECISION_CAPTURE_REPORT)"
 
+.PHONY: receipt-emission-budget-check
+receipt-emission-budget-check:
+	CORTEX_RECEIPT_EMISSION_BUDGET_REPORT="$(CURDIR)/target/receipt-emission-budget/report.json" cargo test -p cortex-engine --lib receipt_emission_p99_is_within_budget --release
+
 accountability-receipt-schema-check:
 	cargo test -p cortexdb-sdk context_pack_v1_deserializes_optional_accountability_receipt
 	python3 scripts/accountability_receipt_schema_check.py --root "." --report "$(ACCOUNTABILITY_RECEIPT_SCHEMA_REPORT)"

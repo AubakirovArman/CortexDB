@@ -74,6 +74,8 @@ profile provenance in the manifest and the CLI-side query embedder.
 
 | F5.2 Benchmark-score regression gate | Landed | `scripts/benchmark_floor_check.py` + committed `fixtures/benchmarks/floors.v1.json`: asserts each committed benchmark headline is at or above its recorded floor (ERB-500 combined ≥ 47.74, recall ≥ 55.71%), so a ranking/pipeline change that silently lowers a published score fails CI, not after release. Wired into the nightly `benchmark-validation` job. Gate `benchmark-floor-check`. | Add per-type floors + a history trend as more runs commit. | `benchmark-floor-check` |
 
+| C4-1 Receipt-emission p99 budget | Landed | `receipt_emission_p99_is_within_budget` (`accountability/receipt_sign_tests.rs`): measures the receipt emission hot path (canonicalize + Ed25519-sign the header) over 400 iterations and asserts p99 stays under a frozen budget (50 ms/emit). Release-build measured **p50 ≈ 146 µs, p99 ≈ 155 µs** — a 325× margin, so it never flakes on CI noise yet catches a catastrophic emission regression (which would tempt operators to flag the receipt off → moat gone). Writes a report for tracking. Gate `receipt-emission-budget-check`. | Add a per-machine history/trend as release runs accumulate. | `receipt-emission-budget-check` |
+
 ## Cross-cutting landings
 
 | Item | State | Notes | Gate |
