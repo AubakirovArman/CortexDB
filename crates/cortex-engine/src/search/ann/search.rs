@@ -63,6 +63,16 @@ pub fn search_persisted_ann(
     )
 }
 
+/// A3.3: the recall step's mode. `Exact` recomputes exact recall on the query
+/// (the default / sampled path, byte-identical to pre-A3.3 behavior); `Windowed`
+/// serves an unsampled guarded query with the collection's windowed recall and
+/// skips the exact scan — the sampling perf win.
+#[derive(Clone, Copy, Debug)]
+pub(crate) enum RecallMode {
+    Exact,
+    Windowed(u16),
+}
+
 pub fn search_persisted_ann_with_policy(
     vectors: &BTreeMap<u32, Vec<i16>>,
     graph: &HnswGraphIndex,
@@ -70,6 +80,48 @@ pub fn search_persisted_ann_with_policy(
     allowed: &BTreeSet<u32>,
     limit: usize,
     policy: AnnSearchPolicy,
+) -> AnnSearchOutcome {
+    search_persisted_ann_inner(
+        vectors,
+        graph,
+        query,
+        allowed,
+        limit,
+        policy,
+        RecallMode::Exact,
+    )
+}
+
+/// A3.3: serve ANN for an unsampled guarded-recall query without recomputing exact
+/// recall — the recall carried in the report is the collection's windowed value.
+pub fn search_persisted_ann_sampled(
+    vectors: &BTreeMap<u32, Vec<i16>>,
+    graph: &HnswGraphIndex,
+    query: &[i16],
+    allowed: &BTreeSet<u32>,
+    limit: usize,
+    policy: AnnSearchPolicy,
+    windowed_recall_q16: u16,
+) -> AnnSearchOutcome {
+    search_persisted_ann_inner(
+        vectors,
+        graph,
+        query,
+        allowed,
+        limit,
+        policy,
+        RecallMode::Windowed(windowed_recall_q16),
+    )
+}
+
+fn search_persisted_ann_inner(
+    vectors: &BTreeMap<u32, Vec<i16>>,
+    graph: &HnswGraphIndex,
+    query: &[i16],
+    allowed: &BTreeSet<u32>,
+    limit: usize,
+    policy: AnnSearchPolicy,
+    recall_mode: RecallMode,
 ) -> AnnSearchOutcome {
     let available = vectors
         .iter()
@@ -217,17 +269,28 @@ pub fn search_persisted_ann_with_policy(
         );
     }
 
-    let exact_results = search_persisted_vectors(vectors, query, allowed, limit, &config.metric);
-    let exact_set = exact_results
-        .iter()
-        .map(|candidate| candidate.cell_id)
-        .collect::<BTreeSet<_>>();
-    let overlap = ann
-        .iter()
-        .filter(|candidate| exact_set.contains(&candidate.cell_id))
-        .count();
-    let recall = recall_q16(overlap, exact_results.len());
     let effective_min_recall = policy.min_recall_q16.unwrap_or(MIN_ANN_RECALL_Q16);
+    let (recall, precomputed_exact) = match recall_mode {
+        // Default (sampled / non-guarded) path: recompute exact recall on this
+        // query — byte-identical to the pre-A3.3 behavior.
+        RecallMode::Exact => {
+            let exact_results =
+                search_persisted_vectors(vectors, query, allowed, limit, &config.metric);
+            let exact_set = exact_results
+                .iter()
+                .map(|candidate| candidate.cell_id)
+                .collect::<BTreeSet<_>>();
+            let overlap = ann
+                .iter()
+                .filter(|candidate| exact_set.contains(&candidate.cell_id))
+                .count();
+            let recall = recall_q16(overlap, exact_results.len());
+            (recall, Some(exact_results))
+        }
+        // A3.3: an unsampled guarded query serves ANN with the collection's
+        // windowed recall and skips the exact scan (the sampling perf win).
+        RecallMode::Windowed(windowed_recall_q16) => (windowed_recall_q16, None),
+    };
 
     if recall < effective_min_recall {
         if !policy.fallback {
@@ -244,6 +307,12 @@ pub fn search_persisted_ann_with_policy(
                 visited_candidates,
             );
         }
+        // A windowed query that dips below floor still needs an exact result set to
+        // serve from; compute it now (rare — the guarded caller routes a degraded
+        // collection to exact serving before it reaches this path).
+        let exact_results = precomputed_exact.unwrap_or_else(|| {
+            search_persisted_vectors(vectors, query, allowed, limit, &config.metric)
+        });
         return exact_from_results(
             exact_results,
             limit,

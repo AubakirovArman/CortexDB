@@ -3,10 +3,81 @@ use std::collections::{BTreeMap, BTreeSet};
 use cortex_storage::hnsw::HnswGraphIndex;
 
 use super::search::{
-    allowed_ratio_within_bps, search_persisted_ann_with_policy,
+    allowed_ratio_within_bps, search_persisted_ann_sampled, search_persisted_ann_with_policy,
     SPARSE_ALLOWED_EXACT_FALLBACK_MAX_CANDIDATES, SPARSE_ALLOWED_EXACT_FALLBACK_MAX_RATIO_BPS,
 };
 use super::types::{AnnFallbackReason, AnnSearchPath, AnnSearchPolicy, MIN_ANN_RECALL_Q16};
+
+// A3.3: build a small, well-connected HNSW graph over a full allowed set so a
+// query takes the HNSW path (no sparse/budget/insufficient fallback).
+fn dense_ring_graph() -> (BTreeMap<u32, Vec<i16>>, HnswGraphIndex, BTreeSet<u32>) {
+    let mut vectors = BTreeMap::new();
+    let mut links = BTreeMap::new();
+    let n = 40u32;
+    for id in 1..=n {
+        vectors.insert(id, vec![id as i16, (n - id) as i16]);
+        // Ring + skip links for connectivity.
+        let a = id % n + 1;
+        let b = (id + 3) % n + 1;
+        links.insert(id, BTreeSet::from([a, b]));
+    }
+    let graph = HnswGraphIndex {
+        links,
+        dimension: 2,
+        metric: 0,
+        ..HnswGraphIndex::default()
+    };
+    let allowed: BTreeSet<u32> = (1..=n).collect();
+    (vectors, graph, allowed)
+}
+
+// A3.3: the sampled (unsampled-query) path serves ANN with the collection's
+// windowed recall and does NOT recompute exact recall — the report carries the
+// supplied windowed value verbatim, and it still returns ANN results.
+#[test]
+fn sampled_path_serves_ann_with_windowed_recall() {
+    let (vectors, graph, allowed) = dense_ring_graph();
+    let policy = AnnSearchPolicy {
+        min_recall_q16: Some(1_000), // low floor so the windowed value passes
+        fallback: true,
+        fallback_scan_cap: None,
+        max_visited_candidates: None,
+        require_slo: false,
+    };
+    let windowed = 50_000u16;
+    let outcome =
+        search_persisted_ann_sampled(&vectors, &graph, &[20, 20], &allowed, 3, policy, windowed);
+
+    assert_eq!(outcome.report.path, AnnSearchPath::HnswGraph);
+    assert_eq!(
+        outcome.report.recall_q16,
+        Some(windowed),
+        "the report must carry the windowed recall, not a recomputed one"
+    );
+    assert!(!outcome.results.is_empty());
+}
+
+// A3.3: a windowed value below the floor still falls back to exact serving
+// (correctness preserved even on the skip path).
+#[test]
+fn sampled_path_below_floor_falls_back_to_exact() {
+    let (vectors, graph, allowed) = dense_ring_graph();
+    let policy = AnnSearchPolicy {
+        min_recall_q16: Some(50_000),
+        fallback: true,
+        fallback_scan_cap: None,
+        max_visited_candidates: None,
+        require_slo: false,
+    };
+    let outcome =
+        search_persisted_ann_sampled(&vectors, &graph, &[20, 20], &allowed, 3, policy, 10_000);
+
+    assert_eq!(outcome.report.path, AnnSearchPath::ExactFallback);
+    assert_eq!(
+        outcome.report.fallback_reason,
+        Some(AnnFallbackReason::LowRecall)
+    );
+}
 
 #[test]
 fn allowed_ratio_threshold_is_explicit_and_codified() {
