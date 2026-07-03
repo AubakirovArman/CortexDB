@@ -50,6 +50,10 @@ longmemeval-v1-e2e-adapter-check:
 longmemeval-evidence-page-check:
 	python3 scripts/longmemeval_evidence_page_check.py
 
+.PHONY: longmemeval-per-type-regression-check
+longmemeval-per-type-regression-check:
+	python3 scripts/longmemeval/per_type_regression_gate.py --self-test
+
 longmemeval-v1-official-generate: longmemeval-v1-official-repo longmemeval-v1-cortexdb-retrieval
 	@if [ -z "$(LONGMEMEVAL_V1_READER_API_KEY)" ]; then echo "Set LONGMEMEVAL_V1_READER_API_KEY or DEEPSEEK_API_KEY for generation" >&2; exit 2; fi
 	mkdir -p "$(LONGMEMEVAL_V1_GENERATION_ROOT)"

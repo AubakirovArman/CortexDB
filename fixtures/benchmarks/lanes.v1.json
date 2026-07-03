@@ -15,6 +15,7 @@
         {"target": "benchmark-registry-check", "purpose": "F1.2 published benchmark numbers trace to committed evidence, no overclaim"},
         {"target": "quick-retrieval-eval-check", "purpose": "F1.4 fast per-type retrieval-eval loop; real CLI retrieval scored vs registry baseline, degradation fixture caught"},
         {"target": "benchmark-trend-check", "purpose": "F5.2 latest-vs-previous benchmark trend gate; per-benchmark tolerances, ERB cross-judge trend refused (F2.2 rule)"},
+        {"target": "longmemeval-per-type-regression-check", "purpose": "F3.1 LongMemEval per-type retrieval regression gate; fast mini-log replay + degraded-log catch"},
         {"target": "erb-compare-runs-check", "purpose": "F2.2 ERB run comparisons refuse across-judge deltas"},
         {"target": "results-page-check", "purpose": "F5.1 RESULTS.md figures trace to committed reports"},
         {"target": "aab-mini-score-check", "purpose": "F4.2 6-axis AAB mini-score (structural axes unranked)"},

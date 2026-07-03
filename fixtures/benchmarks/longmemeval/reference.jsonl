@@ -1,0 +1,18 @@
+{"question_id": "lme_0_0", "question_type": "single-session-user", "gold_ids": ["g_0_0_0"]}
+{"question_id": "lme_0_1", "question_type": "single-session-user", "gold_ids": ["g_0_1_0"]}
+{"question_id": "lme_0_2", "question_type": "single-session-user", "gold_ids": ["g_0_2_0"]}
+{"question_id": "lme_1_0", "question_type": "single-session-assistant", "gold_ids": ["g_1_0_0"]}
+{"question_id": "lme_1_1", "question_type": "single-session-assistant", "gold_ids": ["g_1_1_0"]}
+{"question_id": "lme_1_2", "question_type": "single-session-assistant", "gold_ids": ["g_1_2_0"]}
+{"question_id": "lme_2_0", "question_type": "single-session-preference", "gold_ids": ["g_2_0_0"]}
+{"question_id": "lme_2_1", "question_type": "single-session-preference", "gold_ids": ["g_2_1_0"]}
+{"question_id": "lme_2_2", "question_type": "single-session-preference", "gold_ids": ["g_2_2_0"]}
+{"question_id": "lme_3_0", "question_type": "multi-session", "gold_ids": ["g_3_0_0", "g_3_0_1"]}
+{"question_id": "lme_3_1", "question_type": "multi-session", "gold_ids": ["g_3_1_0", "g_3_1_1"]}
+{"question_id": "lme_3_2", "question_type": "multi-session", "gold_ids": ["g_3_2_0", "g_3_2_1"]}
+{"question_id": "lme_4_0", "question_type": "temporal-reasoning", "gold_ids": ["g_4_0_0"]}
+{"question_id": "lme_4_1", "question_type": "temporal-reasoning", "gold_ids": ["g_4_1_0"]}
+{"question_id": "lme_4_2", "question_type": "temporal-reasoning", "gold_ids": ["g_4_2_0"]}
+{"question_id": "lme_5_0", "question_type": "knowledge-update", "gold_ids": ["g_5_0_0"]}
+{"question_id": "lme_5_1", "question_type": "knowledge-update", "gold_ids": ["g_5_1_0"]}
+{"question_id": "lme_5_2", "question_type": "knowledge-update", "gold_ids": ["g_5_2_0"]}

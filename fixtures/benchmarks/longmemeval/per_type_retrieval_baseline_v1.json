@@ -1,0 +1,41 @@
+{
+  "overall": {
+    "n": 18,
+    "ndcg_any@10": 1.0,
+    "recall_all@10": 1.0
+  },
+  "per_type": {
+    "knowledge-update": {
+      "n": 3,
+      "ndcg_any@10": 1.0,
+      "recall_all@10": 1.0
+    },
+    "multi-session": {
+      "n": 3,
+      "ndcg_any@10": 1.0,
+      "recall_all@10": 1.0
+    },
+    "single-session-assistant": {
+      "n": 3,
+      "ndcg_any@10": 1.0,
+      "recall_all@10": 1.0
+    },
+    "single-session-preference": {
+      "n": 3,
+      "ndcg_any@10": 1.0,
+      "recall_all@10": 1.0
+    },
+    "single-session-user": {
+      "n": 3,
+      "ndcg_any@10": 1.0,
+      "recall_all@10": 1.0
+    },
+    "temporal-reasoning": {
+      "n": 3,
+      "ndcg_any@10": 1.0,
+      "recall_all@10": 1.0
+    }
+  },
+  "schema_version": "cortexdb.longmemeval.per_type_retrieval.v1",
+  "top_k": 10
+}
