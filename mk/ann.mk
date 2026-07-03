@@ -311,8 +311,14 @@ ann-release-evidence-check:
 	$(MAKE) ann-demo-domain-validate-baseline-package
 	@echo "=== ANN release evidence check passed ==="
 
+# A3.3 p50 DoD: default n=50000 (the DoD scale) so the representative clustered-384-D
+# arm hard-asserts p50 >= 3x; override ANN_GUARDED_BENCH_N for a faster local smoke
+# (below 50000 the bench is report-only). ANN_GUARDED_BENCH_DIM overrides the
+# clustered corpus dimension.
+ANN_GUARDED_BENCH_N ?= 50000
 .PHONY: ann-guarded-sampling-latency-bench
 ann-guarded-sampling-latency-bench:
-	cargo test -p cortex-engine --release --lib \
+	CORTEXDB_BENCH_N=$(ANN_GUARDED_BENCH_N) $(if $(ANN_GUARDED_BENCH_DIM),CORTEXDB_BENCH_DIM=$(ANN_GUARDED_BENCH_DIM),) \
+	  cargo test -p cortex-engine --release --lib \
 	  search::ann::guarded_latency_tests::unsampled_guarded_query_p50_speedup_bench \
 	  -- --ignored --nocapture

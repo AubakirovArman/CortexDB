@@ -230,6 +230,9 @@ jobs:
       - name: Build ANN release evidence bundle
         run: make ann-release-evidence-check
 
+      - name: Enforce A3.3 guarded-sampling p50 speedup DoD (>=3x at n=50000)
+        run: make ann-guarded-sampling-latency-bench
+
       - name: Run continuous scale benchmark gate
         run: make continuous-benchmark-hosted-gate
 
