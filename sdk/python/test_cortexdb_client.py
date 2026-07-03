@@ -109,6 +109,48 @@ class CortexDBClientPathTests(unittest.TestCase):
             "/v1/search?scope=project%3Ainvestments&tenant=tenant%3Aalpha",
         )
 
+    def test_agent_transaction_and_handoff_post_to_the_right_paths(self) -> None:
+        captured: dict[str, object] = {}
+
+        class CaptureResponse:
+            def __enter__(self) -> "CaptureResponse":
+                return self
+
+            def __exit__(self, exc_type: object, exc: object, tb: object) -> None:
+                return None
+
+            def read(self) -> bytes:
+                return b'{"outcome":"committed","idempotent_replay":false}'
+
+        class CaptureOpener:
+            def open(self, request: object, timeout: float) -> "CaptureResponse":
+                captured["url"] = request.full_url  # type: ignore[attr-defined]
+                captured["method"] = request.get_method()  # type: ignore[attr-defined]
+                captured["body"] = request.data  # type: ignore[attr-defined]
+                return CaptureResponse()
+
+        client = CortexDBClient(_opener=CaptureOpener())
+
+        result = client.agent_transaction(
+            {"scope": "agent:one", "base_seq": 0, "operations": [], "idempotency_key": "k"}
+        )
+        self.assertEqual(result["outcome"], "committed")
+        self.assertEqual(captured["method"], "POST")
+        self.assertTrue(str(captured["url"]).endswith("/v1/transactions"))
+        self.assertIn(b"agent:one", captured["body"])  # type: ignore[arg-type]
+
+        client.agent_handoff(
+            {
+                "source_agent_id": 1,
+                "target_agent_id": 2,
+                "scope": "shared:project",
+                "pack_hash": "h",
+                "pack_seq": 0,
+                "required_after_seq": 0,
+            }
+        )
+        self.assertTrue(str(captured["url"]).endswith("/v1/handoff"))
+
     def test_client_retries_database_busy_and_uses_configured_timeout(self) -> None:
         class FakeResponse:
             def __enter__(self) -> "FakeResponse":

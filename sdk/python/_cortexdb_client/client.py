@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import urllib.parse
 from dataclasses import dataclass, field, replace
 from typing import Any, Callable
@@ -92,6 +93,18 @@ class CortexDBClient:
 
     def compact(self) -> dict[str, Any]:
         return self._request("POST", "/v1/compact", b"")
+
+    def agent_transaction(self, request: dict[str, Any]) -> dict[str, Any]:
+        """Commit an optimistic-concurrency agent transaction (F04-B6.3).
+
+        A conflict is a normal response with ``outcome == "conflict"``, not an
+        HTTP error — read ``outcome`` rather than relying on the status code.
+        """
+        return self._request("POST", "/v1/transactions", json.dumps(request).encode())
+
+    def agent_handoff(self, request: dict[str, Any]) -> dict[str, Any]:
+        """Commit a durable SharedSequenced agent handoff (F04-B6.3 / F08-B6.1)."""
+        return self._request("POST", "/v1/handoff", json.dumps(request).encode())
 
     def search(self, scope: str, query: str, limit: int = 20) -> dict[str, Any]:
         path = self._path("/v1/search", scope=scope, mode="keyword", q=query, limit=limit)
