@@ -26,6 +26,12 @@ pub struct DeterminismHashInput<'a> {
     pub bitmap_program_digest: Option<&'a str>,
     pub frozen_weights_version: &'a str,
     pub frozen_weights_artifact_hash: &'a str,
+    /// A3.3: the per-collection ANN serving epoch. `None` for the default
+    /// (unconditional exact-recall) serving path — in which case the hash input is
+    /// byte-identical to the frozen v1 goldens. `Some(epoch)` only when a
+    /// collection is under guarded sampling, so the epoch enters the signed
+    /// determinism surface additively (no golden churn on the default path).
+    pub serving_epoch: Option<u64>,
 }
 
 pub fn frozen_ranking_weights_identity() -> FrozenWeightsIdentity {
@@ -51,7 +57,7 @@ pub fn determinism_hash(input: &DeterminismHashInput<'_>) -> String {
 }
 
 pub fn determinism_hash_input_value(input: &DeterminismHashInput<'_>) -> Value {
-    json!({
+    let mut value = json!({
         "schema_version": DETERMINISM_HASH_SCHEMA,
         "query": input.query,
         "agent_view_digest": input.agent_view_digest,
@@ -61,7 +67,20 @@ pub fn determinism_hash_input_value(input: &DeterminismHashInput<'_>) -> Value {
             "version": input.frozen_weights_version,
             "artifact_hash": input.frozen_weights_artifact_hash,
         },
-    })
+    });
+    // A3.3: the ANN serving epoch enters the signed determinism surface ONLY when a
+    // collection is under guarded sampling (`Some`). When absent (`None`, the
+    // default serving path), the object is byte-identical to the frozen v1
+    // goldens — an additive change with no golden churn. A verifier that sees an
+    // `ann_serving_epoch` re-executes under that serving mode; one that does not
+    // re-executes the unconditional exact path, exactly as before.
+    if let Some(epoch) = input.serving_epoch {
+        value
+            .as_object_mut()
+            .expect("determinism input value is a JSON object")
+            .insert("ann_serving_epoch".to_owned(), json!(epoch));
+    }
+    value
 }
 
 fn hash_value(domain: &str, value: &Value) -> String {
@@ -76,20 +95,66 @@ fn hash_bytes(domain: &str, bytes: &[u8]) -> String {
 mod tests {
     use super::*;
 
-    #[test]
-    fn determinism_hash_binds_frozen_weight_hash() {
-        let input = DeterminismHashInput {
+    fn sample_input() -> DeterminismHashInput<'static> {
+        DeterminismHashInput {
             query: "RETRIEVE CONTEXT FOR TASK \"ship\"",
             agent_view_digest: Some("a"),
             context_options_digest: Some("b"),
             bitmap_program_digest: Some("c"),
             frozen_weights_version: "ranking-frozen-weights-v1",
             frozen_weights_artifact_hash: "hash-a",
-        };
+            serving_epoch: None,
+        }
+    }
+
+    #[test]
+    fn determinism_hash_binds_frozen_weight_hash() {
+        let input = sample_input();
         let mut changed = input.clone();
         changed.frozen_weights_artifact_hash = "hash-b";
 
         assert_ne!(determinism_hash(&input), determinism_hash(&changed));
+    }
+
+    // A3.3: the serving epoch is additive. `None` (the default serving path) must
+    // reproduce the exact bytes the frozen v1 goldens were signed over — i.e. the
+    // canonical input value must have no `ann_serving_epoch` key at all — so adding
+    // the field cannot churn any committed accountability golden. `Some` must both
+    // add the key and change the hash (so a verifier re-executes under that epoch).
+    #[test]
+    fn serving_epoch_is_additive_and_golden_safe() {
+        let none = sample_input();
+        // The None value is byte-identical to the pre-A3.3 object (no epoch key).
+        let value = determinism_hash_input_value(&none);
+        assert!(
+            value
+                .as_object()
+                .unwrap()
+                .get("ann_serving_epoch")
+                .is_none(),
+            "None serving_epoch must not add a key (golden-safety)"
+        );
+
+        let mut with_epoch = sample_input();
+        with_epoch.serving_epoch = Some(7);
+        let epoch_value = determinism_hash_input_value(&with_epoch);
+        assert_eq!(
+            epoch_value.as_object().unwrap().get("ann_serving_epoch"),
+            Some(&serde_json::json!(7)),
+        );
+        assert_ne!(
+            determinism_hash(&none),
+            determinism_hash(&with_epoch),
+            "a distinct serving epoch must change the determinism hash"
+        );
+
+        // Different epochs hash differently (monotonic transitions are visible).
+        let mut with_epoch_8 = sample_input();
+        with_epoch_8.serving_epoch = Some(8);
+        assert_ne!(
+            determinism_hash(&with_epoch),
+            determinism_hash(&with_epoch_8)
+        );
     }
 
     #[test]

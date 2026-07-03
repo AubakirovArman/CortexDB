@@ -81,6 +81,10 @@ impl AccountabilityDeterminismInput {
             bitmap_program_digest: self.bitmap_program_digest.as_deref(),
             frozen_weights_version: &self.frozen_weights_version,
             frozen_weights_artifact_hash: &self.frozen_weights_hash,
+            // A3.3: absent on the default (unconditional exact-recall) path, so
+            // existing receipts + goldens are byte-identical. The guarded-sampling
+            // wiring threads Some(epoch) only for collections under sampling.
+            serving_epoch: None,
         }
     }
 }
