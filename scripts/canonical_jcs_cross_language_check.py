@@ -126,6 +126,45 @@ def build_ed25519() -> list[dict]:
     return out
 
 
+# The real committed accountability receipt: its header roots were produced by
+# Rust; re-deriving them here from its committed leaves proves the receipt-body
+# Merkle composition reproduces cross-language on real data (not just synthetics).
+RECEIPT_GOLDEN = REPO / "fixtures" / "accountability_receipt" / "verify_input.golden.json"
+RECEIPT_FAMILY_SPECS = [
+    ("access", "cortexdb.accountability.receipt.access_root.v1", "access_root"),
+    ("provenance", "cortexdb.accountability.receipt.provenance_root.v1", "provenance_root"),
+    ("cell_set", "cortexdb.accountability.receipt.cell_set_root.v1", "cell_set_root"),
+    ("verification", "cortexdb.accountability.receipt.verification_root.v1", "verification_root"),
+    ("budget", "cortexdb.accountability.receipt.budget_commitment.v1", "budget_commitment"),
+    ("conflict", "cortexdb.accountability.receipt.conflict_commitment.v1", "conflict_commitment"),
+]
+
+
+def check_receipt_golden() -> list[str]:
+    if not RECEIPT_GOLDEN.exists():
+        return []
+    try:
+        import blake3  # noqa: F401
+    except ImportError:
+        return []
+    receipt = json.loads(RECEIPT_GOLDEN.read_text())["receipt"]
+    header, leaves = receipt["header"], receipt["leaves"]
+    errors = []
+    for family, domain, root_field in RECEIPT_FAMILY_SPECS:
+        # The receipt root is over receipt.rs::sorted_values(leaves) — leaves
+        # sorted by their canonical bytes — before merkle_root; the stored order
+        # is not guaranteed sorted, so replicate the sort here.
+        family_leaves = sorted(leaves[family], key=canonical_json_bytes)
+        derived = merkle_root(domain, family_leaves)
+        expected = header[root_field]
+        if derived != expected:
+            errors.append(
+                f"real-receipt {family}: python root {derived} != committed header "
+                f"{root_field} {expected}"
+            )
+    return errors
+
+
 def check_ed25519() -> list[str]:
     if not ED25519_FIXTURE.exists():
         return [f"missing fixture {ED25519_FIXTURE.relative_to(REPO)} (run with --generate)"]
@@ -228,6 +267,7 @@ def main() -> int:
                 f"{entry['canonical_sha256']}"
             )
     errors.extend(check_merkle())
+    errors.extend(check_receipt_golden())
     errors.extend(check_ed25519())
     if errors:
         print("canonical-jcs-cross-language-check FAILED")
@@ -236,8 +276,9 @@ def main() -> int:
         return 1
     print(
         f"canonical-jcs-cross-language-check passed: {len(committed)} JCS + "
-        f"{len(MERKLE_VECTORS)} Merkle + {len(ED25519_VECTORS)} Ed25519 vector(s); "
-        "python canonicalization + blake3 Merkle roots + Ed25519 signatures match the "
+        f"{len(MERKLE_VECTORS)} Merkle + {len(ED25519_VECTORS)} Ed25519 vector(s) + the "
+        f"{len(RECEIPT_FAMILY_SPECS)} roots of a real committed receipt; python "
+        "canonicalization + blake3 Merkle roots + Ed25519 signatures reproduce the "
         "committed values byte-for-byte"
     )
     return 0
