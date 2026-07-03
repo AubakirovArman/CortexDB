@@ -47,8 +47,8 @@ fn ed25519_signature_matches_cross_language_vectors() {
     for (index, entry) in vectors.iter().enumerate() {
         let seed_hex = entry["seed_hex"].as_str().expect("seed");
         let message = entry["message"].as_str().expect("message");
-        let key = ReceiptSigningKey::from_seed_hex("cross-lang-test", seed_hex)
-            .expect("seed decodes");
+        let key =
+            ReceiptSigningKey::from_seed_hex("cross-lang-test", seed_hex).expect("seed decodes");
         assert_eq!(
             key.public_key().to_hex(),
             entry["public_key_hex"].as_str().unwrap(),
@@ -60,6 +60,79 @@ fn ed25519_signature_matches_cross_language_vectors() {
             "ed25519 vector {index}: signature differs cross-language"
         );
     }
+}
+
+// C4-2 (pack_root): the receipt's `pack_root` hashes a canonical *mapping* of the
+// ContextPack (canonical.rs::context_pack_value) — not a Merkle leaf set — so
+// verifying it cross-language means re-implementing that mapping, not just the
+// hash. A pure-Python mirror
+// (scripts/canonical_jcs_cross_language_check.py::context_pack_value) computed the
+// committed pack_root for this minimal pack; here we build the *same* pack through
+// the real engine `canonical_context_pack_bytes` and assert the identical bytes +
+// root, so the pack canonicalization reproduces byte-for-byte in both languages.
+#[test]
+fn pack_root_matches_cross_language_vector() {
+    use crate::canonical::canonical_context_pack_bytes;
+    use cortex_crypto::hex_lower;
+
+    let vector: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../fixtures/canonical/pack_root_conformance_vector.v1.json"
+    ))
+    .expect("pack_root conformance vector parses");
+
+    // A plain payload: no `source_id=`/`source=`/`citation=` header line, so
+    // metadata.source_ref stays None (-> null), matching the Python mapping.
+    let payload = b"cortex pack root cross-language fixture body".to_vec();
+    let descriptor = CellDescriptor::from_payload_lossy(&payload);
+    let retrieved = RetrievedCell {
+        cell_id: CellId(1),
+        payload: payload.clone(),
+        descriptor,
+        captured_access_decision: None,
+    };
+    let metadata = retrieved.metadata();
+    assert!(
+        metadata.source_ref.is_none(),
+        "fixture assumes a payload whose metadata carries no source_ref"
+    );
+    let pack = ContextPack {
+        cells: vec![ContextPackCell {
+            cell_id: CellId(1),
+            payload,
+            metadata,
+            estimated_tokens: 5,
+            citation: None,
+            provenance: None,
+            explain: None,
+            access_decision: None,
+        }],
+        token_budget_tokens: 128,
+        estimated_tokens: 5,
+        truncated: false,
+        citations_required: false,
+        answerability_q16: 0,
+        conflict_visibility_q16: 0,
+        visible_conflict_count: 0,
+        anomalies: vec![],
+        grounding_report: None,
+    };
+
+    let canonical = canonical_context_pack_bytes(&pack);
+    let derived_root = super::receipt::hash_bytes(
+        super::receipt::ACCOUNTABILITY_RECEIPT_PACK_ROOT_DOMAIN,
+        &canonical,
+    );
+
+    assert_eq!(
+        hex_lower(&canonical),
+        vector["canonical_pack_bytes_hex"].as_str().unwrap(),
+        "Rust canonical pack bytes differ from the committed (Python) bytes"
+    );
+    assert_eq!(
+        derived_root,
+        vector["pack_root_blake3"].as_str().unwrap(),
+        "Rust pack_root differs from the committed (Python) pack_root"
+    );
 }
 
 #[test]

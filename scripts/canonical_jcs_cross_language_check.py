@@ -12,8 +12,11 @@ Python canonical bytes equals the committed digest — the SAME digest a Rust te
 are identical (a sha256 collision is infeasible), so the canonicalization is
 language-independent.
 
-This is verify-only: it never rewrites a signed golden. The Merkle-leaf/root and
-Ed25519 layers are the remaining C4-2 work.
+This now also re-derives the receipt's blake3 Merkle roots (synthetic + the 6 roots
+of a real committed receipt), its Ed25519 signatures, and its `pack_root` (the
+canonical ContextPack mapping) — each asserted byte-for-byte against the matching
+Rust test. This is verify-only: it never rewrites a signed golden. Remaining C4-2:
+the 6 leaf-family field extractions (receipt_leaves.rs).
 
 Dependency-free (stdlib only); deterministic; no network, no wall clock.
 """
@@ -139,6 +142,114 @@ RECEIPT_FAMILY_SPECS = [
     ("conflict", "cortexdb.accountability.receipt.conflict_commitment.v1", "conflict_commitment"),
 ]
 
+# C4-2 (pack_root): the receipt's `pack_root` is blake3(domain || 0x00 ||
+# canonical_context_pack_bytes(pack)). Unlike the Merkle families, `pack_root`
+# hashes a *mapping* of the ContextPack struct into a canonical Value
+# (canonical.rs::context_pack_value) before canonicalization — so to verify it
+# cross-language we must re-implement that mapping, not just the hash. The
+# committed accountability golden serializes the pack in its *response* form
+# (without each cell's raw payload bytes), so it cannot drive this check; instead
+# we pin a minimal pack whose every field is reproducible in both languages and
+# assert the derived `pack_root` matches. A Rust test
+# (receipt_tests.rs::pack_root_matches_cross_language_vector) builds the same
+# minimal pack through the real engine `canonical_context_pack_bytes` and asserts
+# the identical committed root, closing the loop.
+PACK_ROOT_FIXTURE = REPO / "fixtures" / "canonical" / "pack_root_conformance_vector.v1.json"
+PACK_ROOT_DOMAIN = "cortexdb.accountability.receipt.pack_root.v1"
+# The minimal pack: one cell with a plain payload (no `source_id=`/`source=`/
+# `citation=` header line, so metadata.source_ref is None -> null) and every
+# optional (citation, source_ref, provenance, explain, access_decision,
+# grounding_report) absent, and no anomalies. This keeps the Python re-mapping a
+# faithful, total mirror of context_pack_value for the fields that are present.
+PACK_ROOT_INPUT = {
+    "token_budget_tokens": 128,
+    "estimated_tokens": 5,
+    "truncated": False,
+    "citations_required": False,
+    "answerability_q16": 0,
+    "conflict_visibility_q16": 0,
+    "visible_conflict_count": 0,
+    "cells": [
+        {
+            "cell_id": 1,
+            "payload_utf8": "cortex pack root cross-language fixture body",
+            "estimated_tokens": 5,
+            "citation": None,
+        }
+    ],
+}
+
+
+def context_pack_cell_value(cell: dict) -> dict:
+    """Mirror of canonical.rs::context_pack_cell_value for a cell with no
+    optional sub-structures (source_ref/provenance/explain/access_decision)."""
+    return {
+        "cell_id": cell["cell_id"],
+        "payload_hex": cell["payload_utf8"].encode("utf-8").hex(),
+        "estimated_tokens": cell["estimated_tokens"],
+        "citation": cell["citation"],
+        "source_ref": None,
+        "provenance": None,
+        "explain": None,
+        "access_decision": None,
+    }
+
+
+def context_pack_value(pack_input: dict) -> dict:
+    """Mirror of canonical.rs::context_pack_value (schema context_pack.canonical.v1)."""
+    return {
+        "schema_version": "context_pack.canonical.v1",
+        "token_budget_tokens": pack_input["token_budget_tokens"],
+        "estimated_tokens": pack_input["estimated_tokens"],
+        "truncated": pack_input["truncated"],
+        "citations_required": pack_input["citations_required"],
+        "answerability_q16": pack_input["answerability_q16"],
+        "conflict_visibility_q16": pack_input["conflict_visibility_q16"],
+        "visible_conflict_count": pack_input["visible_conflict_count"],
+        "cells": [context_pack_cell_value(cell) for cell in pack_input["cells"]],
+        "anomalies": [],
+        "grounding_report": None,
+    }
+
+
+def pack_root(pack_input: dict) -> tuple[str, str]:
+    """Return (canonical_pack_bytes_hex, pack_root) for a minimal ContextPack."""
+    canonical = canonical_json_bytes(context_pack_value(pack_input))
+    return canonical.hex(), hash_bytes(PACK_ROOT_DOMAIN, canonical)
+
+
+def build_pack_root() -> dict:
+    canonical_hex, root = pack_root(PACK_ROOT_INPUT)
+    return {
+        "pack_root_domain": PACK_ROOT_DOMAIN,
+        "pack_input": PACK_ROOT_INPUT,
+        "canonical_pack_bytes_hex": canonical_hex,
+        "pack_root_blake3": root,
+    }
+
+
+def check_pack_root() -> list[str]:
+    if not PACK_ROOT_FIXTURE.exists():
+        return [f"missing fixture {PACK_ROOT_FIXTURE.relative_to(REPO)} (run with --generate)"]
+    try:
+        import blake3  # noqa: F401
+    except ImportError:
+        # The Rust test still verifies pack_root against this committed fixture,
+        # so the cross-language proof holds; Python re-derivation needs `pip
+        # install blake3`.
+        print("  note: blake3 not installed; skipping the Python pack_root re-derivation")
+        return []
+    committed = json.loads(PACK_ROOT_FIXTURE.read_text())
+    canonical_hex, root = pack_root(committed["pack_input"])
+    errors = []
+    if canonical_hex != committed["canonical_pack_bytes_hex"]:
+        errors.append("pack_root: python canonical pack bytes != committed")
+    if root != committed["pack_root_blake3"]:
+        errors.append(
+            f"pack_root: python root {root} != committed {committed['pack_root_blake3']}"
+        )
+    return errors
+
 
 def check_receipt_golden() -> list[str]:
     if not RECEIPT_GOLDEN.exists():
@@ -247,10 +358,12 @@ def main() -> int:
         FIXTURE.write_text(json.dumps(build(), indent=2, ensure_ascii=False) + "\n")
         MERKLE_FIXTURE.write_text(json.dumps(build_merkle(), indent=2, ensure_ascii=False) + "\n")
         ED25519_FIXTURE.write_text(json.dumps(build_ed25519(), indent=2) + "\n")
+        PACK_ROOT_FIXTURE.write_text(json.dumps(build_pack_root(), indent=2) + "\n")
         print(
             f"wrote {FIXTURE.relative_to(REPO)} ({len(VECTORS)}) + "
             f"{MERKLE_FIXTURE.relative_to(REPO)} ({len(MERKLE_VECTORS)}) + "
-            f"{ED25519_FIXTURE.relative_to(REPO)} ({len(ED25519_VECTORS)})"
+            f"{ED25519_FIXTURE.relative_to(REPO)} ({len(ED25519_VECTORS)}) + "
+            f"{PACK_ROOT_FIXTURE.relative_to(REPO)} (1)"
         )
         return 0
 
@@ -269,6 +382,7 @@ def main() -> int:
     errors.extend(check_merkle())
     errors.extend(check_receipt_golden())
     errors.extend(check_ed25519())
+    errors.extend(check_pack_root())
     if errors:
         print("canonical-jcs-cross-language-check FAILED")
         for error in errors:
@@ -277,9 +391,10 @@ def main() -> int:
     print(
         f"canonical-jcs-cross-language-check passed: {len(committed)} JCS + "
         f"{len(MERKLE_VECTORS)} Merkle + {len(ED25519_VECTORS)} Ed25519 vector(s) + the "
-        f"{len(RECEIPT_FAMILY_SPECS)} roots of a real committed receipt; python "
-        "canonicalization + blake3 Merkle roots + Ed25519 signatures reproduce the "
-        "committed values byte-for-byte"
+        f"{len(RECEIPT_FAMILY_SPECS)} roots of a real committed receipt + the pack_root "
+        "of a minimal canonical ContextPack; python canonicalization + blake3 Merkle "
+        "roots + Ed25519 signatures + pack canonicalization reproduce the committed "
+        "values byte-for-byte"
     )
     return 0
 

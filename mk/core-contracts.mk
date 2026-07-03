@@ -153,6 +153,7 @@ canonical-jcs-cross-language-check:
 	cargo test -p cortex-engine --lib canonical::tests::jcs_cross_language_vectors_match
 	cargo test -p cortex-engine --lib accountability::receipt_tests::merkle_root_matches_cross_language_vectors
 	cargo test -p cortex-engine --lib accountability::receipt_tests::ed25519_signature_matches_cross_language_vectors
+	cargo test -p cortex-engine --lib accountability::receipt_tests::pack_root_matches_cross_language_vector
 	python3 scripts/canonical_jcs_cross_language_check.py
 
 accountability-receipt-schema-check:
