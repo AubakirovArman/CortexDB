@@ -1,0 +1,5 @@
+{"question_id": "gen_pref_0", "question_type": "single-session-preference", "question": "Recommend a weekend trip for me.", "answer": "A quiet mountain cabin getaway within a ~$400 budget."}
+{"question_id": "gen_ssu_0", "question_type": "single-session-user", "question": "Where did I say my dentist office is located?", "answer": "Maple Street in Riverton."}
+{"question_id": "gen_multi_0", "question_type": "multi-session", "question": "How much did I spend on running shoes in total?", "answer": "$200."}
+{"question_id": "gen_temporal_0", "question_type": "temporal-reasoning", "question": "Which happened first, my move or my new job?", "answer": "The move (Feb 5) happened before the new job (Mar 1)."}
+{"question_id": "gen_ku_0", "question_type": "knowledge-update", "question": "What phone do I currently use?", "answer": "An iPhone 15."}

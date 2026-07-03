@@ -58,6 +58,30 @@ longmemeval-per-type-regression-check:
 longmemeval-per-type-report-check:
 	python3 scripts/longmemeval/per_type_report.py --self-test
 
+# A6.2 (fast, offline): prove the type-aware generation harness — the prompt
+# branching (ported verbatim from the DeepSeek diagnostic), the evaluate_qa.py-
+# compatible JSONL schema, and byte-determinism — over the committed 5-branch
+# fixture, with NO endpoint. The metered GPT-4o run plugs into the same generator
+# via longmemeval-v1-typeaware-generate.
+.PHONY: longmemeval-v1-typeaware-check
+longmemeval-v1-typeaware-check:
+	python3 scripts/longmemeval/run_official_generation.py --self-test
+
+# A6.2 (real, metered): type-aware official generation over the retrieval log via
+# an OpenAI-compatible endpoint (GPT-4o official). Emits hypotheses for the
+# untouched official evaluate_qa.py (score with longmemeval-v1-official-qa-score
+# LONGMEMEVAL_V1_HYPOTHESIS_FILE=<the emitted jsonl>).
+longmemeval-v1-typeaware-generate: longmemeval-v1-cortexdb-retrieval
+	@if [ -z "$(LONGMEMEVAL_V1_READER_API_KEY)" ]; then echo "Set LONGMEMEVAL_V1_READER_API_KEY for type-aware generation" >&2; exit 2; fi
+	mkdir -p "$(LONGMEMEVAL_V1_GENERATION_ROOT)"
+	python3 scripts/longmemeval/run_official_generation.py \
+	  --retrieval-log "$(LONGMEMEVAL_V1_RETRIEVAL_LOG)" \
+	  --reference-file "$(LONGMEMEVAL_V1_DATA_FILE)" \
+	  --output "$(LONGMEMEVAL_V1_GENERATION_ROOT)/typeaware_hypotheses.jsonl" \
+	  --model "$(LONGMEMEVAL_V1_READER_MODEL_NAME)" \
+	  $(if $(LONGMEMEVAL_V1_READER_BASE_URL),--base-url "$(LONGMEMEVAL_V1_READER_BASE_URL)",) \
+	  --api-key "$(LONGMEMEVAL_V1_READER_API_KEY)"
+
 longmemeval-v1-official-generate: longmemeval-v1-official-repo longmemeval-v1-cortexdb-retrieval
 	@if [ -z "$(LONGMEMEVAL_V1_READER_API_KEY)" ]; then echo "Set LONGMEMEVAL_V1_READER_API_KEY or DEEPSEEK_API_KEY for generation" >&2; exit 2; fi
 	mkdir -p "$(LONGMEMEVAL_V1_GENERATION_ROOT)"
