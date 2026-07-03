@@ -5,7 +5,8 @@ use crate::database::Database;
 use crate::error::EngineResult;
 
 use super::super::ann::{
-    search_persisted_ann, search_persisted_ann_with_policy, AnnSearchOutcome, AnnSearchPolicy,
+    search_persisted_ann, search_persisted_ann_sampled, search_persisted_ann_with_policy,
+    AnnSearchOutcome, AnnSearchPolicy, GuardedServingMode, MIN_ANN_RECALL_Q16,
 };
 use super::super::persisted::{
     search_persisted_lexical, search_persisted_vectors, PersistedLexicalSearchIndex,
@@ -128,23 +129,17 @@ impl Database {
                                     report,
                                 }
                             } else {
-                                match policy {
-                                    Some(policy) => search_persisted_ann_with_policy(
-                                        &index.vectors,
-                                        &graph,
-                                        vector,
-                                        &allowed,
-                                        query.limit,
-                                        policy,
-                                    ),
-                                    None => search_persisted_ann(
-                                        &index.vectors,
-                                        &graph,
-                                        vector,
-                                        &allowed,
-                                        query.limit,
-                                    ),
-                                }
+                                // A3.3: the guarded sampler decides whether to pay
+                                // an exact recall recompute on this query (default
+                                // off -> unchanged behavior).
+                                self.guarded_ann_search(
+                                    &index.vectors,
+                                    &graph,
+                                    vector,
+                                    &allowed,
+                                    query.limit,
+                                    policy,
+                                )
                             }
                         }
                         Err(_) => {
@@ -293,5 +288,97 @@ impl Database {
             view_traces: Vec::new(),
             diversity_diagnostics,
         }))
+    }
+
+    /// A3.3: run the ANN query under the guarded-recall sampler when opted in.
+    ///
+    /// Default off -> the exact-recall recompute runs on every query, byte-identical
+    /// to pre-A3.3. When on, a deterministic sample of queries recomputes exact
+    /// recall into the per-database window (`record_sampled`); unsampled queries
+    /// serve ANN with the windowed recall and skip the exact scan
+    /// (`search_persisted_ann_sampled`); a collection whose window has degraded
+    /// serves exact until a rebuild (detected via the manifest generation) clears
+    /// it. All decisions are deterministic (no wall clock / RNG).
+    fn guarded_ann_search(
+        &self,
+        vectors: &std::collections::BTreeMap<u32, Vec<i16>>,
+        graph: &cortex_storage::hnsw::HnswGraphIndex,
+        vector: &[i16],
+        allowed: &std::collections::BTreeSet<u32>,
+        limit: usize,
+        policy: Option<AnnSearchPolicy>,
+    ) -> AnnSearchOutcome {
+        let unguarded = |policy: Option<AnnSearchPolicy>| match policy {
+            Some(policy) => {
+                search_persisted_ann_with_policy(vectors, graph, vector, allowed, limit, policy)
+            }
+            None => search_persisted_ann(vectors, graph, vector, allowed, limit),
+        };
+        if !self.ann_guarded_sampling.enabled {
+            return unguarded(policy);
+        }
+        let mut guard = match self.guarded_recall.lock() {
+            Ok(guard) => guard,
+            Err(_) => return unguarded(policy),
+        };
+        let Some(state) = guard.as_mut() else {
+            return unguarded(policy);
+        };
+
+        // A rebuild (new manifest generation) reshuffles the sample set + re-arms
+        // the warm-up, and recovers a degraded collection to ANN serving.
+        let generation = self.manifest().checkpoint_seq;
+        if state.generation() != generation {
+            state.on_rebuild(generation);
+        }
+
+        let base_policy = policy.unwrap_or_default();
+        let floor = base_policy.min_recall_q16.unwrap_or(MIN_ANN_RECALL_Q16);
+        let query_bytes: Vec<u8> = vector
+            .iter()
+            .flat_map(|value| value.to_le_bytes())
+            .collect();
+
+        if state.serving_mode() == GuardedServingMode::ExactDegraded {
+            // Degraded: a windowed recall of 0 forces the low-recall exact fallback.
+            state.record_unsampled();
+            return search_persisted_ann_sampled(
+                vectors,
+                graph,
+                vector,
+                allowed,
+                limit,
+                base_policy,
+                0,
+            );
+        }
+
+        if state.should_sample(&query_bytes) {
+            let outcome = search_persisted_ann_with_policy(
+                vectors,
+                graph,
+                vector,
+                allowed,
+                limit,
+                base_policy,
+            );
+            match outcome.report.recall_q16 {
+                Some(recall) => state.record_sampled(recall, floor),
+                None => state.record_unsampled(),
+            }
+            outcome
+        } else {
+            let windowed = state.window().windowed_min().unwrap_or(u16::MAX);
+            state.record_unsampled();
+            search_persisted_ann_sampled(
+                vectors,
+                graph,
+                vector,
+                allowed,
+                limit,
+                base_policy,
+                windowed,
+            )
+        }
     }
 }
