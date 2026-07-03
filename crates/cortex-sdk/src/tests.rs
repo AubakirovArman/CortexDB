@@ -2,6 +2,46 @@ use super::*;
 use crate::http::{append_query_param, path};
 
 #[test]
+fn agent_transaction_wire_types_and_paths_are_stable() {
+    // The request serializes with the tagged `op` discriminator the server expects.
+    let request = AgentTransactionRequestBody {
+        scope: "agent:one".to_owned(),
+        base_seq: 3,
+        operations: vec![WriteOpRequest::Tombstone { cell_id: 7 }],
+        idempotency_key: Some("k".to_owned()),
+    };
+    let json = serde_json::to_string(&request).unwrap();
+    assert!(json.contains(r#""op":"tombstone""#), "{json}");
+    assert!(json.contains(r#""base_seq":3"#), "{json}");
+
+    // A conflict response (a 200 body) deserializes, and the helper gives the
+    // logical status an SDK caller surfaces.
+    let response: AgentTransactionResponse = serde_json::from_value(serde_json::json!({
+        "outcome": "conflict",
+        "idempotent_replay": false,
+        "conflicts": [{"cell_id": 7, "base_seq": 3, "observed_seq": 5, "kind": "stale_cell"}],
+    }))
+    .unwrap();
+    assert_eq!(response.outcome, "conflict");
+    assert_eq!(response.conflicts.len(), 1);
+    assert_eq!(transaction_outcome_status(&response.outcome), 409);
+
+    let handoff: AgentHandoffResponse = serde_json::from_value(serde_json::json!({
+        "handoff_cell_id": 42,
+        "committed_seq": 8,
+        "level": "shared_sequenced",
+        "visible_after_seq": 7,
+        "target_can_read": true,
+    }))
+    .unwrap();
+    assert_eq!(handoff.level, "shared_sequenced");
+
+    // The wire paths the client methods POST to are stable.
+    assert_eq!(path("/v1/transactions", &[]), "/v1/transactions");
+    assert_eq!(path("/v1/handoff", &[]), "/v1/handoff");
+}
+
+#[test]
 fn core_response_types_are_shared_with_api_types() {
     let response: StatsResponse = serde_json::from_value(serde_json::json!({
         "current_seq": 42,

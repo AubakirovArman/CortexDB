@@ -41,6 +41,8 @@ pub use context_pack::{
 };
 pub use grounded_answer::{GroundedAnswerRequest, GroundedAnswerResponse};
 pub use types::{
+    transaction_outcome_status, AgentHandoffRequestBody, AgentHandoffResponse,
+    AgentTransactionConflictResponse, AgentTransactionRequestBody, AgentTransactionResponse,
     AnnEvaluationResponse, AnnNoFallbackDecision, AnnSearchReport, AnswerGroundingOptionsResponse,
     AnswerGroundingReportResponse, AnswerGroundingSpanResponse, AqlCandidateCounts,
     AqlCellResponse, AqlExecutionOperator, AqlExecutionTrace, AqlExplainFilter, AqlExplainResponse,
@@ -55,6 +57,7 @@ pub use types::{
     SearchExplainTermContribution, SearchResponse, SearchResult, SearchRoutingDecision,
     SourceRefResponse, StatsResponse, ValidationResponse, VectorAlgorithm,
     VerificationReportResponse, WriteBatchOperationRequest, WriteBatchRequest, WriteBatchResponse,
+    WriteOpRequest,
 };
 pub use verification::{
     VerificationReportExt, VerifyConflict, VerifyEvidenceConflict, VerifyNumericConflict,

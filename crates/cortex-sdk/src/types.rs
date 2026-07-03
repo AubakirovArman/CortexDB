@@ -1,3 +1,4 @@
+mod agent_transaction;
 mod aql;
 mod context;
 mod core;
@@ -5,6 +6,12 @@ mod error;
 mod ingestion;
 mod search;
 mod verification;
+
+pub use agent_transaction::{
+    transaction_outcome_status, AgentHandoffRequestBody, AgentHandoffResponse,
+    AgentTransactionConflictResponse, AgentTransactionRequestBody, AgentTransactionResponse,
+    WriteOpRequest,
+};
 
 pub use aql::{
     AqlCandidateCounts, AqlCellResponse, AqlExecutionOperator, AqlExecutionTrace, AqlExplainFilter,
