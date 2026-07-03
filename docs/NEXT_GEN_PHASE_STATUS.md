@@ -112,10 +112,40 @@ F01 tiered-storage productization is multi-week; F02/F03 (replication/consensus)
 
 ## Execution log + corrections (this cycle)
 
-Landed this cycle under gates: **A1.4** (`--candidate-pool` first-class, default
-512), **C3-1** (ranking-change protocol doc), **C3-4** (agent-cell-id.v2 NO-GO
-ADR), **A1.3** (cosine-single-implementation allowlist gate), **F5.1**
-(machine-verifiable `RESULTS.md`), **A1.2** (corpus-BM25 IDF, golden-safe slice).
+Landed this cycle under gates (14 phases): **A1.2** (corpus-BM25 IDF), **A1.3**
+(cosine-single-implementation allowlist), **A1.4** (`--candidate-pool` default
+512), **A5.1** (offline LTR corpus builder + leak-free split), **A8.1**
+(structure-aware chunking), **A8.2** (table-row cells), **C3-1** (ranking-change
+protocol doc), **C3-4** (agent-cell-id.v2 NO-GO ADR), **F1.1** (benchmark_report.v1
+schema freeze), **F4.1** (aab_run.v1 schema freeze), **F4.2** (AAB-mini six-axis
+scorer), **F5.1** (machine-verifiable `RESULTS.md`), plus the phase-status map and
+the F3.2/C3-2 already-landed corrections. A8.1/A8.2/A5.1 are complete engine/
+tooling features; A1.2 is a golden-safe slice pending engine-path wiring.
+
+### Honest boundary of what remains
+
+After this sweep, the genuinely-remaining phases fall into four buckets, **none of
+which is a clean tail-of-session landing**:
+
+1. **Run-dependent** — A6.3 (LME hybrid) needs a multi-hour embedded-index + A/B
+   run against the LongMemEval baseline.
+2. **Golden-rebaseline** (11) — the AQL/plan-visible surfaces (diversity/rerank/
+   temporal/coverage as `USING …` options, a new frozen ranker) change the plan's
+   canonical bytes and must land via the C3-1/C3-5 additive-minor-version protocol
+   with re-baselined receipt/plan goldens. This is careful contract work that must
+   not be rushed — a wrong re-baseline breaks the very accountability invariant the
+   project exists to protect.
+3. **Blocked-external** (15) — need resources absent from this environment: a
+   working LLM chat endpoint (Gemma `VLLM_*` gone from `.env`; DeepSeek key 401), a
+   real KMS/HSM operator + published anchor, external compliance reviewers, ≥2
+   independent transparency witnesses/monitors. These are operator/credential
+   actions, **not code**.
+4. **Frozen / cut** (5) — F02/F03/F09 are declared v1.0 non-goals; A8.3/F4.4 are
+   cut; F01 is multi-week productization.
+
+So "all 86 phases in one session" is not achievable: buckets 3-4 (20 phases)
+cannot be completed by code in this environment, and buckets 1-2 (12 phases) are
+multi-session efforts that require a run or the golden-rebaseline ceremony.
 
 Corrections found while executing — several "completable" rows were **already
 landed** (the repo is far past the plan's baseline), so the true remaining count
