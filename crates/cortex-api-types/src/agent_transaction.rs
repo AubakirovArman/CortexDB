@@ -76,9 +76,13 @@ pub struct AgentHandoffResponse {
     pub target_can_read: bool,
 }
 
-/// The HTTP status a transaction `outcome` maps to: a clean commit is `200`, a
-/// write/write conflict is `409 Conflict`. Reused-key-with-different-request and
-/// feature-disabled are engine errors mapped by the error taxonomy, not outcomes.
+/// The **logical** status a client surfaces for a transaction `outcome`. The HTTP
+/// transport always returns `200` with this [`AgentTransactionResponse`] body — the
+/// request was processed and the outcome (`committed`/`conflict`, with the full
+/// `conflicts` detail) is domain data, not a transport error — so an SDK reads
+/// `outcome` and uses this helper to raise a `409`-equivalent on a conflict.
+/// Reused-key-with-different-request and feature-disabled are transport-level engine
+/// errors mapped by the error taxonomy, not outcomes.
 pub fn transaction_outcome_status(outcome: &str) -> u16 {
     match outcome {
         "committed" => 200,

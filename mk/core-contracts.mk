@@ -139,7 +139,7 @@ agent-transactions-contract-check:
 
 .PHONY: agent-handoff-route-check
 agent-handoff-route-check:
-	cargo test -p cortex-server handoff
+	cargo test -p cortex-server agent_transaction::tests
 	python3 scripts/check_openapi_coverage.py
 
 accountability-receipt-schema-check:

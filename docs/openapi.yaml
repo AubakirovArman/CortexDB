@@ -838,6 +838,78 @@ paths:
         '400': *id001
         '403': *id005
         '500': *id002
+  /v1/transactions:
+    post:
+      summary: Commit an optimistic-concurrency agent transaction
+      description: |
+        Commits a write batch as the authenticated agent with optimistic
+        concurrency + idempotency (F04-B1.3). A conflict is returned as a 200
+        response whose `outcome` is `conflict` (the request was processed; the
+        outcome is domain data), carrying the full conflict detail. Requires the
+        agent_transactions feature.
+      parameters:
+      - $ref: '#/components/parameters/Tenant'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - scope
+              - base_seq
+              - operations
+              properties:
+                scope:
+                  type: string
+                base_seq:
+                  type: integer
+                  format: uint64
+                operations:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                    - op
+                    properties:
+                      op:
+                        type: string
+                        enum: [put, patch, tombstone]
+                      cell_id:
+                        type: integer
+                        format: uint64
+                      payload:
+                        type: string
+                idempotency_key:
+                  type: string
+                  nullable: true
+      responses:
+        '200':
+          description: Transaction outcome (committed or conflict)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  outcome:
+                    type: string
+                  committed_seq:
+                    type: integer
+                    format: uint64
+                    nullable: true
+                  idempotent_replay:
+                    type: boolean
+                  conflicts:
+                    type: array
+                    items:
+                      type: object
+                  idempotency_key:
+                    type: string
+                    nullable: true
+        '400':
+          description: Invalid transaction request
+        '500':
+          description: Internal error
   /v1/handoff:
     post:
       summary: Commit a durable SharedSequenced agent handoff

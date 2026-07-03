@@ -164,6 +164,16 @@ pub(crate) fn route_database_with_auth<A: DatabaseAccess>(
                 authenticated_view.as_ref(),
             );
         }
+        ("POST", "/v1/transactions") => {
+            let db = db
+                .as_write()
+                .ok_or_else(|| RouterError::Internal("write route on read lock".to_owned()))?;
+            return crate::agent_transaction::handle_transactions_shared(
+                db,
+                body,
+                authenticated_view.as_ref(),
+            );
+        }
         ("POST", "/v1/handoff") => {
             let db = db
                 .as_write()
@@ -233,6 +243,7 @@ fn is_agent_scoped_route(method: &str, path: &str) -> bool {
             | ("DELETE", "/v1/cell")
             | ("POST", "/v1/context")
             | ("POST", "/v1/context/trace")
+            | ("POST", "/v1/transactions")
             | ("POST", "/v1/handoff")
             | ("POST", "/v1/aql")
             | ("POST", "/v1/search")

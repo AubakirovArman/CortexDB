@@ -1,17 +1,94 @@
-//! F04-B6.3 (handoff route): HTTP surface for the durable agent handoff-ledger.
+//! F04-B6.3: HTTP surface for agent transactions + the durable handoff-ledger.
 //!
-//! `POST /v1/handoff` validates + commits a `SharedSequenced` handoff through the
-//! engine's `commit_agent_handoff` (F08-B6.1) and returns the durable record. The
-//! caller must be authenticated as the source agent; the target agent's view is
-//! resolved from the engine's agent-view store. The engine gates the write on the
-//! default-off `agent_transactions` feature, so this route is inert unless enabled.
+//! `POST /v1/transactions` commits an optimistic-concurrency write batch through
+//! `commit_agent_transaction` (idempotency ledger, F04-B1.3); `POST /v1/handoff`
+//! validates + commits a `SharedSequenced` handoff through `commit_agent_handoff`
+//! (F08-B6.1). Both require an authenticated agent and are gated on the default-off
+//! `agent_transactions` feature, so the routes are inert unless it is enabled.
 
-use cortex_api_types::{AgentHandoffRequestBody, AgentHandoffResponse};
+use cortex_api_types::{
+    AgentHandoffRequestBody, AgentHandoffResponse, AgentTransactionConflictResponse,
+    AgentTransactionRequestBody, AgentTransactionResponse, WriteOpRequest,
+};
 use cortex_aql::{AgentId, AgentView};
-use cortex_core::CommitSeq;
-use cortex_engine::{AgentHandoffRequest, Database};
+use cortex_core::{CellId, CommitSeq};
+use cortex_engine::{
+    AgentHandoffRequest, AgentTransactionConflictKind, AgentTransactionOutcome,
+    AgentTransactionRequest, Database, WriteBatch,
+};
 
+use crate::authz;
 use crate::responses::RouterError;
+
+/// `POST /v1/transactions`: commit an optimistic-concurrency write batch as the
+/// authenticated agent. A conflict is returned as a normal `200` response whose
+/// `outcome` is `"conflict"` (the request was processed; the outcome is domain
+/// data), so the body carries the full conflict detail rather than an error
+/// envelope. Reused idempotency keys and a disabled feature surface as engine
+/// errors mapped through the taxonomy.
+pub fn handle_transactions_shared(
+    db: &mut Database,
+    body: &[u8],
+    authenticated_view: Option<&AgentView>,
+) -> Result<String, RouterError> {
+    let request: AgentTransactionRequestBody = serde_json::from_slice(body).map_err(|error| {
+        RouterError::BadRequest(format!("invalid transaction request body: {error}"))
+    })?;
+    let view = authenticated_view.ok_or_else(|| {
+        RouterError::PermissionDenied(
+            "agent authentication is required for a transaction".to_owned(),
+        )
+    })?;
+    authz::require_write_scope(view, &request.scope)?;
+
+    let mut batch = WriteBatch::new();
+    for operation in request.operations {
+        batch = match operation {
+            WriteOpRequest::Put { cell_id, payload } => {
+                batch.put_cell(CellId(cell_id), payload.into_bytes())
+            }
+            WriteOpRequest::Patch { cell_id, payload } => {
+                batch.patch_cell(CellId(cell_id), payload.into_bytes())
+            }
+            WriteOpRequest::Tombstone { cell_id } => batch.tombstone_cell(CellId(cell_id)),
+        };
+    }
+
+    let engine_request = AgentTransactionRequest {
+        agent_id: view.agent_id,
+        scope: request.scope,
+        base_seq: CommitSeq(request.base_seq),
+        batch,
+        idempotency_key: request.idempotency_key,
+    };
+    let report = db.commit_agent_transaction(view, engine_request)?;
+
+    let response = AgentTransactionResponse {
+        outcome: match report.outcome {
+            AgentTransactionOutcome::Committed => "committed",
+            AgentTransactionOutcome::Conflict => "conflict",
+        }
+        .to_owned(),
+        committed_seq: report.committed_seq.map(|seq| seq.0),
+        idempotent_replay: report.idempotent_replay,
+        conflicts: report
+            .conflicts
+            .iter()
+            .map(|conflict| AgentTransactionConflictResponse {
+                cell_id: conflict.cell_id.0,
+                base_seq: conflict.base_seq.0,
+                observed_seq: conflict.observed_seq.0,
+                kind: match conflict.kind {
+                    AgentTransactionConflictKind::StaleCell => "stale_cell",
+                    AgentTransactionConflictKind::TombstonedCell => "tombstoned_cell",
+                }
+                .to_owned(),
+            })
+            .collect(),
+        idempotency_key: report.idempotency_key,
+    };
+    Ok(serde_json::to_string(&response)?)
+}
 
 pub fn handle_handoff_shared(
     db: &mut Database,
@@ -159,6 +236,69 @@ mod tests {
             handle_handoff_shared(&mut db, &body(1, 2), Some(&agent_view(1, "shared:project")))
                 .unwrap_err();
         // The engine's FeatureDisabled maps through the error taxonomy to a client error.
+        assert!(matches!(error, RouterError::BadRequest(_)));
+    }
+
+    fn tx_body(base_seq: u64, cell: u64, key: Option<&str>) -> Vec<u8> {
+        let key_field = match key {
+            Some(k) => format!(r#","idempotency_key":"{k}""#),
+            None => String::new(),
+        };
+        format!(
+            r#"{{"scope":"agent:one","base_seq":{base_seq},"operations":[{{"op":"put","cell_id":{cell},"payload":"scope=agent:one\nstatus=ready\ntype=fact\n\nbody {cell}"}}]{key_field}}}"#
+        )
+        .into_bytes()
+    }
+
+    #[test]
+    fn transaction_route_commits_and_replays_idempotently() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut db = enabled_db(dir.path());
+        let view = agent_view(1, "agent:one");
+
+        let out =
+            handle_transactions_shared(&mut db, &tx_body(0, 1, Some("k1")), Some(&view)).unwrap();
+        assert!(out.contains(r#""outcome":"committed""#), "{out}");
+        assert!(out.contains(r#""idempotent_replay":false"#), "{out}");
+
+        // The identical request replays from the ledger without re-writing.
+        let replay =
+            handle_transactions_shared(&mut db, &tx_body(0, 1, Some("k1")), Some(&view)).unwrap();
+        assert!(replay.contains(r#""idempotent_replay":true"#), "{replay}");
+    }
+
+    #[test]
+    fn transaction_route_returns_conflict_as_a_200_body() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut db = enabled_db(dir.path());
+        let view = agent_view(1, "agent:one");
+
+        // First write creates cell 1 (advancing the sequence past base_seq 0).
+        handle_transactions_shared(&mut db, &tx_body(0, 1, None), Some(&view)).unwrap();
+        // A second write to cell 1 with the now-stale base_seq 0 conflicts — and is
+        // reported as a normal 200 body with the conflict detail, not an error.
+        let out = handle_transactions_shared(&mut db, &tx_body(0, 1, None), Some(&view)).unwrap();
+        assert!(out.contains(r#""outcome":"conflict""#), "{out}");
+        assert!(out.contains(r#""cell_id":1"#), "{out}");
+        assert!(out.contains("stale_cell"), "{out}");
+    }
+
+    #[test]
+    fn transaction_route_requires_authentication() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut db = enabled_db(dir.path());
+        let anon =
+            handle_transactions_shared(&mut db, &tx_body(0, 1, Some("k")), None).unwrap_err();
+        assert!(matches!(anon, RouterError::PermissionDenied(_)));
+    }
+
+    #[test]
+    fn transaction_route_is_inert_when_feature_disabled() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut db = Database::open(dir.path()).unwrap(); // feature off
+        let view = agent_view(1, "agent:one");
+        let error = handle_transactions_shared(&mut db, &tx_body(0, 1, Some("k")), Some(&view))
+            .unwrap_err();
         assert!(matches!(error, RouterError::BadRequest(_)));
     }
 }
