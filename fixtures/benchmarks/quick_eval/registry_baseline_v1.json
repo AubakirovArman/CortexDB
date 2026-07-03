@@ -1,0 +1,36 @@
+{
+  "overall": {
+    "mrr": 1.0,
+    "n": 12,
+    "ndcg_at_k": 1.0,
+    "recall_at_k": 1.0
+  },
+  "per_type": {
+    "basic": {
+      "mrr": 1.0,
+      "n": 3,
+      "ndcg_at_k": 1.0,
+      "recall_at_k": 1.0
+    },
+    "multi_doc": {
+      "mrr": 1.0,
+      "n": 3,
+      "ndcg_at_k": 1.0,
+      "recall_at_k": 1.0
+    },
+    "paraphrase": {
+      "mrr": 1.0,
+      "n": 3,
+      "ndcg_at_k": 1.0,
+      "recall_at_k": 1.0
+    },
+    "temporal": {
+      "mrr": 1.0,
+      "n": 3,
+      "ndcg_at_k": 1.0,
+      "recall_at_k": 1.0
+    }
+  },
+  "schema_version": "cortexdb.benchmarks.quick_retrieval_eval.v1",
+  "top_k": 10
+}

@@ -1,0 +1,12 @@
+{"doc_id": "doc_alpha_runbook", "body": "The Alpha onboarding runbook lists the steps operators follow to bring a new tenant online, including the rollout checklist prerequisites."}
+{"doc_id": "doc_alpha_rollout", "body": "The Alpha rollout checklist enumerates the launch gates: staging bake, canary cohort, and the go/no-go signoff required before general availability."}
+{"doc_id": "doc_beta_owner", "body": "Dana owns the Beta workstream and is the directly responsible individual for its dependencies and its launch signoff."}
+{"doc_id": "doc_checkout_postmortem", "body": "The checkout outage postmortem records the root cause as permission cache invalidation during a checkout deployment window."}
+{"doc_id": "doc_auth_dependency", "body": "The release is blocked on the authentication service dependency; the rollout owner is waiting on the auth team before proceeding."}
+{"doc_id": "doc_billing_migration", "body": "The billing migration moves invoices from the legacy ledger to the new metering pipeline, and freezes writes during the cutover."}
+{"doc_id": "doc_slo_dashboard", "body": "The reliability SLO dashboard tracks latency and error budget burn for checkout, search, and billing surfaces."}
+{"doc_id": "doc_incident_2023", "body": "During the 2023 winter incident the search index fell behind and stale results were served until the rebuild completed."}
+{"doc_id": "doc_incident_2024", "body": "In the 2024 spring incident a bad ranking deploy lowered recall until it was rolled back the same day."}
+{"doc_id": "doc_oncall_rotation", "body": "The on-call rotation assigns a primary and secondary responder each week and documents the escalation path to the incident commander."}
+{"doc_id": "doc_data_retention", "body": "The data retention policy keeps audit logs for one year and expires ephemeral session records after thirty days."}
+{"doc_id": "doc_vendor_contract", "body": "The vendor contract for the embedding provider caps monthly request volume and requires thirty days notice before termination."}

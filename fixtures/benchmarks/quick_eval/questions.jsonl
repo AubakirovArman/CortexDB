@@ -1,0 +1,12 @@
+{"question_id": "qe_b1", "question": "Who owns the Beta workstream?", "question_type": "basic", "expected_doc_ids": ["doc_beta_owner"]}
+{"question_id": "qe_b2", "question": "What was the root cause of the checkout outage?", "question_type": "basic", "expected_doc_ids": ["doc_checkout_postmortem"]}
+{"question_id": "qe_b3", "question": "What does the data retention policy say about audit logs?", "question_type": "basic", "expected_doc_ids": ["doc_data_retention"]}
+{"question_id": "qe_m1", "question": "Which documents are needed for the Alpha launch runbook and rollout checklist?", "question_type": "multi_doc", "expected_doc_ids": ["doc_alpha_runbook", "doc_alpha_rollout"]}
+{"question_id": "qe_m2", "question": "What blocks the release and who is the rollout owner waiting on?", "question_type": "multi_doc", "expected_doc_ids": ["doc_auth_dependency", "doc_beta_owner"]}
+{"question_id": "qe_m3", "question": "Which incidents lowered search recall or served stale results?", "question_type": "multi_doc", "expected_doc_ids": ["doc_incident_2023", "doc_incident_2024"]}
+{"question_id": "qe_p1", "question": "Who is the directly responsible individual for Beta dependencies?", "question_type": "paraphrase", "expected_doc_ids": ["doc_beta_owner"]}
+{"question_id": "qe_p2", "question": "Why did checkout go down during a deployment?", "question_type": "paraphrase", "expected_doc_ids": ["doc_checkout_postmortem"]}
+{"question_id": "qe_p3", "question": "How long are audit records preserved?", "question_type": "paraphrase", "expected_doc_ids": ["doc_data_retention"]}
+{"question_id": "qe_t1", "question": "What happened in the 2024 spring ranking incident?", "question_type": "temporal", "expected_doc_ids": ["doc_incident_2024"]}
+{"question_id": "qe_t2", "question": "What went wrong with the search index in the 2023 winter incident?", "question_type": "temporal", "expected_doc_ids": ["doc_incident_2023"]}
+{"question_id": "qe_t3", "question": "What freezes writes during the billing migration cutover?", "question_type": "temporal", "expected_doc_ids": ["doc_billing_migration"]}

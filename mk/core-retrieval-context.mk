@@ -48,6 +48,13 @@ benchmark-lane-audit-check:
 benchmark-registry-check:
 	python3 scripts/benchmarks/registry_summarize.py --report "target/benchmark-registry/report.json"
 
+.PHONY: quick-retrieval-eval-check
+quick-retrieval-eval-check:
+	cargo build -p cortex-cli --bin cortexdb
+	python3 scripts/benchmarks/quick_eval.py --self-test
+	python3 scripts/benchmarks/quick_eval.py --bin target/debug/cortexdb
+	python3 scripts/benchmarks/quick_eval.py --degradation-check --bin target/debug/cortexdb
+
 .PHONY: erb-compare-runs-check
 erb-compare-runs-check:
 	python3 scripts/enterprise_rag_bench/compare_official_runs.py --self-test

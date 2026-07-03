@@ -307,6 +307,35 @@ fixture shaped around investment-project, legal-risk, operations-error, and
 agent-memory vectors. This keeps a CortexDB-shaped ANN gate in normal CI without
 checking in a large domain corpus.
 
+## Quick Retrieval Eval (F1.4)
+
+`make quick-retrieval-eval-check` is the fast, shared retrieval-eval loop that any
+Track A/B ranking change runs as a uniform acceptance step (instead of a bespoke
+A/B procedure). `scripts/benchmarks/quick_eval.py` ingests a cached self-contained
+mini-corpus (`fixtures/benchmarks/quick_eval/corpus.jsonl`, 12 docs) into a
+throwaway DB **through the `cortexdb` CLI** and runs one real keyword search per
+question (`questions.jsonl`, 12 questions across `basic` / `multi_doc` /
+`paraphrase` / `temporal` types), then scores per-type **recall@10, MRR, nDCG@10**
+against `expected_doc_ids`.
+
+- **Real ranking.** Retrieval runs through the engine, so a ranking change moves
+  the numbers — it is not a cached retrieval log.
+- **Registry baseline.** Results are compared to
+  `fixtures/benchmarks/quick_eval/registry_baseline_v1.json`; any per-type or
+  overall metric dropping below the committed baseline fails the gate. Regenerate
+  deliberately with `--generate-baseline`.
+- **Deterministic & offline.** Keyword BM25 has no wall-clock/RNG and the report
+  (`target/quick-retrieval-eval/report.json`) carries no timestamps, so a double
+  run is byte-identical; zero LLM/network; runs in well under the 5-minute budget.
+- **Degradation is caught.** `--self-test` checks the metric math and proves a
+  degraded ranking is flagged; `--degradation-check` runs real retrieval over a
+  committed degraded corpus (`degraded_corpus.jsonl`, gold terms stripped) and
+  asserts the gate catches the regression end-to-end.
+
+The gate is in the `benchmark-validation` lane (`fixtures/benchmarks/lanes.v1.json`
++ `.github/workflows/nightly.yml`, bidirectionally audited by
+`benchmark-lane-audit-check`).
+
 ## LongMemEval Official Evidence
 
 CortexDB includes a LongMemEval v1 official-data retrieval harness:
