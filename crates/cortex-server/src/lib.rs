@@ -28,6 +28,7 @@ mod http_metrics;
 mod lifecycle;
 mod llm;
 mod memory;
+mod memory_consolidation;
 mod metrics;
 mod quota;
 mod rate_limit;

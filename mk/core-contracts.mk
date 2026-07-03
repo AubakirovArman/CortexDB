@@ -142,6 +142,12 @@ agent-handoff-route-check:
 	cargo test -p cortex-server agent_transaction::tests
 	python3 scripts/check_openapi_coverage.py
 
+.PHONY: memory-consolidate-route-check
+memory-consolidate-route-check:
+	cargo test -p cortex-api-types memory_consolidation
+	cargo test -p cortex-server memory_consolidation::tests
+	python3 scripts/check_openapi_coverage.py
+
 accountability-receipt-schema-check:
 	cargo test -p cortexdb-sdk context_pack_v1_deserializes_optional_accountability_receipt
 	python3 scripts/accountability_receipt_schema_check.py --root "." --report "$(ACCOUNTABILITY_RECEIPT_SCHEMA_REPORT)"

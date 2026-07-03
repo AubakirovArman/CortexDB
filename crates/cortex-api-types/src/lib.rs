@@ -7,6 +7,7 @@ pub mod agent_transaction;
 pub mod aql;
 pub mod core;
 pub mod feedback;
+pub mod memory_consolidation;
 pub mod search;
 pub mod verification;
 
@@ -14,5 +15,6 @@ pub use agent_transaction::*;
 pub use aql::*;
 pub use core::*;
 pub use feedback::*;
+pub use memory_consolidation::*;
 pub use search::*;
 pub use verification::*;

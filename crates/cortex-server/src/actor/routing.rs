@@ -20,6 +20,7 @@ pub(crate) fn is_write_route(method: &str, target: &str) -> bool {
             | ("POST", "/v1/batch")
             | ("POST", "/v1/transactions")
             | ("POST", "/v1/handoff")
+            | ("POST", "/v1/memory/consolidate/commit")
             | ("POST", "/tombstone")
             | ("DELETE", "/v1/cell")
             | ("POST", "/flush")

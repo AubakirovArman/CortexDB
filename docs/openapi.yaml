@@ -838,6 +838,106 @@ paths:
         '400': *id001
         '403': *id005
         '500': *id002
+  /v1/memory/consolidate/plan:
+    post:
+      summary: Plan memory consolidation (stale episodic groups)
+      description: |
+        Returns the stale episodic memory groups in a scope that are eligible for
+        semantic consolidation (F04-B4.4 / B4.2). Read-only; requires the
+        semantic_compression feature.
+      parameters:
+      - $ref: '#/components/parameters/Tenant'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - scope
+              - freshness_below_q16
+              - max_groups
+              properties:
+                scope:
+                  type: string
+                freshness_below_q16:
+                  type: integer
+                  format: uint16
+                max_groups:
+                  type: integer
+                  format: uint32
+                now_unix_seconds:
+                  type: integer
+                  format: uint64
+                  nullable: true
+      responses:
+        '200':
+          description: Consolidation plan (candidate groups)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  groups:
+                    type: array
+                    items:
+                      type: object
+        '400':
+          description: Invalid plan request
+        '500':
+          description: Internal error
+  /v1/memory/consolidate/commit:
+    post:
+      summary: Commit a memory-consolidation summary
+      description: |
+        Durably records an externally-generated summary over a set of source
+        cells (F04-B4.4 / B4.3). Requires the semantic_compression feature.
+      parameters:
+      - $ref: '#/components/parameters/Tenant'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - scope
+              - summary_payload
+              - source_refs
+              - answerability_q16
+              - external_worker
+              properties:
+                scope:
+                  type: string
+                summary_cell_id:
+                  type: integer
+                  format: uint64
+                  nullable: true
+                summary_payload:
+                  type: string
+                source_refs:
+                  type: array
+                  items:
+                    type: object
+                answerability_q16:
+                  type: integer
+                  format: uint16
+                external_worker:
+                  type: string
+                idempotency_key:
+                  type: string
+                  nullable: true
+      responses:
+        '200':
+          description: Committed summary record
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Invalid commit request
+        '500':
+          description: Internal error
   /v1/transactions:
     post:
       summary: Commit an optimistic-concurrency agent transaction

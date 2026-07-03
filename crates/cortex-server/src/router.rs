@@ -174,6 +174,24 @@ pub(crate) fn route_database_with_auth<A: DatabaseAccess>(
                 authenticated_view.as_ref(),
             );
         }
+        ("POST", "/v1/memory/consolidate/plan") => {
+            let db = db.as_read();
+            return crate::memory_consolidation::handle_consolidate_plan_shared(
+                db,
+                body,
+                authenticated_view.as_ref(),
+            );
+        }
+        ("POST", "/v1/memory/consolidate/commit") => {
+            let db = db
+                .as_write()
+                .ok_or_else(|| RouterError::Internal("write route on read lock".to_owned()))?;
+            return crate::memory_consolidation::handle_consolidate_commit_shared(
+                db,
+                body,
+                authenticated_view.as_ref(),
+            );
+        }
         ("POST", "/v1/handoff") => {
             let db = db
                 .as_write()
@@ -245,6 +263,8 @@ fn is_agent_scoped_route(method: &str, path: &str) -> bool {
             | ("POST", "/v1/context/trace")
             | ("POST", "/v1/transactions")
             | ("POST", "/v1/handoff")
+            | ("POST", "/v1/memory/consolidate/plan")
+            | ("POST", "/v1/memory/consolidate/commit")
             | ("POST", "/v1/aql")
             | ("POST", "/v1/search")
             | ("POST", "/v1/search/explain")
