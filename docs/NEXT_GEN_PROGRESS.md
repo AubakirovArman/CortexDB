@@ -5,6 +5,10 @@ This is the running, honest record of what has actually landed against
 **vertical slice** from the plan's full task scope, so the delta stays visible
 rather than being rounded up to "done". Each row links its regression gate.
 
+For the **complete** phase-by-phase status across all tracks (A/B/C/F) — including
+which phases are blocked-external or frozen — see
+[`NEXT_GEN_PHASE_STATUS.md`](NEXT_GEN_PHASE_STATUS.md).
+
 Status vocabulary:
 
 - **Landed** — merged to `main`, gated, and (where noted) live-verified.
