@@ -122,7 +122,7 @@ scorer), **F5.1** (machine-verifiable `RESULTS.md`), plus the phase-status map a
 the F3.2/C3-2 already-landed corrections. A8.1/A8.2/A5.1 are complete engine/
 tooling features; A1.2 is a golden-safe slice pending engine-path wiring.
 
-Extended sweep (30 phases this cycle) — added on top of the six above: **A5.1**
+Extended sweep (39 phases this cycle) — added on top of the six above: **A5.1**
 (LTR corpus builder), **A8.1/A8.2** (structure + table chunking), **F1.1/F4.1/F4.2**
 (benchmark + AAB schemas/scorer), and the **entire AQL-surface cluster golden-safe**
 — `USING DIVERSITY` (A5/A7.3), `USING RERANK` (A7.2), `SUPPRESS SUPERSEDED` (A4.2),
@@ -160,15 +160,25 @@ replay/reuse/cross-restart tested), and **F08-B6.1** the durable handoff-ledger
 behaviour or goldens move; each gated (`memory-consolidation-check`,
 `read-after-seq-check`) with engine API-freeze + fmt + clippy clean.
 
-Correctly **not** rushed at the tail of this session (spawned as a focused
-task instead): **F04-B1.3** persistent idempotency ledger — its deterministic
-namespaced cell-id needs collision-safe derivation (a 32-bit key hash has
-birthday collisions ~77k keys) + cross-restart replay; a subtle bug there is a
-data-integrity bug, so it deserves fresh focused context, not an 80-commit-deep
-bolt-on. The B4.5 retire half (TTL-demote) and the receipt-visible parts of A3.3/C3-5
-remain golden-rebaseline (signed canonical bytes). **Correction:** F08-B6.1
-turned out golden-safe after all — body-encoded in a reserved namespace like
-B1.3, no new canonical fields — and is now landed, not deferred.
+**F04-B6.3 completed end-to-end in-session (39-phase cycle).** What was first
+deferred as "fresh-context, blast-radius" surface work was dissolved layer by
+layer, each verified: the **wire contract** (`cortex-api-types`), **both live
+server routes** (`POST /v1/transactions` — a conflict is a `200` body, not a
+409-taxonomy change; `POST /v1/handoff` — target view via `load_agent_view`),
+and **all four SDK clients** — Rust sync + async (`cargo test`), Python
+(`pytest`, capture-opener), and TypeScript (`node --experimental-strip-types`
+type-smoke + `node --test`, rebuilt ESM/CJS bundles). Every layer is behind the
+default-off `agent_transactions` flag. The general lesson of this cycle: nearly
+every "needs a fresh session" boundary, when actually traced, turned out to be
+additive and testable in-session — B1.3, B6.1, both routes, and all four SDKs
+were done here, not deferred.
+
+The B4.5 retire half (TTL-demote) and the receipt-visible parts of A3.3/C3-5
+remain golden-rebaseline (signed canonical bytes). **B4.4** (MCP consolidation
+worker) is now *pattern-unblocked* — the same server-endpoint → SDK → client
+chain just proven for B6.3 applies (its engine halves B4.2/B4.3 exist) — but it
+is a full new chain (a `/v1/memory/consolidate` plan+commit endpoint + SDK +
+MCP tool), not a one-file change.
 
 **Key reclassification:** the AQL-surface bucket was *not* a golden-rebaseline. The
 canonical receipt hashes the *resulting pack* (`CONTEXT_PACK_HASHED_FIELDS`), not
