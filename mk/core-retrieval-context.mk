@@ -26,6 +26,10 @@ retrieval-two-stage-rerank-check:
 	cargo test -p cortex-engine --lib retrieval_rank::two_stage
 	cargo test -p cortex-engine --lib two_stage_rerank_
 
+.PHONY: ltr-corpus-check
+ltr-corpus-check:
+	python3 scripts/enterprise_rag_bench/build_ltr_corpus.py --self-test
+
 .PHONY: structure-chunking-check
 structure-chunking-check:
 	cargo test -p cortex-engine --lib ingestion::chunking::structured_tests

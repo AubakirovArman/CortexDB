@@ -58,6 +58,8 @@ profile provenance in the manifest and the CLI-side query embedder.
 
 | A8.2 Table fidelity (row-scoped cells) | Slice | `split_table_rows_structured` (`ingestion/chunking.rs`): a table-summary **parent** chunk (column names → a "which columns?" query resolves to the table) plus row-group **child** chunks where each row is tokenized as `header: value` pairs (→ a "column + value" query resolves to the right rows), each prefixed with its source-row provenance (`TableChunkPolicy::cell_range`) and carrying the header breadcrumb + `parent_id`. Configurable rows-per-group; deterministic; additive (golden-safe). 3 unit tests. | Wire into the `/v1/ingest/csv` path behind the structured policy flag + a 200-row query-relevance A/B. | `structure-chunking-check` |
 
+| A5.1 Offline LTR corpus builder | Landed | `scripts/enterprise_rag_bench/build_ltr_corpus.py`: builds a deterministic learned-to-rank corpus — per (question, candidate) the A1.1-normalized Q16 feature vector (lexical/semantic/recency/trust via `normalize_q16`) + a binary gold label — with a **leak-free train/heldout split** on *both* axes (document-connected components ensure no `question_id` **and** no `document_id` crosses the split), stable ordering, downsample ≤50k, and a manifest hash. `--self-test` (60-question synthetic) asserts determinism + no-leak + positives + Q16 range; committed `offline_v2.jsonl` built from the v1 traces. Gate `ltr-corpus-check`. | Train/freeze the Q16 ranker on the corpus (A5.2, via the C3-1 frozen-weights protocol). | `ltr-corpus-check` |
+
 ## Cross-cutting landings
 
 | Item | State | Notes | Gate |
