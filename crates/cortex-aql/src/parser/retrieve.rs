@@ -55,6 +55,7 @@ pub(super) fn parse_retrieve_context(input: Span<'_>) -> PResult<'_, RawRetrieve
             budget_tokens: clauses.budget_tokens,
             candidate_limit: clauses.candidate_limit,
             diversity_lambda_q16: clauses.diversity_lambda_q16,
+            rerank_weight_q16: clauses.rerank_weight_q16,
             where_clause: clauses.where_clause,
             requirements: clauses.requirements,
             strategy: None,
@@ -68,6 +69,7 @@ struct RetrieveClauses<'a> {
     budget_tokens: Option<Spanned<u64>>,
     candidate_limit: Option<Spanned<u32>>,
     diversity_lambda_q16: Option<Spanned<u64>>,
+    rerank_weight_q16: Option<Spanned<u64>>,
     where_clause: Option<Spanned<crate::ast::Condition<'a>>>,
     requirements: Vec<Spanned<Requirement<'a>>>,
 }
@@ -85,6 +87,12 @@ fn parse_next_clause<'a>(
             let (rest, _) = ws1(rest)?;
             let (rest, lambda) = parse_spanned_integer(rest)?;
             reject_duplicate(clauses.diversity_lambda_q16.replace(lambda), rest)?;
+            Ok(rest)
+        } else if starts_with_keyword(after_using, "RERANK") {
+            let (rest, _) = kw("RERANK")(after_using)?;
+            let (rest, _) = ws1(rest)?;
+            let (rest, weight) = parse_spanned_integer(rest)?;
+            reject_duplicate(clauses.rerank_weight_q16.replace(weight), rest)?;
             Ok(rest)
         } else {
             let (rest, mode) = parse_using_mode(input)?;

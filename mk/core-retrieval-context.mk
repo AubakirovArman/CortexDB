@@ -15,7 +15,7 @@ embedding-model-selection-check:
 
 .PHONY: aql-diversity-option-check
 aql-diversity-option-check:
-	cargo test -p cortex-aql --test binder_tests using_diversity
+	cargo test -p cortex-aql --test binder_tests using_
 	cargo test -p cortex-engine --lib aql_using_diversity
 
 .PHONY: retrieval-diversify-check

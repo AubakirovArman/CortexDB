@@ -99,6 +99,9 @@ pub struct RawRetrieveContext<'a> {
     /// (`USING DIVERSITY <n>`). `None` leaves diversification to the database
     /// default (off), so an absent clause is byte-identical to before.
     pub diversity_lambda_q16: Option<Spanned<u64>>,
+    /// A7.2: optional per-query two-stage dense rerank weight in Q16
+    /// (`USING RERANK <n>`). `None` defers to the database default (off).
+    pub rerank_weight_q16: Option<Spanned<u64>>,
     pub where_clause: Option<Spanned<Condition<'a>>>,
     pub requirements: Vec<Spanned<Requirement<'a>>>,
     pub strategy: Option<Spanned<Strategy>>,

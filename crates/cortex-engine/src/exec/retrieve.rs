@@ -101,8 +101,9 @@ pub fn execute_retrieve<P: CandidateResolver>(
     // diversity demotes near-duplicates within the reranked order. A weight of
     // `Some(0)` is treated exactly like `None` — the stage is skipped entirely,
     // so neither the ordering nor the operator trace differs from "off".
-    let rerank_weight = database
-        .retrieval_two_stage_rerank_weight_q16
+    let rerank_weight = plan
+        .rerank_weight_q16
+        .or(database.retrieval_two_stage_rerank_weight_q16)
         .filter(|weight| *weight > 0);
     let ranked = if let Some(weight) = rerank_weight {
         let started = Instant::now();

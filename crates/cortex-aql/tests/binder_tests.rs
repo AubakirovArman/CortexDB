@@ -163,10 +163,25 @@ fn using_diversity_binds_the_lambda_and_is_absent_by_default() {
     // Absent by default (byte-identical to before the clause existed).
     let plain = retrieve(r#"RETRIEVE CONTEXT FOR TASK "x" IN BRAIN brain;"#);
     assert_eq!(plain.diversity_lambda_q16, None);
+    assert_eq!(plain.rerank_weight_q16, None);
     let plain_plan = Binder::new(&catalog(), &view(BTreeSet::from([ScopeId(10)]), true))
         .bind_retrieve(&plain)
         .unwrap();
     assert_eq!(plain_plan.diversity_lambda_q16, None);
+    assert_eq!(plain_plan.rerank_weight_q16, None);
+}
+
+#[test]
+fn using_rerank_binds_the_weight() {
+    // A7.2: the two-stage dense rerank weight is a per-query AQL option.
+    let raw = retrieve(
+        r#"RETRIEVE CONTEXT FOR TASK "x" IN BRAIN brain USING RERANK 65535 LIMIT 5 CANDIDATES;"#,
+    );
+    assert_eq!(raw.rerank_weight_q16.as_ref().map(|s| s.node), Some(65_535));
+    let plan = Binder::new(&catalog(), &view(BTreeSet::from([ScopeId(10)]), true))
+        .bind_retrieve(&raw)
+        .unwrap();
+    assert_eq!(plan.rerank_weight_q16, Some(65_535));
 }
 
 #[test]

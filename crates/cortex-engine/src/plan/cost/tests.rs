@@ -288,6 +288,7 @@ fn plan(
         quality_thresholds: QualityThresholds::default(),
         weights: default_weights(mode),
         diversity_lambda_q16: None,
+        rerank_weight_q16: None,
     }
 }
 

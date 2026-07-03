@@ -27,6 +27,9 @@ pub struct BoundRetrievePlan {
     /// `None` defers to the database default (off), so it does not appear in the
     /// canonical pack unless the query asks for it.
     pub diversity_lambda_q16: Option<u64>,
+    /// A7.2: per-query two-stage dense rerank weight (Q16) from `USING RERANK`.
+    /// `None` defers to the database default (off).
+    pub rerank_weight_q16: Option<u64>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
