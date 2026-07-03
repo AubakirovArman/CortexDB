@@ -63,6 +63,11 @@ pub struct AgentHandoffRequestBody {
     pub required_after_seq: u64,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub idempotency_key: Option<String>,
+    /// C3-3: optional binding to the accountability receipt this handoff carries.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub receipt_pack_root: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub receipt_signature_context: Option<String>,
 }
 
 /// `POST /v1/handoff` response body — the durable, auditable record (F08-B6.1).
@@ -74,6 +79,11 @@ pub struct AgentHandoffResponse {
     pub level: String,
     pub visible_after_seq: u64,
     pub target_can_read: bool,
+    /// C3-3: the receipt binding recorded on the durable handoff (echoed back).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub receipt_pack_root: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub receipt_signature_context: Option<String>,
 }
 
 /// The **logical** status a client surfaces for a transaction `outcome`. The HTTP
@@ -149,6 +159,8 @@ mod tests {
             pack_seq: 7,
             required_after_seq: 0,
             idempotency_key: None,
+            receipt_pack_root: Some("root:abc".to_owned()),
+            receipt_signature_context: None,
         });
         round_trip(&AgentHandoffResponse {
             handoff_cell_id: 42,
@@ -156,6 +168,8 @@ mod tests {
             level: "shared_sequenced".to_owned(),
             visible_after_seq: 7,
             target_can_read: true,
+            receipt_pack_root: Some("root:abc".to_owned()),
+            receipt_signature_context: None,
         });
     }
 

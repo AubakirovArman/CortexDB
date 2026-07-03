@@ -41,6 +41,12 @@ pub struct AgentHandoffRequest {
     pub pack_seq: CommitSeq,
     pub required_after_seq: CommitSeq,
     pub idempotency_key: Option<String>,
+    /// C3-3: optional binding to the accountability receipt this handoff carries —
+    /// the receipt's pack root and a signature-verification context. Recorded on
+    /// the durable handoff (B6.1) so a consumer can re-verify the receipt the
+    /// handoff was made against; does not itself sign or alter any receipt.
+    pub receipt_pack_root: Option<String>,
+    pub receipt_signature_context: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -56,6 +62,10 @@ pub struct AgentHandoffReport {
     pub visible_after_seq: CommitSeq,
     pub target_can_read: bool,
     pub idempotency_key: Option<String>,
+    /// C3-3: the receipt binding carried through from the request (see
+    /// [`AgentHandoffRequest`]).
+    pub receipt_pack_root: Option<String>,
+    pub receipt_signature_context: Option<String>,
 }
 
 /// F08-B6.1: a handoff report plus where it was durably recorded.
@@ -68,8 +78,14 @@ pub struct CommittedAgentHandoff {
 
 fn encode_handoff(report: &AgentHandoffReport) -> Vec<u8> {
     // Every free-form field is hex-encoded so arbitrary bytes can't break parsing.
+    let hex_opt = |value: &Option<String>| {
+        value
+            .as_deref()
+            .map(|inner| hex_lower(inner.as_bytes()))
+            .unwrap_or_default()
+    };
     format!(
-        "source_agent_id={}\ntarget_agent_id={}\nscope_hex={}\npack_hash_hex={}\npack_seq={}\nrequired_after_seq={}\nvisible_after_seq={}\ntarget_can_read={}\nidempotency_key_hex={}\n",
+        "source_agent_id={}\ntarget_agent_id={}\nscope_hex={}\npack_hash_hex={}\npack_seq={}\nrequired_after_seq={}\nvisible_after_seq={}\ntarget_can_read={}\nidempotency_key_hex={}\nreceipt_pack_root_hex={}\nreceipt_signature_context_hex={}\n",
         report.source_agent_id.0,
         report.target_agent_id.0,
         hex_lower(report.scope.as_bytes()),
@@ -78,11 +94,9 @@ fn encode_handoff(report: &AgentHandoffReport) -> Vec<u8> {
         report.required_after_seq.0,
         report.visible_after_seq.0,
         report.target_can_read,
-        report
-            .idempotency_key
-            .as_deref()
-            .map(|key| hex_lower(key.as_bytes()))
-            .unwrap_or_default(),
+        hex_opt(&report.idempotency_key),
+        hex_opt(&report.receipt_pack_root),
+        hex_opt(&report.receipt_signature_context),
     )
     .into_bytes()
 }
@@ -98,7 +112,14 @@ fn parse_handoff(payload: &[u8]) -> Option<AgentHandoffReport> {
     let mut visible_after_seq = None;
     let mut target_can_read = None;
     let mut idempotency_key = None;
+    let mut receipt_pack_root = None;
+    let mut receipt_signature_context = None;
     let mut saw_idempotency_field = false;
+    let decode_opt = |value: &str| {
+        (!value.is_empty())
+            .then(|| decode_hex(value).and_then(|bytes| String::from_utf8(bytes).ok()))
+            .flatten()
+    };
     for line in text.lines() {
         let Some((field, value)) = line.split_once('=') else {
             continue;
@@ -118,11 +139,10 @@ fn parse_handoff(payload: &[u8]) -> Option<AgentHandoffReport> {
             "target_can_read" => target_can_read = value.parse::<bool>().ok(),
             "idempotency_key_hex" => {
                 saw_idempotency_field = true;
-                if !value.is_empty() {
-                    idempotency_key =
-                        decode_hex(value).and_then(|bytes| String::from_utf8(bytes).ok());
-                }
+                idempotency_key = decode_opt(value);
             }
+            "receipt_pack_root_hex" => receipt_pack_root = decode_opt(value),
+            "receipt_signature_context_hex" => receipt_signature_context = decode_opt(value),
             _ => {}
         }
     }
@@ -142,6 +162,8 @@ fn parse_handoff(payload: &[u8]) -> Option<AgentHandoffReport> {
         visible_after_seq: visible_after_seq?,
         target_can_read: target_can_read?,
         idempotency_key,
+        receipt_pack_root,
+        receipt_signature_context,
     })
 }
 
@@ -220,6 +242,8 @@ impl Database {
             visible_after_seq: request.pack_seq,
             target_can_read: true,
             idempotency_key: request.idempotency_key,
+            receipt_pack_root: request.receipt_pack_root,
+            receipt_signature_context: request.receipt_signature_context,
         })
     }
 

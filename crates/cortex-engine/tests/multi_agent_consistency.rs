@@ -203,6 +203,8 @@ fn sequenced_handoff_requires_target_visibility_and_stable_pack_seq() {
                 pack_seq: committed,
                 required_after_seq: CommitSeq(0),
                 idempotency_key: Some("handoff-1-2-gamma".to_owned()),
+                receipt_pack_root: None,
+                receipt_signature_context: None,
             },
         )
         .unwrap();
@@ -223,6 +225,8 @@ fn sequenced_handoff_requires_target_visibility_and_stable_pack_seq() {
                 pack_seq: committed,
                 required_after_seq: committed,
                 idempotency_key: None,
+                receipt_pack_root: None,
+                receipt_signature_context: None,
             },
         )
         .unwrap_err();
@@ -240,6 +244,8 @@ fn sequenced_handoff_requires_target_visibility_and_stable_pack_seq() {
                 pack_seq: CommitSeq(committed.0 + 1),
                 required_after_seq: committed,
                 idempotency_key: None,
+                receipt_pack_root: None,
+                receipt_signature_context: None,
             },
         )
         .unwrap_err();
@@ -286,6 +292,8 @@ fn handoff_request(pack_seq: CommitSeq) -> AgentHandoffRequest {
         pack_seq,
         required_after_seq: CommitSeq(0),
         idempotency_key: Some("handoff-1-2".to_owned()),
+        receipt_pack_root: None,
+        receipt_signature_context: None,
     }
 }
 
@@ -369,6 +377,41 @@ fn committed_agent_handoff_survives_restart() {
     // Reopen: the persisted handoff record is still auditable.
     let db = Database::open_with_options(dir.path(), options()).unwrap();
     assert_eq!(db.read_agent_handoff(cell_id).unwrap().unwrap(), report);
+}
+
+#[test]
+fn agent_handoff_records_receipt_binding() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open_with_options(dir.path(), options()).unwrap();
+    let source = view(1, &["shared:project"], &["shared:project"], None);
+    let target = view(2, &["shared:project"], &[], None);
+
+    // C3-3: bind the handoff to the accountability receipt it carries.
+    let mut request = handoff_request(db.current_seq());
+    request.receipt_pack_root = Some("packroot:deadbeef".to_owned());
+    request.receipt_signature_context = Some("sigctx:v1".to_owned());
+
+    let committed = db.commit_agent_handoff(&source, &target, request).unwrap();
+    assert_eq!(
+        committed.report.receipt_pack_root.as_deref(),
+        Some("packroot:deadbeef")
+    );
+
+    // The binding round-trips through the durable B6.1 ledger.
+    let read_back = db
+        .read_agent_handoff(committed.handoff_cell_id)
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        read_back.receipt_pack_root.as_deref(),
+        Some("packroot:deadbeef")
+    );
+    assert_eq!(
+        read_back.receipt_signature_context.as_deref(),
+        Some("sigctx:v1")
+    );
+    // Equality with the committed report confirms full round-trip fidelity.
+    assert_eq!(read_back, committed.report);
 }
 
 fn keyed_request(

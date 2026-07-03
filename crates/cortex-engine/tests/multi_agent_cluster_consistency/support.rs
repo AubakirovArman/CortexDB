@@ -73,6 +73,8 @@ pub fn handoff_request(
         pack_seq,
         required_after_seq,
         idempotency_key: Some(format!("cluster-handoff-{suffix}")),
+        receipt_pack_root: None,
+        receipt_signature_context: None,
     }
 }
 

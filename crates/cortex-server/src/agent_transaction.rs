@@ -122,6 +122,8 @@ pub fn handle_handoff_shared(
         pack_seq: CommitSeq(request.pack_seq),
         required_after_seq: CommitSeq(request.required_after_seq),
         idempotency_key: request.idempotency_key,
+        receipt_pack_root: request.receipt_pack_root,
+        receipt_signature_context: request.receipt_signature_context,
     };
     let committed = db.commit_agent_handoff(source, &target, engine_request)?;
 
@@ -131,6 +133,8 @@ pub fn handle_handoff_shared(
         level: "shared_sequenced".to_owned(),
         visible_after_seq: committed.report.visible_after_seq.0,
         target_can_read: committed.report.target_can_read,
+        receipt_pack_root: committed.report.receipt_pack_root.clone(),
+        receipt_signature_context: committed.report.receipt_signature_context.clone(),
     };
     Ok(serde_json::to_string(&response)?)
 }
