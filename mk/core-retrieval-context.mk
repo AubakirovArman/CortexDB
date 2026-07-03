@@ -36,6 +36,10 @@ retrieval-two-stage-rerank-check:
 aab-mini-score-check:
 	python3 scripts/aab_mini_score.py --self-test
 
+.PHONY: benchmark-floor-check
+benchmark-floor-check:
+	python3 scripts/benchmark_floor_check.py --report "target/benchmark-floor/report.json"
+
 .PHONY: benchmark-report-schema-check
 benchmark-report-schema-check:
 	python3 scripts/benchmark_report_schema_check.py --report "target/benchmark-schema/report.json"

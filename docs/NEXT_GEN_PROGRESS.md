@@ -72,6 +72,8 @@ profile provenance in the manifest and the CLI-side query embedder.
 
 | F5.3 Nightly validation workflow | Landed | Added a `benchmark-validation` job to `.github/workflows/nightly.yml` that runs — nightly + on-dispatch — the 12 benchmark/moat/retrieval/AQL gates landed this cycle (benchmark-report-schema, results-page, aab-mini-score, ltr-corpus, learned-ranker-train, candidate-pool, corpus-bm25, vector-metric-allowlist, two-stage-rerank, temporal-supersede, aql-diversity-option, structure-chunking) and uploads the validation reports as an artifact. YAML validated; every referenced gate exists and passes locally. | Extend as more benchmark families commit committed evidence. | nightly `benchmark-validation` job |
 
+| F5.2 Benchmark-score regression gate | Landed | `scripts/benchmark_floor_check.py` + committed `fixtures/benchmarks/floors.v1.json`: asserts each committed benchmark headline is at or above its recorded floor (ERB-500 combined ≥ 47.74, recall ≥ 55.71%), so a ranking/pipeline change that silently lowers a published score fails CI, not after release. Wired into the nightly `benchmark-validation` job. Gate `benchmark-floor-check`. | Add per-type floors + a history trend as more runs commit. | `benchmark-floor-check` |
+
 ## Cross-cutting landings
 
 | Item | State | Notes | Gate |

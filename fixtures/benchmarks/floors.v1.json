@@ -1,0 +1,17 @@
+{
+  "schema_version": "cortexdb.benchmark_floors.v1",
+  "benchmarks": [
+    {
+      "name": "EnterpriseRAG-Bench official-500 combined correctness*completeness",
+      "file": "erb-submission/official_results.json",
+      "metric": "aggregate_stats.combined_correctness_completeness_score",
+      "floor": 47.74
+    },
+    {
+      "name": "EnterpriseRAG-Bench official-500 document recall",
+      "file": "erb-submission/official_results.json",
+      "metric": "aggregate_stats.average_recall_pct",
+      "floor": 55.71
+    }
+  ]
+}
