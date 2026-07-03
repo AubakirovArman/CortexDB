@@ -1,0 +1,58 @@
+{
+  "schema_version": "cortexdb.ci_lanes.v1",
+  "description": "Machine-readable map of every benchmark / retrieval / moat gate to exactly one CI lane. The lane_audit.py gate asserts (a) each target is a real make target, (b) no gate is in two lanes, and (c) the benchmark-validation lane agrees bidirectionally with the .github/workflows/nightly.yml job (no gate run-but-unmapped, none mapped-but-unrun).",
+  "workflow": ".github/workflows/nightly.yml",
+  "lanes": [
+    {
+      "lane": "benchmark-validation",
+      "workflow_job": "benchmark-validation",
+      "trigger": "nightly schedule + manual dispatch",
+      "required_env": [],
+      "gates": [
+        {"target": "benchmark-report-schema-check", "purpose": "F1.1/F4.1 benchmark_report.v1 schema conformance"},
+        {"target": "benchmark-floor-check", "purpose": "F5.2 headline metric never regresses below committed floor"},
+        {"target": "benchmark-lane-audit-check", "purpose": "F1.3 this lane map agrees with the real workflow"},
+        {"target": "results-page-check", "purpose": "F5.1 RESULTS.md figures trace to committed reports"},
+        {"target": "aab-mini-score-check", "purpose": "F4.2 6-axis AAB mini-score (structural axes unranked)"},
+        {"target": "ltr-corpus-check", "purpose": "A5.1 leak-free LTR corpus builder self-test"},
+        {"target": "learned-ranker-train-check", "purpose": "A5.2-training held-out MRR lift vs uniform"},
+        {"target": "retrieval-candidate-pool-check", "purpose": "A1.4 configurable ERB candidate pool"},
+        {"target": "retrieval-corpus-bm25-check", "purpose": "A1.2 corpus-wide BM25 statistics path"},
+        {"target": "vector-metric-allowlist-check", "purpose": "A1.3 vector-metric parity / no ad-hoc similarity"},
+        {"target": "retrieval-two-stage-rerank-check", "purpose": "A7.2 engine-native two-stage dense rerank"},
+        {"target": "retrieval-temporal-supersede-check", "purpose": "A4.x temporal supersede / recency window"},
+        {"target": "aql-diversity-option-check", "purpose": "A4.1 AQL diversity surface (default-off, golden-safe)"},
+        {"target": "structure-chunking-check", "purpose": "A8.1/A8.2 structure-aware + row-scoped chunking"},
+        {"target": "aab-conformance-check", "purpose": "C4-3 thin-wrapper reference fails >=3 AAB axes"},
+        {"target": "gce-spec-doc-check", "purpose": "C4-3 governed-context-engine spec doc present"},
+        {"target": "receipt-threat-model-check", "purpose": "C4-3 receipt threat-model doc present"},
+        {"target": "receipt-emission-budget-check", "purpose": "C4-1 p99 receipt-emission within budget"}
+      ]
+    },
+    {
+      "lane": "nightly-heavy",
+      "workflow_job": "heavy-gates",
+      "trigger": "nightly schedule + manual dispatch",
+      "required_env": [],
+      "gates": [
+        {"target": "load-smoke-check", "purpose": "single-node load smoke"},
+        {"target": "crash-fault-check", "purpose": "crash/fault recovery evidence"},
+        {"target": "backup-offsite-check", "purpose": "off-site backup restore"},
+        {"target": "chaos-restart-check", "purpose": "chaos restart durability"},
+        {"target": "replication-partition-check", "purpose": "replication under partition"},
+        {"target": "replication-lifecycle-check", "purpose": "replication lifecycle"}
+      ]
+    },
+    {
+      "lane": "nightly-ann-scale",
+      "workflow_job": "ann-and-scale",
+      "trigger": "nightly schedule + manual dispatch",
+      "required_env": ["ANN_BGE_M3_CORPUS_VECTORS", "ANN_BGE_M3_QUERY_CACHE"],
+      "gates": [
+        {"target": "ann-nightly-regression-report", "purpose": "ANN recall/latency regression"},
+        {"target": "ann-release-evidence-check", "purpose": "ANN release evidence bundle"},
+        {"target": "continuous-benchmark-hosted-gate", "purpose": "continuous scale benchmark"}
+      ]
+    }
+  ]
+}

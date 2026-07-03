@@ -42,6 +42,8 @@ jobs:
       # Benchmark/moat contract gates (schemas verified against committed evidence).
       - run: make benchmark-report-schema-check
       - run: make benchmark-floor-check
+      # F1.3: every gate below is pinned to this lane in fixtures/benchmarks/lanes.v1.json.
+      - run: make benchmark-lane-audit-check
       - run: make results-page-check
       - run: make aab-mini-score-check
       # Learned-ranking pipeline (deterministic corpus + trainer, held-out lift).

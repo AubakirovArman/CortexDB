@@ -40,6 +40,10 @@ aab-mini-score-check:
 benchmark-floor-check:
 	python3 scripts/benchmark_floor_check.py --report "target/benchmark-floor/report.json"
 
+.PHONY: benchmark-lane-audit-check
+benchmark-lane-audit-check:
+	python3 scripts/benchmarks/lane_audit.py --report "target/benchmark-lane/report.json"
+
 .PHONY: benchmark-report-schema-check
 benchmark-report-schema-check:
 	python3 scripts/benchmark_report_schema_check.py --report "target/benchmark-schema/report.json"
