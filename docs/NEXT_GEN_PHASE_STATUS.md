@@ -122,30 +122,37 @@ scorer), **F5.1** (machine-verifiable `RESULTS.md`), plus the phase-status map a
 the F3.2/C3-2 already-landed corrections. A8.1/A8.2/A5.1 are complete engine/
 tooling features; A1.2 is a golden-safe slice pending engine-path wiring.
 
-### Honest boundary of what remains
+Extended sweep (19 phases this cycle) — added on top of the six above: **A5.1**
+(LTR corpus builder), **A8.1/A8.2** (structure + table chunking), **F1.1/F4.1/F4.2**
+(benchmark + AAB schemas/scorer), and the **entire AQL-surface cluster golden-safe**
+— `USING DIVERSITY` (A5/A7.3), `USING RERANK` (A7.2), `SUPPRESS SUPERSEDED` (A4.2),
+`RECENCY WINDOW` (A4.1) — plus **A3.2** (ANN sparse-fallback ratio in telemetry).
 
-After this sweep, the genuinely-remaining phases fall into four buckets, **none of
-which is a clean tail-of-session landing**:
+**Key reclassification:** the AQL-surface bucket was *not* a golden-rebaseline. The
+canonical receipt hashes the *resulting pack* (`CONTEXT_PACK_HASHED_FIELDS`), not
+the query's option flags, so a default-off AQL option is byte-identical when unused
+— verified by pack-determinism + public-API-freeze. That collapsed the biggest
+"golden-rebaseline" sub-bucket into completable-now, and it is now done.
 
-1. **Run-dependent** — A6.3 (LME hybrid) needs a multi-hour embedded-index + A/B
-   run against the LongMemEval baseline.
-2. **Golden-rebaseline** (11) — the AQL/plan-visible surfaces (diversity/rerank/
-   temporal/coverage as `USING …` options, a new frozen ranker) change the plan's
-   canonical bytes and must land via the C3-1/C3-5 additive-minor-version protocol
-   with re-baselined receipt/plan goldens. This is careful contract work that must
-   not be rushed — a wrong re-baseline breaks the very accountability invariant the
-   project exists to protect.
-3. **Blocked-external** (15) — need resources absent from this environment: a
-   working LLM chat endpoint (Gemma `VLLM_*` gone from `.env`; DeepSeek key 401), a
-   real KMS/HSM operator + published anchor, external compliance reviewers, ≥2
-   independent transparency witnesses/monitors. These are operator/credential
+### Honest boundary of what genuinely remains
+
+1. **Run-dependent** — A6.3 (LME hybrid) needs a multi-hour embedded-index + A/B run.
+2. **A5.2 learned ranker** (+ F05/F07) — train/freeze a Q16 ranker on the A5.1
+   corpus and serve it as an **opt-in** profile (golden-safe when default-off, but a
+   substantial ML + serving feature — a focused effort, not a quick phase).
+3. **Signed-golden regen** (A3.3 receipt-visibility, C3-5 `embedding_ref`
+   byte-promotion) — these DO touch the *signed* receipt canonical set, and
+   regenerating a Merkle-signed golden needs regeneration tooling that is not
+   present; rewriting a signed golden by hand would be irresponsible.
+4. **Blocked-external** (15) — a working LLM chat endpoint (Gemma `VLLM_*` gone;
+   DeepSeek 401), a real KMS/HSM operator + published anchor, external compliance
+   reviewers, ≥2 independent transparency witnesses/monitors. Operator/credential
    actions, **not code**.
-4. **Frozen / cut** (5) — F02/F03/F09 are declared v1.0 non-goals; A8.3/F4.4 are
-   cut; F01 is multi-week productization.
+5. **Frozen / cut** (5) — F02/F03/F09 v1.0 non-goals; A8.3/F4.4 cut; F01 multi-week.
 
-So "all 86 phases in one session" is not achievable: buckets 3-4 (20 phases)
-cannot be completed by code in this environment, and buckets 1-2 (12 phases) are
-multi-session efforts that require a run or the golden-rebaseline ceremony.
+So the entire clean + golden-safe in-session bucket is complete. What is left needs
+a multi-hour run (1), a focused ML feature (2), regeneration tooling (3), external
+operators/credentials (4), or is a declared non-goal (5).
 
 Corrections found while executing — several "completable" rows were **already
 landed** (the repo is far past the plan's baseline), so the true remaining count
