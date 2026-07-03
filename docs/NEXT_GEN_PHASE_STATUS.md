@@ -110,6 +110,30 @@ F01 tiered-storage productization is multi-week; F02/F03 (replication/consensus)
 | F02-F03 | F02 replication / F03 consensus — FROZEN (Raft = passive state machine | slice | low | Frozen by the project's own criteria. Raft is a full set of passive state machines (election/consensus/joint-consensus/snapshot/TCP transport) with NO driver: no election timer, no heartbeat loop; current_term/voted_for not persisted (real  |
 | F09 | F09 managed cloud — FROZEN | not-started | none | Frozen; explicitly a v1.0 non-goal. All reports keep managed_cloud_ready=false. |
 
+## Execution log + corrections (this cycle)
+
+Landed this cycle under gates: **A1.4** (`--candidate-pool` first-class, default
+512), **C3-1** (ranking-change protocol doc), **C3-4** (agent-cell-id.v2 NO-GO
+ADR), **A1.3** (cosine-single-implementation allowlist gate), **F5.1**
+(machine-verifiable `RESULTS.md`), **A1.2** (corpus-BM25 IDF, golden-safe slice).
+
+Corrections found while executing — several "completable" rows were **already
+landed** (the repo is far past the plan's baseline), so the true remaining count
+is smaller than the inventory implies:
+
+- **F3.2** ERB per-type regression — already wired: `erb-category-regression-check`
+  runs in the main `check:` target.
+- **C3-2** receipt-consumption schema freeze — already gated:
+  `accountability-receipt-schema-check`.
+- **C3-1 / A1.3** enforcement machinery was already present; only the prose /
+  allowlist guard were missing (now landed).
+
+The genuinely net-new remaining completable work is a smaller set of **medium-large
+features that each need a run or deep engine work** — A5.1 (offline LTR corpus),
+A6.3 (LME hybrid: embedded index + A/B run), A8.1 (structure-aware chunking),
+A8.2 (table-row cells) — plus benchmark-infra polish. These are multi-session,
+not quick wins.
+
 ## How this closes
 
 The completable-now backlog lands incrementally under gates. The golden-rebaseline
