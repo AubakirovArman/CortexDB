@@ -26,6 +26,10 @@ retrieval-two-stage-rerank-check:
 	cargo test -p cortex-engine --lib retrieval_rank::two_stage
 	cargo test -p cortex-engine --lib two_stage_rerank_
 
+.PHONY: benchmark-report-schema-check
+benchmark-report-schema-check:
+	python3 scripts/benchmark_report_schema_check.py --report "target/benchmark-schema/report.json"
+
 .PHONY: ltr-corpus-check
 ltr-corpus-check:
 	python3 scripts/enterprise_rag_bench/build_ltr_corpus.py --self-test

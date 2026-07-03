@@ -60,6 +60,8 @@ profile provenance in the manifest and the CLI-side query embedder.
 
 | A5.1 Offline LTR corpus builder | Landed | `scripts/enterprise_rag_bench/build_ltr_corpus.py`: builds a deterministic learned-to-rank corpus — per (question, candidate) the A1.1-normalized Q16 feature vector (lexical/semantic/recency/trust via `normalize_q16`) + a binary gold label — with a **leak-free train/heldout split** on *both* axes (document-connected components ensure no `question_id` **and** no `document_id` crosses the split), stable ordering, downsample ≤50k, and a manifest hash. `--self-test` (60-question synthetic) asserts determinism + no-leak + positives + Q16 range; committed `offline_v2.jsonl` built from the v1 traces. Gate `ltr-corpus-check`. | Train/freeze the Q16 ranker on the corpus (A5.2, via the C3-1 frozen-weights protocol). | `ltr-corpus-check` |
 
+| F1.1 Benchmark-report schema freeze | Landed | Frozen `schemas/benchmark_report.v1.schema.json` (schema_version, `aggregate_stats` with required question counts + recall/correctness/completeness in `[0,100]`, per-type `question_type_stats`, judge model/provider) + a dependency-free validator `scripts/benchmark_report_schema_check.py` that fails if a committed benchmark report is not well-formed. Verified against the committed `erb-submission/official_results.json`. Gate `benchmark-report-schema-check`. | Extend the target list as more benchmark families (LME, LoCoMo) commit results. | `benchmark-report-schema-check` |
+
 ## Cross-cutting landings
 
 | Item | State | Notes | Gate |

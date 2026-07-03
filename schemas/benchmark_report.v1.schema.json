@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "cortexdb.benchmark_report.v1",
+  "title": "CortexDB benchmark report v1",
+  "description": "Frozen contract for a scored benchmark result (F1.1). Every published benchmark number must live in a document conforming to this schema, so a leaderboard entry is always backed by a well-formed, machine-checkable artifact.",
+  "type": "object",
+  "required": ["aggregate_stats"],
+  "properties": {
+    "aggregate_stats": {
+      "type": "object",
+      "required": [
+        "total_questions",
+        "completed_questions",
+        "average_recall_pct"
+      ],
+      "properties": {
+        "total_questions": { "type": "integer", "minimum": 0 },
+        "completed_questions": { "type": "integer", "minimum": 0 },
+        "skipped_rows": { "type": "integer", "minimum": 0 },
+        "average_recall_pct": { "type": "number", "minimum": 0, "maximum": 100 },
+        "average_correctness_pct": { "type": "number", "minimum": 0, "maximum": 100 },
+        "average_completeness_pct": { "type": "number", "minimum": 0, "maximum": 100 },
+        "combined_correctness_completeness_score": { "type": "number", "minimum": 0, "maximum": 100 }
+      }
+    },
+    "question_type_stats": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["count"],
+        "properties": {
+          "count": { "type": "integer", "minimum": 0 },
+          "average_recall_pct": { "type": ["number", "null"] }
+        }
+      }
+    },
+    "judge_model": { "type": "string" },
+    "judge_provider": { "type": "string" }
+  }
+}
