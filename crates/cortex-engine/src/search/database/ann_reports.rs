@@ -43,6 +43,7 @@ pub(super) fn snapshot_ann_report(
             require_slo: policy.require_slo,
             production_safe: true,
             slo_violations: Vec::new(),
+            sparse_exact_fallback_ratio_bps: None,
         },
         policy,
     ))
@@ -75,6 +76,7 @@ pub(super) fn persisted_exact_fallback_report(
             require_slo: policy.require_slo,
             production_safe: true,
             slo_violations: Vec::new(),
+            sparse_exact_fallback_ratio_bps: None,
         },
         policy,
     )
@@ -107,6 +109,7 @@ pub(super) fn persisted_hnsw_fault_fallback_report(
             require_slo: policy.require_slo,
             production_safe: true,
             slo_violations: Vec::new(),
+            sparse_exact_fallback_ratio_bps: None,
         },
         policy,
     )
@@ -145,6 +148,7 @@ pub(super) fn persisted_hnsw_stale_fallback_report(
             require_slo: policy.require_slo,
             production_safe: true,
             slo_violations: Vec::new(),
+            sparse_exact_fallback_ratio_bps: None,
         },
         policy,
     )

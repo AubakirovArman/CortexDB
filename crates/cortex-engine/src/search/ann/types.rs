@@ -127,6 +127,11 @@ pub struct AnnSearchReport {
     pub require_slo: bool,
     pub production_safe: bool,
     pub slo_violations: Vec<AnnSloViolation>,
+    /// A3.2: when the sparse permission-scope exact-fallback path is taken, the
+    /// allowed-set/graph-nodes ratio in basis points that qualified it (compared
+    /// against `SPARSE_ALLOWED_EXACT_FALLBACK_MAX_RATIO_BPS`). `None` when that
+    /// path was not the reason for the chosen strategy.
+    pub sparse_exact_fallback_ratio_bps: Option<u64>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

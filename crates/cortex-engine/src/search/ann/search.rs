@@ -37,6 +37,15 @@ pub(super) fn allowed_ratio_within_bps(
     (available as u128) * 10_000 <= (graph_nodes as u128) * u128::from(max_ratio_bps)
 }
 
+/// A3.2: the allowed-set/graph-nodes ratio in basis points (integer-only), for
+/// recording in `AnnSearchReport` when the sparse-scope exact fallback is chosen.
+pub(super) fn sparse_allowed_ratio_bps(available: usize, graph_nodes: usize) -> u64 {
+    if graph_nodes == 0 {
+        return 0;
+    }
+    u64::try_from((available as u128) * 10_000 / (graph_nodes as u128)).unwrap_or(u64::MAX)
+}
+
 pub fn search_persisted_ann(
     vectors: &BTreeMap<u32, Vec<i16>>,
     graph: &HnswGraphIndex,
@@ -271,6 +280,7 @@ pub fn search_persisted_ann_with_policy(
                 require_slo: policy.require_slo,
                 production_safe: true,
                 slo_violations: Vec::new(),
+                sparse_exact_fallback_ratio_bps: None,
             },
             policy,
         ),

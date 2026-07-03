@@ -3,6 +3,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use super::super::persisted::search_persisted_vectors;
 use super::super::ScoredCandidate;
 use super::report::finalize_report;
+use super::search::sparse_allowed_ratio_bps;
 use super::runtime::HnswRuntimeConfig;
 use super::types::{
     AnnFallbackReason, AnnSearchOutcome, AnnSearchPath, AnnSearchPolicy, AnnSearchReport,
@@ -55,6 +56,8 @@ pub(super) fn fallback_disabled_outcome(
                 require_slo: policy.require_slo,
                 production_safe: true,
                 slo_violations: Vec::new(),
+                sparse_exact_fallback_ratio_bps: matches!(reason, AnnFallbackReason::SparseAllowedSet)
+                    .then(|| sparse_allowed_ratio_bps(available, graph_nodes)),
             },
             policy,
         ),
@@ -121,6 +124,8 @@ pub(super) fn exact_from_results(
                 require_slo: policy.require_slo,
                 production_safe: true,
                 slo_violations: Vec::new(),
+                sparse_exact_fallback_ratio_bps: matches!(reason, AnnFallbackReason::SparseAllowedSet)
+                    .then(|| sparse_allowed_ratio_bps(available, graph_nodes)),
             },
             policy,
         ),

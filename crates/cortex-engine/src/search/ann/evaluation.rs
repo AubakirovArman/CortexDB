@@ -101,6 +101,7 @@ pub fn evaluate_persisted_ann_with_policy(
                             require_slo: policy.require_slo,
                             production_safe: true,
                             slo_violations: Vec::new(),
+                            sparse_exact_fallback_ratio_bps: None,
                         },
                         policy,
                     ),

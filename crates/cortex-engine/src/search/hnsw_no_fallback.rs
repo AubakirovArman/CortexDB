@@ -211,6 +211,7 @@ mod tests {
             require_slo: true,
             production_safe: true,
             slo_violations: Vec::new(),
+            sparse_exact_fallback_ratio_bps: None,
         }
     }
 

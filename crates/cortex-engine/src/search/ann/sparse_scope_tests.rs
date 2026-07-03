@@ -92,6 +92,16 @@ fn sparse_allowed_set_routes_to_exact_before_hnsw_budget() {
     assert_eq!(outcome.results[0].cell_id, 1_000);
     assert_eq!(outcome.report.allowed_candidates, 2);
     assert!(outcome.report.allowed_candidates <= SPARSE_ALLOWED_EXACT_FALLBACK_MAX_CANDIDATES);
+    // A3.2: the qualifying allowed/graph ratio (bps) is recorded on the sparse
+    // exact-fallback path, and is within the codified threshold.
+    let ratio = outcome
+        .report
+        .sparse_exact_fallback_ratio_bps
+        .expect("sparse fallback ratio recorded");
+    assert!(
+        ratio <= SPARSE_ALLOWED_EXACT_FALLBACK_MAX_RATIO_BPS,
+        "recorded ratio {ratio} bps must be within the {SPARSE_ALLOWED_EXACT_FALLBACK_MAX_RATIO_BPS} bps threshold"
+    );
     assert_eq!(outcome.report.visited_candidates, 0);
     assert_eq!(outcome.report.max_visited_candidates, Some(1));
 }
