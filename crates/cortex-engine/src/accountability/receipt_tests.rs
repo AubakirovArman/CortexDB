@@ -286,6 +286,33 @@ fn cell_content_leaf_families_match_cross_language_vector() {
     );
 }
 
+// C4-2 (verification leaf extraction): the verification report leaf's
+// evidence_digest is blake3(VERIFICATION_ROOT_DOMAIN ||
+// canonical_verification_report_bytes(report)). We pin a minimal report (no
+// evidence/guard/conflict sub-leaves) so the report canonicalization is a total,
+// reproducible mapping; the Python mirror re-derives the leaf and here the real
+// engine verification_leaves must match. Closes the 6th and final leaf family.
+#[test]
+fn verification_leaf_family_matches_cross_language_vector() {
+    use crate::verification::{VerificationReport, VerificationStatus};
+
+    let vector = pack_root_vector();
+    let report = VerificationReport {
+        fact: "cortex verification cross-language fact".to_owned(),
+        status: VerificationStatus::Supported,
+        confidence_q16: 60_000,
+        evidence: vec![],
+        contradicting_evidence: vec![],
+        guards: vec![],
+        numeric_conflicts: vec![],
+    };
+    assert_eq!(
+        serde_json::Value::Array(super::receipt_leaves::verification_leaves(Some(&report))),
+        vector["verification_leaves"],
+        "Rust verification_leaves extraction differs from the committed (Python) leaves"
+    );
+}
+
 #[test]
 fn accountability_receipt_body_roots_are_deterministic_and_schema_aligned() {
     let (pack, retrieved_cells, denials, input) = sample_receipt_inputs();

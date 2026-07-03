@@ -157,6 +157,7 @@ canonical-jcs-cross-language-check:
 	cargo test -p cortex-engine --lib accountability::receipt_tests::pack_leaf_families_match_cross_language_vector
 	cargo test -p cortex-engine --lib accountability::receipt_tests::access_leaves_match_cross_language_vector
 	cargo test -p cortex-engine --lib accountability::receipt_tests::cell_content_leaf_families_match_cross_language_vector
+	cargo test -p cortex-engine --lib accountability::receipt_tests::verification_leaf_family_matches_cross_language_vector
 	python3 scripts/canonical_jcs_cross_language_check.py
 
 accountability-receipt-schema-check:

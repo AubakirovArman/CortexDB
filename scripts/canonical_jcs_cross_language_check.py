@@ -13,10 +13,12 @@ are identical (a sha256 collision is infeasible), so the canonicalization is
 language-independent.
 
 This now also re-derives the receipt's blake3 Merkle roots (synthetic + the 6 roots
-of a real committed receipt), its Ed25519 signatures, and its `pack_root` (the
-canonical ContextPack mapping) — each asserted byte-for-byte against the matching
-Rust test. This is verify-only: it never rewrites a signed golden. Remaining C4-2:
-the 6 leaf-family field extractions (receipt_leaves.rs).
+of a real committed receipt), its Ed25519 signatures, its `pack_root` (the canonical
+ContextPack mapping), and all 6 leaf-family extractions (budget/conflict/access/
+cell_set/provenance/verification — including cell_content_hash and the
+verification-report canonicalization) — each asserted byte-for-byte against the
+matching Rust test. This is verify-only: it never rewrites a signed golden. So the
+receipt's entire canonicalization + crypto surface is proven language-independent.
 
 Dependency-free (stdlib only); deterministic; no network, no wall clock.
 """
@@ -385,6 +387,54 @@ def provenance_leaves(cell_input: dict) -> list:
     ]
 
 
+# Verification leaf family. The report leaf's evidence_digest is
+# blake3(VERIFICATION_ROOT_DOMAIN || canonical_verification_report_bytes), where
+# canonical_verification_report_bytes = canonical_json_bytes(verification_report_value).
+# We pin a minimal report (empty evidence/guards/conflicts) so the mapping is a
+# total, reproducible function; the Rust test builds the same report and runs the
+# real engine verification_leaves.
+VERIFICATION_ROOT_DOMAIN = "cortexdb.accountability.receipt.verification_root.v1"
+VERIFICATION_INPUT = {
+    "fact": "cortex verification cross-language fact",
+    "status": "supported",
+    "confidence_q16": 60000,
+}
+
+
+def verification_report_value(report_input: dict) -> dict:
+    """Mirror of canonical.rs::verification_report_value for a report with no
+    evidence/guards/conflicts (empty arrays)."""
+    return {
+        "schema_version": "verification_report.canonical.v1",
+        "fact": report_input["fact"],
+        "status": report_input["status"],
+        "confidence_q16": report_input["confidence_q16"],
+        "evidence": [],
+        "contradicting_evidence": [],
+        "guards": [],
+        "numeric_conflicts": [],
+    }
+
+
+def verification_leaves(report_input: dict) -> list:
+    """Mirror of receipt_leaves.rs::verification_leaves for a report with no
+    evidence/conflict sub-leaves — a single report leaf whose evidence_digest is a
+    blake3 over the canonical verification-report bytes."""
+    digest = hash_bytes(
+        VERIFICATION_ROOT_DOMAIN,
+        canonical_json_bytes(verification_report_value(report_input)),
+    )
+    return [
+        {
+            "leaf_type": "verification_report",
+            "cell_id": None,
+            "status": report_input["status"],
+            "confidence_q16": report_input["confidence_q16"],
+            "evidence_digest": digest,
+        }
+    ]
+
+
 def access_leaves(access_input: dict) -> list:
     """Mirror of receipt_leaves.rs::access_leaves (+ admitted_access_leaf): the
     admitted cells (each with an evidence_digest = hash_value over the access
@@ -458,6 +508,10 @@ def build_pack_root() -> dict:
         "cell_content_hash": cell_content_hash(CELL_CONTENT_INPUT),
         "cell_set_leaves": cell_set_leaves(CELL_CONTENT_INPUT),
         "provenance_leaves": provenance_leaves(CELL_CONTENT_INPUT),
+        # Verification leaf family (minimal report; evidence_digest over canonical
+        # verification-report bytes). Completes all 6 leaf families.
+        "verification_input": VERIFICATION_INPUT,
+        "verification_leaves": verification_leaves(VERIFICATION_INPUT),
     }
 
 
@@ -500,6 +554,8 @@ def check_pack_root() -> list[str]:
         errors.append("cell_set_leaves: python extraction != committed")
     if provenance_leaves(cell_input) != committed["provenance_leaves"]:
         errors.append("provenance_leaves: python extraction != committed")
+    if verification_leaves(committed["verification_input"]) != committed["verification_leaves"]:
+        errors.append("verification_leaves: python extraction != committed")
     return errors
 
 
@@ -644,10 +700,11 @@ def main() -> int:
         f"canonical-jcs-cross-language-check passed: {len(committed)} JCS + "
         f"{len(MERKLE_VECTORS)} Merkle + {len(ED25519_VECTORS)} Ed25519 vector(s) + the "
         f"{len(RECEIPT_FAMILY_SPECS)} roots of a real committed receipt + the pack_root "
-        "+ 5 of 6 leaf-family extractions (budget/conflict/access/cell_set/"
-        "provenance, incl. cell_content_hash); python canonicalization + blake3 "
-        "Merkle roots + Ed25519 signatures + pack canonicalization + leaf "
-        "extraction reproduce the committed values byte-for-byte"
+        "+ all 6 leaf-family extractions (budget/conflict/access/cell_set/"
+        "provenance/verification, incl. cell_content_hash + report canonicalization); "
+        "python canonicalization + blake3 Merkle roots + Ed25519 signatures + pack "
+        "canonicalization + every leaf extraction reproduce the committed values "
+        "byte-for-byte"
     )
     return 0
 

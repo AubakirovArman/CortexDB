@@ -154,5 +154,19 @@
       "source_ref": null,
       "citation": "fixture:xlang#L1"
     }
+  ],
+  "verification_input": {
+    "fact": "cortex verification cross-language fact",
+    "status": "supported",
+    "confidence_q16": 60000
+  },
+  "verification_leaves": [
+    {
+      "leaf_type": "verification_report",
+      "cell_id": null,
+      "status": "supported",
+      "confidence_q16": 60000,
+      "evidence_digest": "2d0c33dfda1d866d043585405ff9f045359e35d2e4dafe509727ff39e88c989d"
+    }
   ]
 }
