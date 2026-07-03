@@ -69,8 +69,11 @@ pub enum BenchmarkRerankMode {
     None,
     Weighted,
     /// A7.2: rerank the lexical candidate pool by the engine's own exact dense
-    /// two-stage pass (`Database::two_stage_rerank_for_task`, pure dense).
+    /// two-stage pass (`Database::two_stage_rerank_for_task`, pure dot).
     TwoStage,
+    /// A7.2 cosine variant: `Database::two_stage_rerank_for_task_cosine` (dot
+    /// normalized by candidate magnitude — ranks by direction, not raw dot).
+    TwoStageCosine,
 }
 
 impl BenchmarkRerankMode {
@@ -79,7 +82,10 @@ impl BenchmarkRerankMode {
             "none" => Ok(Self::None),
             "weighted" => Ok(Self::Weighted),
             "two-stage" => Ok(Self::TwoStage),
-            _ => Err("rerank mode must be none, weighted, or two-stage".to_owned()),
+            "two-stage-cosine" => Ok(Self::TwoStageCosine),
+            _ => {
+                Err("rerank mode must be none, weighted, two-stage, or two-stage-cosine".to_owned())
+            }
         }
     }
 
@@ -88,11 +94,12 @@ impl BenchmarkRerankMode {
             Self::None => "none",
             Self::Weighted => "weighted",
             Self::TwoStage => "two-stage",
+            Self::TwoStageCosine => "two-stage-cosine",
         }
     }
 
     pub fn is_enabled(self) -> bool {
-        matches!(self, Self::Weighted | Self::TwoStage)
+        matches!(self, Self::Weighted | Self::TwoStage | Self::TwoStageCosine)
     }
 }
 

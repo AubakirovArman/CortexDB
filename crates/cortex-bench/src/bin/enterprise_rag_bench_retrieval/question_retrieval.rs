@@ -141,10 +141,14 @@ pub(crate) fn retrieve_aql_questions(
         // exact dense two-stage pass (pure dense, Q16 = u16::MAX), the same
         // `two_stage_rerank` the retrieve pipeline's RerankOp runs. Otherwise use
         // the weighted-fusion ranking.
-        let ranked = if matches!(args.rerank_mode, BenchmarkRerankMode::TwoStage) {
-            db.two_stage_rerank_for_task(cells, &task, u64::from(u16::MAX))
-        } else {
-            db.rerank_retrieved_cells_for_task(cells, &task, &default_weights(mode))
+        let ranked = match args.rerank_mode {
+            BenchmarkRerankMode::TwoStage => {
+                db.two_stage_rerank_for_task(cells, &task, u64::from(u16::MAX))
+            }
+            BenchmarkRerankMode::TwoStageCosine => {
+                db.two_stage_rerank_for_task_cosine(cells, &task, u64::from(u16::MAX))
+            }
+            _ => db.rerank_retrieved_cells_for_task(cells, &task, &default_weights(mode)),
         };
         let results = ranked
             .into_iter()

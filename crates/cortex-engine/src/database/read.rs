@@ -16,7 +16,7 @@ use crate::exec::{execute_retrieve, RetrieveExecutionReport};
 use crate::feedback::current_unix_seconds;
 #[cfg(test)]
 use crate::retrieval_quality::cell_version_meets_quality_thresholds;
-use crate::retrieval_rank::{rank_retrieved_cells, two_stage_rerank};
+use crate::retrieval_rank::{rank_retrieved_cells, two_stage_rerank, two_stage_rerank_cosine};
 #[cfg(test)]
 use crate::retrieval_rank::{expand_parent_context, suppress_duplicate_content};
 
@@ -185,6 +185,19 @@ impl Database {
         weight_q16: u64,
     ) -> Vec<RetrievedCell> {
         two_stage_rerank(cells, task, weight_q16)
+    }
+
+    /// Cosine variant of [`Self::two_stage_rerank_for_task`]: the dense pass ranks
+    /// candidates by `dot(query, doc) / |doc|` (direction, not raw magnitude),
+    /// which recovers the recall a raw-dot rerank leaves on the table when i16
+    /// quantization perturbs the magnitude of otherwise L2-normalized embeddings.
+    pub fn two_stage_rerank_for_task_cosine(
+        &self,
+        cells: Vec<RetrievedCell>,
+        task: &str,
+        weight_q16: u64,
+    ) -> Vec<RetrievedCell> {
+        two_stage_rerank_cosine(cells, task, weight_q16)
     }
 
     pub fn current_seq(&self) -> CommitSeq {

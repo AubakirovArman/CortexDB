@@ -15,7 +15,9 @@
 //! vector, or a pool whose cells carry no matching vector, it is a no-op, so
 //! existing retrieval output and its goldens are unchanged.
 
-use super::{min_max_normalize_q16, query_vector_from_task, semantic_dot_score};
+use super::{
+    min_max_normalize_q16, query_vector_from_task, semantic_cosine_score_q16, semantic_dot_score,
+};
 use crate::database::RetrievedCell;
 
 /// Q16 unit (1.0). Matches the `min_max_normalize_q16` range used across ranking.
@@ -32,6 +34,30 @@ pub(crate) fn two_stage_rerank(
     task: &str,
     rerank_weight_q16: u64,
 ) -> Vec<RetrievedCell> {
+    two_stage_rerank_with(cells, task, rerank_weight_q16, semantic_dot_score)
+}
+
+/// Cosine variant of [`two_stage_rerank`]: reranks by the candidate-normalized
+/// dense score (`semantic_cosine_score_q16`) instead of the raw dot, so the
+/// dense pass ranks by direction rather than magnitude. Same no-op guards and
+/// determinism.
+pub(crate) fn two_stage_rerank_cosine(
+    cells: Vec<RetrievedCell>,
+    task: &str,
+    rerank_weight_q16: u64,
+) -> Vec<RetrievedCell> {
+    two_stage_rerank_with(cells, task, rerank_weight_q16, semantic_cosine_score_q16)
+}
+
+/// Shared two-stage rerank: reorders `cells` by blending their incoming rank with
+/// a dense score produced by `dense_score(payload, query_vector)`, using the
+/// Q16 `rerank_weight_q16` (`0`/no query vector/no matching vectors -> no-op).
+fn two_stage_rerank_with(
+    cells: Vec<RetrievedCell>,
+    task: &str,
+    rerank_weight_q16: u64,
+    dense_score: impl Fn(&[u8], &[i16]) -> u64,
+) -> Vec<RetrievedCell> {
     let weight = rerank_weight_q16.min(Q16_ONE);
     if cells.len() <= 1 || weight == 0 {
         return cells;
@@ -41,7 +67,7 @@ pub(crate) fn two_stage_rerank(
     };
     let dense_raw = cells
         .iter()
-        .map(|cell| semantic_dot_score(&cell.payload, &query_vector))
+        .map(|cell| dense_score(&cell.payload, &query_vector))
         .collect::<Vec<_>>();
     // No cell carries a vector matching the query dimension -> nothing to rerank
     // on -> keep the stage-1 order rather than collapse everything to a tie.
@@ -167,5 +193,29 @@ mod tests {
         let mut sorted = ids_a.clone();
         sorted.sort_unstable();
         assert_eq!(sorted, vec![1, 2, 3, 4], "must be a permutation of all inputs");
+    }
+
+    #[test]
+    fn cosine_ranks_by_direction_not_magnitude() {
+        // Query points diagonally (1,1). Cell 1 has a larger magnitude but points
+        // along x; cell 2 is the direction match. Raw dot favors cell 1 (its
+        // magnitude wins), cosine favors cell 2 (direction wins) — this is the
+        // recall the cosine variant recovers.
+        let cells = || {
+            vec![
+                cell(1, "10,0", "large magnitude, wrong direction"),
+                cell(2, "1,1", "direction match"),
+            ]
+        };
+        let by_dot = two_stage_rerank(cells(), "q\nvector=1,1\n", Q16_ONE);
+        assert_eq!(
+            by_dot[0].cell_id.0, 1,
+            "raw dot favors the large-magnitude vector"
+        );
+        let by_cosine = two_stage_rerank_cosine(cells(), "q\nvector=1,1\n", Q16_ONE);
+        assert_eq!(
+            by_cosine[0].cell_id.0, 2,
+            "cosine favors the direction match"
+        );
     }
 }

@@ -18,9 +18,11 @@ mod two_stage;
 
 pub(crate) use diversify::diversify_retrieved_cells;
 use memory_decay::memory_decay_q16;
-pub(crate) use semantic::{query_vector_from_task, semantic_dot_score};
+pub(crate) use semantic::{
+    query_vector_from_task, semantic_cosine_score_q16, semantic_dot_score,
+};
 pub(crate) use supersede::suppress_superseded_cells;
-pub(crate) use two_stage::two_stage_rerank;
+pub(crate) use two_stage::{two_stage_rerank, two_stage_rerank_cosine};
 
 pub(crate) fn rank_retrieved_cells(
     cells: Vec<RetrievedCell>,
