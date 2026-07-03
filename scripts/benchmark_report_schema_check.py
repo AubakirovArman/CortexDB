@@ -15,9 +15,17 @@ import pathlib
 import sys
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
-SCHEMA = REPO / "schemas" / "benchmark_report.v1.schema.json"
-# Committed benchmark reports that must always conform.
-TARGETS = [REPO / "erb-submission" / "official_results.json"]
+# (schema, [committed reports that must always conform]) pairs.
+PAIRS = [
+    (
+        REPO / "schemas" / "benchmark_report.v1.schema.json",
+        [REPO / "erb-submission" / "official_results.json"],
+    ),
+    (
+        REPO / "schemas" / "aab_run.v1.schema.json",
+        [REPO / "fixtures" / "aab_mini" / "aab_run.sample.v1.json"],
+    ),
+]
 
 
 def _type_ok(value, spec) -> bool:
@@ -43,6 +51,13 @@ def validate(obj, schema, path: str, errors: list[str]) -> None:
     if stype and not _type_ok(obj, stype):
         errors.append(f"{path}: expected type {stype}, got {type(obj).__name__}")
         return
+    if "enum" in schema and obj not in schema["enum"]:
+        errors.append(f"{path}: {obj!r} not in enum {schema['enum']}")
+    if "minItems" in schema and isinstance(obj, list) and len(obj) < schema["minItems"]:
+        errors.append(f"{path}: {len(obj)} items < minItems {schema['minItems']}")
+    if isinstance(obj, list) and isinstance(schema.get("items"), dict):
+        for idx, item in enumerate(obj):
+            validate(item, schema["items"], f"{path}[{idx}]", errors)
     if isinstance(obj, dict):
         for req in schema.get("required", []):
             if req not in obj:
@@ -70,23 +85,28 @@ def main() -> int:
         if a == "--report" and i + 1 < len(args):
             report_path = pathlib.Path(args[i + 1])
 
-    schema = json.loads(SCHEMA.read_text())
     checked = []
     all_errors: list[str] = []
-    for target in TARGETS:
-        if not target.exists():
-            all_errors.append(f"{target}: missing")
-            continue
-        errors: list[str] = []
-        validate(json.loads(target.read_text()), schema, target.name, errors)
-        checked.append({"file": str(target.relative_to(REPO)), "errors": errors})
-        all_errors.extend(errors)
+    for schema_path, targets in PAIRS:
+        schema = json.loads(schema_path.read_text())
+        for target in targets:
+            if not target.exists():
+                all_errors.append(f"{target}: missing")
+                continue
+            errors: list[str] = []
+            validate(json.loads(target.read_text()), schema, target.name, errors)
+            checked.append({
+                "schema": schema_path.name,
+                "file": str(target.relative_to(REPO)),
+                "errors": errors,
+            })
+            all_errors.extend(errors)
 
     passed = not all_errors and len(checked) > 0
     report = {
         "schema_version": "cortexdb.benchmark_report_schema_check.v1",
         "status": "passed" if passed else "failed",
-        "schema": str(SCHEMA.relative_to(REPO)),
+        "schemas": [str(s.relative_to(REPO)) for s, _ in PAIRS],
         "checked": checked,
     }
     if report_path is not None:

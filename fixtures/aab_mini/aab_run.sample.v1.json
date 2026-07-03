@@ -1,0 +1,70 @@
+{
+  "schema_version": "cortexdb.aab_mini.v1",
+  "systems": [
+    {
+      "system": "cortexdb",
+      "axes": {
+        "scope_leak_at_budget": {
+          "rank": "RANKED",
+          "score": 1.0
+        },
+        "citation_pr": {
+          "rank": "RANKED",
+          "score": 0.82
+        },
+        "conflict_recall": {
+          "rank": "RANKED",
+          "score": 0.9
+        },
+        "tokens_to_answer": {
+          "rank": "RANKED",
+          "score": 0.8
+        },
+        "receipt_verifiability": {
+          "rank": "RANKED",
+          "score": 1.0
+        },
+        "determinism": {
+          "rank": "RANKED",
+          "score": 1.0
+        }
+      },
+      "ranked_axes": 6,
+      "unranked_axes": []
+    },
+    {
+      "system": "thin-pgvector-opa",
+      "axes": {
+        "scope_leak_at_budget": {
+          "rank": "RANKED",
+          "score": 0.9
+        },
+        "citation_pr": {
+          "rank": "RANKED",
+          "score": 0.7
+        },
+        "conflict_recall": {
+          "rank": "RANKED",
+          "score": 0.55
+        },
+        "tokens_to_answer": {
+          "rank": "RANKED",
+          "score": 0.75
+        },
+        "receipt_verifiability": {
+          "rank": "UNRANKED",
+          "reason": "structurally incapable"
+        },
+        "determinism": {
+          "rank": "UNRANKED",
+          "reason": "structurally incapable"
+        }
+      },
+      "ranked_axes": 4,
+      "unranked_axes": [
+        "determinism",
+        "receipt_verifiability"
+      ]
+    }
+  ]
+}
