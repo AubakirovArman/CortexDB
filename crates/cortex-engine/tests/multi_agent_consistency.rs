@@ -246,6 +246,37 @@ fn sequenced_handoff_requires_target_visibility_and_stable_pack_seq() {
     assert!(matches!(future_seq, EngineError::InvalidAgentSession(_)));
 }
 
+#[test]
+fn require_seq_visible_enforces_read_after_seq() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open_with_options(dir.path(), options()).unwrap();
+
+    let base = db.current_seq();
+    // The current sequence is always visible.
+    assert_eq!(db.require_seq_visible(base).unwrap(), base);
+
+    // A future sequence is not yet visible: a hard, typed failure — never a
+    // silently-stale read.
+    let error = db.require_seq_visible(CommitSeq(base.0 + 1)).unwrap_err();
+    match error {
+        EngineError::SequenceNotVisible { required, current } => {
+            assert_eq!(required, CommitSeq(base.0 + 1));
+            assert_eq!(current, base);
+        }
+        other => panic!("expected SequenceNotVisible, got {other:?}"),
+    }
+
+    // Once a commit advances the sequence, the once-future seq becomes visible.
+    db.put_cell(CellId(7), payload("shared:project", "advance"))
+        .unwrap();
+    let advanced = db.current_seq();
+    assert!(advanced > base);
+    assert_eq!(
+        db.require_seq_visible(CommitSeq(base.0 + 1)).unwrap(),
+        advanced
+    );
+}
+
 fn alpha_query() -> &'static str {
     r#"RETRIEVE CONTEXT FOR TASK "alpha" IN BRAIN investment_projects
 WHERE status = "ready" LIMIT 10 CANDIDATES;"#

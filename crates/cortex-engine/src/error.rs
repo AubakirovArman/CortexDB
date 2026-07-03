@@ -1,5 +1,5 @@
 use cortex_aql::BindError;
-use cortex_core::{CellId, CoreError};
+use cortex_core::{CellId, CommitSeq, CoreError};
 use cortex_storage::StorageError;
 use std::path::PathBuf;
 
@@ -117,6 +117,11 @@ pub enum EngineError {
     InvalidAgentSession(String),
     #[error("agent session expired: {0}")]
     AgentSessionExpired(String),
+    #[error("required commit sequence {required:?} is not yet visible (current {current:?})")]
+    SequenceNotVisible {
+        required: CommitSeq,
+        current: CommitSeq,
+    },
     #[error("invalid semantic compression request: {0}")]
     InvalidSemanticCompression(String),
     #[error("engine feature is disabled: {0}")]
@@ -178,6 +183,7 @@ impl EngineError {
             Self::InvalidOperation
             | Self::InvalidAgentSession(_)
             | Self::AgentSessionExpired(_)
+            | Self::SequenceNotVisible { .. }
             | Self::InvalidSemanticCompression(_)
             | Self::FeatureDisabled(_)
             | Self::InvalidAnnFixture(_)

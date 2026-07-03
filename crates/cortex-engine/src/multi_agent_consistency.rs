@@ -125,6 +125,26 @@ impl Database {
             idempotency_key: request.idempotency_key,
         })
     }
+
+    /// F08-B6.2: read-after-seq enforcement (the engine primitive).
+    ///
+    /// A `SharedSequenced` handoff consumer passes the handoff's
+    /// `visible_after_seq`; this returns the current commit sequence if that
+    /// sequence is visible in this snapshot, and otherwise fails hard with a typed
+    /// [`EngineError::SequenceNotVisible`] instead of letting the consumer read
+    /// silently-stale state. The HTTP `min_seq` (→ 409) and AQL surface build on
+    /// this primitive.
+    pub fn require_seq_visible(&self, required_after_seq: CommitSeq) -> EngineResult<CommitSeq> {
+        let current = self.current_seq();
+        if current >= required_after_seq {
+            Ok(current)
+        } else {
+            Err(EngineError::SequenceNotVisible {
+                required: required_after_seq,
+                current,
+            })
+        }
+    }
 }
 
 fn validate_handoff_view(

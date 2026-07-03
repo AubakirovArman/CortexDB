@@ -120,6 +120,10 @@ memory-consolidation-check:
 	cargo test -p cortex-engine --lib semantic_compression::memory_class_tests
 	cargo test -p cortex-engine --test semantic_compression --all-features
 
+.PHONY: read-after-seq-check
+read-after-seq-check:
+	cargo test -p cortex-engine --test multi_agent_consistency require_seq_visible --all-features
+
 accountability-receipt-schema-check:
 	cargo test -p cortexdb-sdk context_pack_v1_deserializes_optional_accountability_receipt
 	python3 scripts/accountability_receipt_schema_check.py --root "." --report "$(ACCOUNTABILITY_RECEIPT_SCHEMA_REPORT)"
