@@ -7,7 +7,21 @@ Each phase is one of: **completable-now** (bounded change, no frozen-golden chur
 no external blocker), **golden-rebaseline** (needs the C3-1/C3-5 canonical-set
 protocol + re-baselining frozen goldens), **blocked-external** (needs a resource
 absent from this environment), or **large-scope/frozen** (multi-week or frozen by
-the plan). Totals: 86 phases, 14 already landed.
+the plan). Totals: 86 phases, 14 already landed **at the time this snapshot was written**.
+
+> **⚠️ Reconciliation (this table is a point-in-time snapshot; [`NEXT_GEN_PROGRESS.md`](NEXT_GEN_PROGRESS.md) is authoritative for landed status).**
+> Many phases the rows below still mark `not-started` have since **landed** with passing gates. Verified landed since the snapshot (artifact + gate):
+> - **C4-2** — receipt canonicalization proven cross-language Rust↔Python (JCS + Merkle + Ed25519 + pack_root + all 6 leaf-family extractions + a real receipt's 6 roots); `canonical-jcs-cross-language-check` (8 Rust tests + Python).
+> - **C3-3** — receipt↔handoff binding; `handoff-ledger-check`.
+> - **C3-5** — additive-minor schema-versioning procedure + ANN-degradation receipt-visibility ADR; `canonical-schema-field-binding-check`.
+> - **F1.1/F1.2/F1.3** — benchmark_report schema + committed registry + CI lane map; `benchmark-report-schema-check` / `benchmark-registry-check` / `benchmark-lane-audit-check`.
+> - **F1.4** — fast per-type retrieval-eval loop (real CLI retrieval, registry baseline, degradation caught); `quick-retrieval-eval-check`.
+> - **F2.2** — same-judge guard for ERB comparisons; `erb-compare-runs-check`.
+> - **F4.1/F4.2** — AAB-1 spec + `schemas/aab_run.v1.schema.json` + six-axis mini scorer; `aab-conformance-check` / `aab-mini-score-check`.
+> - **F5.2** — benchmark-score trend gate; `benchmark-trend-check`.
+> - **F04-B1.3** (idempotency ledger), **F04-B6.3** (`/v1/transactions` + `/v1/handoff`), **F06-B4.1…B4.5** (semantic compression: classify/select/conflict-guard/MCP worker/unfold+retire), **F08-B6.1** (durable handoff ledger), **F08-B6.2** (read-after-seq) — all landed with their contract gates.
+>
+> So the genuinely-remaining set is much smaller than the row count below suggests, and is dominated by **resource-blocked** work: an LLM chat endpoint (A6.1/A6.2/A6.4/F2.1/F3.4), a 50k-vector perf benchmark (A3.3), official metered-run data (A6.3/A5.2-serving/F2.3/F3.1/F3.3), external human operators (C2-1…C2-4 and peers, 15), a user decision (F2.0), or plan-frozen v1.0 non-goals (F09, A8.3, F4.4, …).
 
 
 ## Completable now (no golden churn, no external blocker) (41)
