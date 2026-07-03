@@ -56,6 +56,8 @@ profile provenance in the manifest and the CLI-side query embedder.
 
 | A8.1 Structure-aware chunking | Slice | `split_text_chunks_structured` (`ingestion/chunking.rs`): Markdown-heading segmentation with a heading **breadcrumb**, fenced code blocks and table-row runs kept **atomic** (never split, and `#` inside a code fence is not a heading), and a document-summary **parent** chunk + **child** body chunks carrying `parent_id`+`breadcrumb` (consumed by parent-context expansion + A7.1 field weights). Deterministic (same bytes → same chunk-ids/roles). **Additive**: the paragraph-based `split_text_chunks` is untouched, so ingestion goldens are byte-identical (pack-determinism + public-API-freeze verified). 5 unit tests. | Wire the structured path into the ingest job behind a default-off policy flag + ERB-50 A/B recall proof. | `structure-chunking-check` |
 
+| A8.2 Table fidelity (row-scoped cells) | Slice | `split_table_rows_structured` (`ingestion/chunking.rs`): a table-summary **parent** chunk (column names → a "which columns?" query resolves to the table) plus row-group **child** chunks where each row is tokenized as `header: value` pairs (→ a "column + value" query resolves to the right rows), each prefixed with its source-row provenance (`TableChunkPolicy::cell_range`) and carrying the header breadcrumb + `parent_id`. Configurable rows-per-group; deterministic; additive (golden-safe). 3 unit tests. | Wire into the `/v1/ingest/csv` path behind the structured policy flag + a 200-row query-relevance A/B. | `structure-chunking-check` |
+
 ## Cross-cutting landings
 
 | Item | State | Notes | Gate |

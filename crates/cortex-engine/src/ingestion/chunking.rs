@@ -498,12 +498,112 @@ fn flush_plain_paragraphs(units: &mut Vec<(String, bool)>, plain: &mut String) {
     plain.clear();
 }
 
+/// A8.2: table fidelity. Emits a table-summary **parent** chunk (the column
+/// names, so a "which columns?" query resolves to the table) plus row-group
+/// **child** chunks where each row is tokenized as `header: value` pairs (so a
+/// "column + value" query resolves to the right rows). Each child carries the
+/// header breadcrumb + `parent_id` and prefixes each row with its source-row
+/// provenance (`TableChunkPolicy::cell_range`). Deterministic and additive.
+pub fn split_table_rows_structured(
+    document_id: &str,
+    header: &[String],
+    rows: &[Vec<String>],
+    rows_per_group: usize,
+    policy: TableChunkPolicy,
+) -> EngineResult<Vec<StructuredChunk>> {
+    let policy = policy.validate()?;
+    let rows_per_group = rows_per_group.max(1);
+
+    let mut out = Vec::new();
+    let parent_index = 1u32;
+    let parent_id = stable_chunk_id(document_id, parent_index);
+    out.push(StructuredChunk {
+        index: parent_index,
+        chunk_id: parent_id.clone(),
+        text: format!("table columns: {}", header.join(", ")),
+        role: StructuredChunkRole::Parent,
+        parent_id: None,
+        breadcrumb: String::new(),
+    });
+
+    let breadcrumb = header.join(" | ");
+    let mut next_index = parent_index;
+    for (group_index, group) in rows.chunks(rows_per_group).enumerate() {
+        next_index = next_index.checked_add(1).ok_or_else(|| {
+            EngineError::StorageInvariant("table chunk count exceeds u32".to_owned())
+        })?;
+        let mut text = String::new();
+        for (row_offset, row) in group.iter().enumerate() {
+            let data_index = group_index * rows_per_group + row_offset;
+            let source_row = policy.source_row_number(data_index)?;
+            let pairs = header
+                .iter()
+                .zip(row)
+                .map(|(column, value)| format!("{column}: {value}"))
+                .collect::<Vec<_>>()
+                .join(" | ");
+            text.push_str(&format!("{}: {pairs}\n", policy.cell_range(source_row)));
+        }
+        out.push(StructuredChunk {
+            index: next_index,
+            chunk_id: stable_chunk_id(document_id, next_index),
+            text: text.trim_end().to_owned(),
+            role: StructuredChunkRole::Child,
+            parent_id: Some(parent_id.clone()),
+            breadcrumb: breadcrumb.clone(),
+        });
+    }
+    Ok(out)
+}
+
 #[cfg(test)]
 mod structured_tests {
     use super::*;
 
     fn structured(text: &str) -> Vec<StructuredChunk> {
         split_text_chunks_structured("doc", text, TextChunkPolicy::default()).unwrap()
+    }
+
+    fn table(rows_per_group: usize) -> Vec<StructuredChunk> {
+        let header = vec!["item".to_owned(), "price".to_owned()];
+        let rows = vec![
+            vec!["apple".to_owned(), "3".to_owned()],
+            vec!["pear".to_owned(), "5".to_owned()],
+            vec!["plum".to_owned(), "7".to_owned()],
+        ];
+        split_table_rows_structured("t", &header, &rows, rows_per_group, TableChunkPolicy::default())
+            .unwrap()
+    }
+
+    #[test]
+    fn table_parent_lists_columns_and_rows_are_key_value_tokenized() {
+        let chunks = table(1);
+        assert_eq!(chunks[0].role, StructuredChunkRole::Parent);
+        assert!(chunks[0].text.contains("item") && chunks[0].text.contains("price"));
+        // A "column + value" query token ("price: 5") lands in the pear row-group.
+        let pear = chunks
+            .iter()
+            .find(|c| c.text.contains("pear"))
+            .expect("pear row");
+        assert!(pear.text.contains("item: pear") && pear.text.contains("price: 5"));
+        assert_eq!(pear.parent_id.as_deref(), Some(chunks[0].chunk_id.as_str()));
+        assert_eq!(pear.breadcrumb, "item | price");
+    }
+
+    #[test]
+    fn row_grouping_and_source_rows_are_respected() {
+        // 3 rows grouped 2-per-group -> parent + 2 children (2 rows, then 1 row).
+        let chunks = table(2);
+        assert_eq!(chunks.len(), 3);
+        assert!(chunks[1].text.contains("apple") && chunks[1].text.contains("pear"));
+        assert!(chunks[2].text.contains("plum"));
+        // First data row provenance (TableChunkPolicy default first_data_row=2).
+        assert!(chunks[1].text.contains("row-2:"));
+    }
+
+    #[test]
+    fn table_chunking_is_deterministic() {
+        assert_eq!(table(2), table(2));
     }
 
     #[test]
