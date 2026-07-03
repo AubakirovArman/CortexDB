@@ -12,6 +12,7 @@ pub struct Args {
     pub output: PathBuf,
     pub report: Option<PathBuf>,
     pub top_k: usize,
+    pub candidate_limit: usize,
     pub batch_size: usize,
     pub progress_every: usize,
     pub max_documents: Option<usize>,
@@ -122,6 +123,9 @@ impl Args {
                 "--output" => parsed.output = Some(PathBuf::from(next_value(&mut args, &arg)?)),
                 "--report" => parsed.report = Some(PathBuf::from(next_value(&mut args, &arg)?)),
                 "--top-k" => parsed.top_k = parse_usize(&next_value(&mut args, &arg)?, &arg)?,
+                "--candidate-limit" => {
+                    parsed.candidate_limit = parse_usize(&next_value(&mut args, &arg)?, &arg)?
+                }
                 "--batch-size" => {
                     parsed.batch_size = parse_usize(&next_value(&mut args, &arg)?, &arg)?
                 }
@@ -172,6 +176,7 @@ struct PartialArgs {
     output: Option<PathBuf>,
     report: Option<PathBuf>,
     top_k: usize,
+    candidate_limit: usize,
     batch_size: usize,
     progress_every: usize,
     max_documents: Option<usize>,
@@ -199,6 +204,7 @@ impl Default for PartialArgs {
             output: None,
             report: None,
             top_k: 10,
+            candidate_limit: 64,
             batch_size: 1_000,
             progress_every: 10_000,
             max_documents: None,
@@ -238,6 +244,7 @@ impl PartialArgs {
                 .ok_or_else(|| "--output is required".to_owned())?,
             report: self.report,
             top_k: self.top_k,
+            candidate_limit: self.candidate_limit.max(1),
             batch_size: self.batch_size.max(1),
             progress_every: self.progress_every,
             max_documents: self.max_documents,

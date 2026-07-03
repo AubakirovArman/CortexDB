@@ -118,7 +118,7 @@ pub(crate) fn retrieve_aql_questions(
         let query = required_str(question, "question", index)?;
         let vector = query_vectors.get(qid);
         let cells = retrieval_index
-            .search_doc_ids(query, &[], args.top_k.max(64))
+            .search_doc_ids(query, &[], args.top_k.max(args.candidate_limit))
             .iter()
             .filter_map(|doc_id| doc_to_cell.get(doc_id).copied())
             .filter_map(|cell_id| {
