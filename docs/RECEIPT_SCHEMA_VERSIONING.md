@@ -45,6 +45,12 @@ or fixture entry fails); the determinism gates enforce step 3. This procedure
 **must be in place before A7.3 lands** (per the master plan) so plan-visible
 ranking/diversity options cannot silently change the signed surface.
 
+The first concrete consumer of this procedure is A3.3's ANN degradation state:
+[`ADR-ann-degradation-receipt-visibility.md`](ADR-ann-degradation-receipt-visibility.md)
+records the Track A ↔ Track C design-review decision that the per-collection ANN
+`serving_epoch` (+ mode) must enter the signed surface through an additive-minor
+bump, so a verifier re-executing the plan knows which serving mode to reproduce.
+
 ## Why additive-minor, not in-place
 
 Old receipts stay verifiable: a verifier that knows `…canonical.v1` can still

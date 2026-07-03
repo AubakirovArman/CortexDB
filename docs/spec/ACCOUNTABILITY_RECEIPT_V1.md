@@ -129,3 +129,16 @@ receipt signing key custody is not configured.
 This preserves the v1 compatibility rule: existing required fields, enum
 meanings, and `schema_version` are frozen; optional additive fields are allowed
 until `context_pack.v2`.
+
+## Changing the canonical (signed) field set
+
+The exact set of fields that enter the canonical, receipt-signed bytes is a
+contract: a verifier re-executes the plan and must reproduce the same signed
+bytes. New plan-visible options or signed metadata enter that surface **only**
+through the additive-minor procedure in
+[`RECEIPT_SCHEMA_VERSIONING.md`](../RECEIPT_SCHEMA_VERSIONING.md) (schema-version
+bump + `schema_field_binding_v1.json` entry + golden re-baseline + the C4-2
+cross-language run, all in one PR), enforced by the
+`canonical_field_sets_are_bound_to_schema_versions` test. State-dependent serving
+decisions (e.g. A3.3 ANN degradation) must reach the signed surface the same way —
+see [`ADR-ann-degradation-receipt-visibility.md`](../ADR-ann-degradation-receipt-visibility.md).
