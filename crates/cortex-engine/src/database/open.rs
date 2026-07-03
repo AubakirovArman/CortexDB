@@ -69,6 +69,20 @@ impl Database {
         self.semantic_compression
     }
 
+    /// A3.3: the current ANN serving epoch for the receipt's determinism input.
+    /// `None` when guarded sampling is off (default) or unarmed — keeping the
+    /// signed determinism surface byte-identical to pre-A3.3.
+    pub(crate) fn current_ann_serving_epoch(&self) -> Option<u64> {
+        if !self.ann_guarded_sampling.enabled {
+            return None;
+        }
+        self.guarded_recall
+            .lock()
+            .ok()?
+            .as_ref()
+            .map(|state| state.serving_epoch())
+    }
+
     pub(crate) fn require_feature(&self, feature: EngineFeature) -> EngineResult<()> {
         if self.feature_flags.is_enabled(feature) {
             Ok(())

@@ -97,6 +97,7 @@ impl Database {
             bitmap_program_digest: None,
             frozen_weights_version: frozen_weights.version,
             frozen_weights_hash: frozen_weights.artifact_hash,
+            ann_serving_epoch: self.current_ann_serving_epoch(),
         };
         Ok(ContextPackReceiptEvidence::new(
             pack,

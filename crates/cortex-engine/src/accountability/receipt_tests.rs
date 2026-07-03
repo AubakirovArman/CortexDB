@@ -480,6 +480,7 @@ fn sample_receipt_inputs() -> (
         bitmap_program_digest: Some("e".repeat(64)),
         frozen_weights_version: "manual-q16.v1".to_owned(),
         frozen_weights_hash: "0".repeat(64),
+        ann_serving_epoch: None,
     };
 
     (pack, vec![retrieved], denials, input)
