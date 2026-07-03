@@ -167,6 +167,26 @@ fn pack_leaf_families_match_cross_language_vector() {
     );
 }
 
+// C4-2 (access leaf extraction): the access family is self-contained — each
+// admitted leaf's evidence_digest is a hash over a small access-evidence object
+// (no cell-content hash) and denied leaves carry a precomputed digest. The Python
+// mirror (access_leaves) re-derives the leaves for the deterministic
+// sample_receipt_inputs decision + denial; here the real engine
+// receipt_leaves::access_leaves must produce the identical leaves, including the
+// blake3 evidence_digest. This closes a 3rd of the 6 leaf families cross-language.
+#[test]
+fn access_leaves_match_cross_language_vector() {
+    let vector = pack_root_vector();
+    let (pack, _retrieved, denials, _input) = sample_receipt_inputs();
+    let leaves = super::receipt_leaves::access_leaves(&pack, &denials)
+        .expect("sample access decision is allowed + captured");
+    assert_eq!(
+        serde_json::Value::Array(leaves),
+        vector["access_leaves"],
+        "Rust access_leaves extraction differs from the committed (Python) leaves"
+    );
+}
+
 #[test]
 fn accountability_receipt_body_roots_are_deterministic_and_schema_aligned() {
     let (pack, retrieved_cells, denials, input) = sample_receipt_inputs();

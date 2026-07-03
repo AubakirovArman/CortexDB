@@ -257,6 +257,95 @@ def conflict_leaves(pack_input: dict) -> list:
     ]
 
 
+# Mirrors receipt_tests.rs::sample_receipt_inputs — the allowed access decision +
+# denied candidate whose leaves receipt_leaves.rs::access_leaves extracts. Kept in
+# sync with that Rust sample; the Rust test
+# (access_leaves_match_cross_language_vector) asserts the real engine reproduces
+# these committed leaves, so any drift in the sample fails loudly.
+ACCESS_ROOT_DOMAIN = "cortexdb.accountability.receipt.access_root.v1"
+ACCESS_LEAVES_INPUT = {
+    "admitted": [
+        {
+            "cell_id": 1,
+            "policy": "agent_view_readable_scope",
+            "policy_version": "agent_view_readable_scope.v1",
+            "reason": "cell candidate survived AQL permission filtering before ContextPack packing",
+            "scope_id": 1001,
+            "agent_id": 7,
+            "agent_view_digest": "a" * 64,
+        }
+    ],
+    "denied": [
+        {
+            "candidate": 2,
+            "cell_id_hash": "b" * 64,
+            "policy": "agent_view_readable_scope",
+            "policy_version": "agent_view_readable_scope.v1",
+            "reason": (
+                "cell candidate was rejected by AQL agent access filtering "
+                "before payload materialization"
+            ),
+            "agent_id": 7,
+            "agent_view_digest": "a" * 64,
+            "evidence_digest": "c" * 64,
+        }
+    ],
+}
+
+
+def access_leaves(access_input: dict) -> list:
+    """Mirror of receipt_leaves.rs::access_leaves (+ admitted_access_leaf): the
+    admitted cells (each with an evidence_digest = hash_value over the access
+    evidence) followed by the denied candidates (whose evidence_digest is
+    precomputed upstream). Self-contained — no cell-content hash."""
+    leaves = []
+    for admitted in access_input["admitted"]:
+        evidence = {
+            "cell_id": admitted["cell_id"],
+            "decision": "allowed",
+            "policy": admitted["policy"],
+            "policy_version": admitted["policy_version"],
+            "reason": admitted["reason"],
+            "scope_id": admitted["scope_id"],
+            "agent_id": admitted["agent_id"],
+            "agent_view_digest": admitted["agent_view_digest"],
+        }
+        leaves.append(
+            {
+                "leaf_type": "admitted_cell",
+                "cell_id": admitted["cell_id"],
+                "candidate": None,
+                "cell_id_hash": None,
+                "decision": "allowed",
+                "policy": admitted["policy"],
+                "policy_version": admitted["policy_version"],
+                "reason": admitted["reason"],
+                "scope_id": admitted["scope_id"],
+                "agent_id": admitted["agent_id"],
+                "agent_view_digest": admitted["agent_view_digest"],
+                "evidence_digest": hash_value(ACCESS_ROOT_DOMAIN, evidence),
+            }
+        )
+    for denied in access_input["denied"]:
+        leaves.append(
+            {
+                "leaf_type": "denied_candidate",
+                "cell_id": None,
+                "candidate": denied["candidate"],
+                "cell_id_hash": denied["cell_id_hash"],
+                "decision": "denied",
+                "policy": denied["policy"],
+                "policy_version": denied["policy_version"],
+                "reason": denied["reason"],
+                "scope_id": None,
+                "agent_id": denied["agent_id"],
+                "agent_view_digest": denied["agent_view_digest"],
+                "evidence_digest": denied["evidence_digest"],
+            }
+        )
+    return leaves
+
+
 def build_pack_root() -> dict:
     canonical_hex, root = pack_root(PACK_ROOT_INPUT)
     return {
@@ -268,6 +357,10 @@ def build_pack_root() -> dict:
         # content-hash-bearing families remain — see task_8f2c7c22).
         "budget_leaves": budget_leaves(PACK_ROOT_INPUT),
         "conflict_leaves": conflict_leaves(PACK_ROOT_INPUT),
+        # Access leaf family (self-contained: an evidence_digest hash over the
+        # access evidence, no cell-content hash). Input mirrors sample_receipt_inputs.
+        "access_leaves_input": ACCESS_LEAVES_INPUT,
+        "access_leaves": access_leaves(ACCESS_LEAVES_INPUT),
     }
 
 
@@ -299,6 +392,9 @@ def check_pack_root() -> list[str]:
         errors.append(
             f"pack_root: python root {root} != committed {committed['pack_root_blake3']}"
         )
+    # access_leaves carries a blake3 evidence_digest, so it lives in the gated block.
+    if access_leaves(committed["access_leaves_input"]) != committed["access_leaves"]:
+        errors.append("access_leaves: python extraction != committed")
     return errors
 
 
@@ -443,9 +539,9 @@ def main() -> int:
         f"canonical-jcs-cross-language-check passed: {len(committed)} JCS + "
         f"{len(MERKLE_VECTORS)} Merkle + {len(ED25519_VECTORS)} Ed25519 vector(s) + the "
         f"{len(RECEIPT_FAMILY_SPECS)} roots of a real committed receipt + the pack_root "
-        "+ budget/conflict leaf extraction of a minimal canonical ContextPack; python "
+        "+ budget/conflict/access leaf extraction (3 of 6 families); python "
         "canonicalization + blake3 Merkle roots + Ed25519 signatures + pack "
-        "canonicalization + scalar leaf extraction reproduce the committed values "
+        "canonicalization + leaf extraction reproduce the committed values "
         "byte-for-byte"
     )
     return 0

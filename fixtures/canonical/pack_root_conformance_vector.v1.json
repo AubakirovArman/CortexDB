@@ -41,5 +41,60 @@
       "visible_conflict_count": 0,
       "anomalies": []
     }
+  ],
+  "access_leaves_input": {
+    "admitted": [
+      {
+        "cell_id": 1,
+        "policy": "agent_view_readable_scope",
+        "policy_version": "agent_view_readable_scope.v1",
+        "reason": "cell candidate survived AQL permission filtering before ContextPack packing",
+        "scope_id": 1001,
+        "agent_id": 7,
+        "agent_view_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    ],
+    "denied": [
+      {
+        "candidate": 2,
+        "cell_id_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "policy": "agent_view_readable_scope",
+        "policy_version": "agent_view_readable_scope.v1",
+        "reason": "cell candidate was rejected by AQL agent access filtering before payload materialization",
+        "agent_id": 7,
+        "agent_view_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "evidence_digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      }
+    ]
+  },
+  "access_leaves": [
+    {
+      "leaf_type": "admitted_cell",
+      "cell_id": 1,
+      "candidate": null,
+      "cell_id_hash": null,
+      "decision": "allowed",
+      "policy": "agent_view_readable_scope",
+      "policy_version": "agent_view_readable_scope.v1",
+      "reason": "cell candidate survived AQL permission filtering before ContextPack packing",
+      "scope_id": 1001,
+      "agent_id": 7,
+      "agent_view_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "evidence_digest": "3f86649b3bdd6869e54e64e0be49c88f6e7e5e5673e50489788f50b32c8c1904"
+    },
+    {
+      "leaf_type": "denied_candidate",
+      "cell_id": null,
+      "candidate": 2,
+      "cell_id_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "decision": "denied",
+      "policy": "agent_view_readable_scope",
+      "policy_version": "agent_view_readable_scope.v1",
+      "reason": "cell candidate was rejected by AQL agent access filtering before payload materialization",
+      "scope_id": null,
+      "agent_id": 7,
+      "agent_view_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "evidence_digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    }
   ]
 }
