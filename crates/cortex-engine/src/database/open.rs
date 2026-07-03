@@ -86,6 +86,46 @@ impl Database {
     /// A3.3: snapshot the guarded-recall state for manifest persistence, so the
     /// sampled-recall window survives a restart. `None` (guarded sampling off /
     /// unarmed) leaves the manifest section absent — byte-identical to pre-A3.3.
+    /// A3.3 perf: return a built + verified `HnswIndex` for the current persisted
+    /// (vectors, graph), reusing a cached one keyed by `(generation,
+    /// checkpoint_seq)` — so the O(n) `from_graph` clone + O(n·edges) integrity
+    /// walk run once per index generation instead of once per query. `None` if the
+    /// graph fails integrity (the caller then takes the per-query rebuild path,
+    /// which reports the same `InvalidGraph` fallback).
+    pub(crate) fn cached_hnsw_index(
+        &self,
+        vectors: &std::collections::BTreeMap<u32, Vec<i16>>,
+        graph: &cortex_storage::hnsw::HnswGraphIndex,
+    ) -> Option<std::sync::Arc<crate::search::HnswIndex>> {
+        // Key on the live-segment fingerprint (id, generation, checkpoint_seq) —
+        // the persisted vectors+graph are a pure function of the live segments, so
+        // this is the same identity `persisted_index_state_cached` uses. A
+        // top-level (generation, checkpoint_seq) key would miss compactions that
+        // rewrite segments without bumping those counters.
+        let key: Vec<(u64, u64, u64)> = self
+            .manifest()
+            .live_segments
+            .iter()
+            .map(|segment| (segment.id, segment.generation, segment.checkpoint_seq))
+            .collect();
+        let mut guard = self.hnsw_index_cache.lock().ok()?;
+        if let Some((cached_key, index)) = guard.as_ref() {
+            if *cached_key == key {
+                return Some(index.clone());
+            }
+        }
+        // Build via the shared builder so the cached index uses the exact same
+        // resolved runtime config (the `0 -> default` mapping) as the per-query
+        // rebuild in `search_hnsw` — otherwise a graph with `max_neighbors`/
+        // `ef_search == 0` would produce a divergent index. `None` (integrity
+        // failure) leaves the caller on the per-query path, which reports the same
+        // `InvalidGraph` fallback.
+        let built = crate::search::build_verified_hnsw_index(vectors, graph)?;
+        let index = std::sync::Arc::new(built);
+        *guard = Some((key, index.clone()));
+        Some(index)
+    }
+
     pub(crate) fn current_guarded_recall_manifest(
         &self,
     ) -> Option<cortex_storage::manifest::ManifestGuardedRecallState> {
@@ -208,6 +248,7 @@ impl Database {
                     )
                 },
             )),
+            hnsw_index_cache: std::sync::Mutex::new(None),
             hnsw_build_config: options.hnsw_build_config.normalized(),
             embedding_profile: options.embedding_profile.clone(),
             retrieval_diversify_lambda_q16: options.retrieval_diversify_lambda_q16,

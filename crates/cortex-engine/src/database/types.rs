@@ -30,6 +30,10 @@ use crate::verification::{
     numeric::fact_claim::FactClaimStore, ConflictIndexStore, TemporalFactStore,
 };
 
+/// A3.3 perf: a cached built HNSW index keyed by its live-segment fingerprint
+/// (`Vec<(segment id, generation, checkpoint_seq)>`). See `Database::hnsw_index_cache`.
+type CachedHnswIndex = (Vec<(u64, u64, u64)>, Arc<crate::search::HnswIndex>);
+
 #[derive(Debug)]
 pub struct Database {
     pub(crate) root_path: PathBuf,
@@ -54,6 +58,15 @@ pub struct Database {
     /// (the read path is `&self`). `None` when the opt-in knob is off — in which
     /// case the ANN read path is byte-identical to pre-A3.3.
     pub(crate) guarded_recall: Mutex<Option<crate::search::GuardedRecallState>>,
+    /// A3.3 perf: a built + verified `HnswIndex` cached by the live-segment
+    /// fingerprint (`Vec<(segment id, generation, checkpoint_seq)>`, the same key
+    /// `persisted_index_state_cached` uses), so persisted ANN queries reuse it
+    /// instead of rebuilding + re-verifying per query. The persisted vectors+graph
+    /// are a pure function of the live segments, so any checkpoint/compaction that
+    /// rewrites segments changes the fingerprint and forces a rebuild. Results are
+    /// identical to the per-query rebuild — the traversal is unchanged, only the
+    /// O(n) rebuild is amortized.
+    pub(crate) hnsw_index_cache: Mutex<Option<CachedHnswIndex>>,
     pub(crate) hnsw_build_config: HnswBuildConfig,
     pub(crate) embedding_profile: Option<crate::embedding_pipeline::EmbeddingProfile>,
     pub(crate) retrieval_diversify_lambda_q16: Option<u64>,

@@ -25,7 +25,8 @@ pub use guarded_recall::{
 };
 pub(crate) use report::finalize_report;
 pub use search::{
-    search_persisted_ann, search_persisted_ann_sampled, search_persisted_ann_with_policy,
+    build_verified_hnsw_index, search_persisted_ann_cached, search_persisted_ann_sampled,
+    search_persisted_ann_with_policy, RecallMode,
 };
 pub use types::{
     AnnEvaluationReport, AnnFallbackReason, AnnMetrics, AnnSearchOutcome, AnnSearchPath,

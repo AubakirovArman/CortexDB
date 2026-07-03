@@ -3,12 +3,13 @@ use cortex_storage::hnsw::HnswGraphIndex;
 
 #[test]
 fn empty_graph_falls_back_to_exact() {
-    let outcome = search_persisted_ann(
+    let outcome = search_persisted_ann_with_policy(
         &BTreeMap::from([(1, vec![10, 0]), (2, vec![0, 10])]),
         &HnswGraphIndex::default(),
         &[0, 5],
         &BTreeSet::from([1, 2]),
         1,
+        AnnSearchPolicy::default(),
     );
 
     assert_eq!(outcome.results[0].cell_id, 2);
@@ -71,7 +72,7 @@ fn fallback_disabled_without_scan_cap_returns_empty_results() {
 
 #[test]
 fn invalid_graph_falls_back_to_exact() {
-    let outcome = search_persisted_ann(
+    let outcome = search_persisted_ann_with_policy(
         &BTreeMap::from([(1, vec![10, 0]), (2, vec![0, 10])]),
         &HnswGraphIndex {
             links: BTreeMap::from([(1, BTreeSet::from([999]))]),
@@ -82,6 +83,7 @@ fn invalid_graph_falls_back_to_exact() {
         &[0, 5],
         &BTreeSet::from([1, 2]),
         1,
+        AnnSearchPolicy::default(),
     );
 
     assert_eq!(outcome.results[0].cell_id, 2);
@@ -93,7 +95,7 @@ fn invalid_graph_falls_back_to_exact() {
 
 #[test]
 fn incomplete_graph_results_fall_back_to_exact() {
-    let outcome = search_persisted_ann(
+    let outcome = search_persisted_ann_with_policy(
         &BTreeMap::from([(1, vec![10, 0]), (2, vec![0, 10])]),
         &HnswGraphIndex {
             links: BTreeMap::from([(1, BTreeSet::new())]),
@@ -104,6 +106,7 @@ fn incomplete_graph_results_fall_back_to_exact() {
         &[0, 5],
         &BTreeSet::from([1, 2]),
         2,
+        AnnSearchPolicy::default(),
     );
 
     assert_eq!(outcome.results.len(), 2);
@@ -116,7 +119,7 @@ fn incomplete_graph_results_fall_back_to_exact() {
 
 #[test]
 fn low_recall_graph_falls_back_to_exact() {
-    let outcome = search_persisted_ann(
+    let outcome = search_persisted_ann_with_policy(
         &BTreeMap::from([(1, vec![10, 0]), (2, vec![0, 10])]),
         &HnswGraphIndex {
             links: BTreeMap::from([(1, BTreeSet::new())]),
@@ -127,6 +130,7 @@ fn low_recall_graph_falls_back_to_exact() {
         &[0, 10],
         &BTreeSet::from([1, 2]),
         1,
+        AnnSearchPolicy::default(),
     );
 
     assert_eq!(outcome.results[0].cell_id, 2);

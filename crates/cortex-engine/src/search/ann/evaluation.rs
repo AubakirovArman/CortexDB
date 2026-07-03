@@ -56,8 +56,8 @@ pub fn evaluate_persisted_ann_with_policy(
         query,
         allowed,
         limit,
-        config,
         policy.max_visited_candidates,
+        None,
     ) {
         Ok((results, visited_candidates, budget_exceeded)) => {
             if budget_exceeded {

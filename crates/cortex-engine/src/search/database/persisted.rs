@@ -5,8 +5,8 @@ use crate::database::Database;
 use crate::error::EngineResult;
 
 use super::super::ann::{
-    search_persisted_ann, search_persisted_ann_sampled, search_persisted_ann_with_policy,
-    AnnSearchOutcome, AnnSearchPolicy, GuardedServingMode, MIN_ANN_RECALL_Q16,
+    search_persisted_ann_cached, search_persisted_ann_sampled, search_persisted_ann_with_policy,
+    AnnSearchOutcome, AnnSearchPolicy, GuardedServingMode, RecallMode, MIN_ANN_RECALL_Q16,
 };
 use super::super::persisted::{
     search_persisted_lexical, search_persisted_vectors, PersistedLexicalSearchIndex,
@@ -308,21 +308,43 @@ impl Database {
         limit: usize,
         policy: Option<AnnSearchPolicy>,
     ) -> AnnSearchOutcome {
-        let unguarded = |policy: Option<AnnSearchPolicy>| match policy {
-            Some(policy) => {
-                search_persisted_ann_with_policy(vectors, graph, vector, allowed, limit, policy)
-            }
-            None => search_persisted_ann(vectors, graph, vector, allowed, limit),
+        // A3.3 perf: reuse a cross-query cached `HnswIndex` when available so the
+        // O(n) per-query rebuild + integrity walk is amortized. `None` (integrity
+        // failure / poisoned lock) falls back to the per-query rebuild path, which
+        // is byte-identical to pre-cache behavior. The `run` closure serves every
+        // path (default / sampled / unsampled / degraded) through whichever is
+        // available, so results are identical regardless of cache state.
+        let cached = self.cached_hnsw_index(vectors, graph);
+        let run = |recall_mode: RecallMode, policy: AnnSearchPolicy| match cached.as_ref() {
+            Some(index) => search_persisted_ann_cached(
+                vectors,
+                graph,
+                vector,
+                allowed,
+                limit,
+                policy,
+                recall_mode,
+                index,
+            ),
+            None => match recall_mode {
+                RecallMode::Exact => {
+                    search_persisted_ann_with_policy(vectors, graph, vector, allowed, limit, policy)
+                }
+                RecallMode::Windowed(windowed) => search_persisted_ann_sampled(
+                    vectors, graph, vector, allowed, limit, policy, windowed,
+                ),
+            },
         };
+
         if !self.ann_guarded_sampling.enabled {
-            return unguarded(policy);
+            return run(RecallMode::Exact, policy.unwrap_or_default());
         }
         let mut guard = match self.guarded_recall.lock() {
             Ok(guard) => guard,
-            Err(_) => return unguarded(policy),
+            Err(_) => return run(RecallMode::Exact, policy.unwrap_or_default()),
         };
         let Some(state) = guard.as_mut() else {
-            return unguarded(policy);
+            return run(RecallMode::Exact, policy.unwrap_or_default());
         };
 
         // A rebuild (new manifest generation) reshuffles the sample set + re-arms
@@ -342,26 +364,11 @@ impl Database {
         if state.serving_mode() == GuardedServingMode::ExactDegraded {
             // Degraded: a windowed recall of 0 forces the low-recall exact fallback.
             state.record_unsampled();
-            return search_persisted_ann_sampled(
-                vectors,
-                graph,
-                vector,
-                allowed,
-                limit,
-                base_policy,
-                0,
-            );
+            return run(RecallMode::Windowed(0), base_policy);
         }
 
         if state.should_sample(&query_bytes) {
-            let outcome = search_persisted_ann_with_policy(
-                vectors,
-                graph,
-                vector,
-                allowed,
-                limit,
-                base_policy,
-            );
+            let outcome = run(RecallMode::Exact, base_policy);
             match outcome.report.recall_q16 {
                 Some(recall) => state.record_sampled(recall, floor),
                 None => state.record_unsampled(),
@@ -370,15 +377,7 @@ impl Database {
         } else {
             let windowed = state.window().windowed_min().unwrap_or(u16::MAX);
             state.record_unsampled();
-            search_persisted_ann_sampled(
-                vectors,
-                graph,
-                vector,
-                allowed,
-                limit,
-                base_policy,
-                windowed,
-            )
+            run(RecallMode::Windowed(windowed), base_policy)
         }
     }
 }

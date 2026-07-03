@@ -7,7 +7,7 @@ use super::super::persisted::search_persisted_vectors;
 use super::super::ScoredCandidate;
 use super::outcomes::{exact, exact_from_results, fallback_disabled_outcome};
 use super::report::{finalize_report, recall_q16};
-use super::runtime::{hnsw_runtime_config, HnswRuntimeConfig};
+use super::runtime::hnsw_runtime_config;
 use super::types::{
     AnnFallbackReason, AnnSearchOutcome, AnnSearchPath, AnnSearchPolicy, AnnSearchReport,
     MIN_ANN_RECALL_Q16,
@@ -46,29 +46,12 @@ pub(super) fn sparse_allowed_ratio_bps(available: usize, graph_nodes: usize) -> 
     u64::try_from((available as u128) * 10_000 / (graph_nodes as u128)).unwrap_or(u64::MAX)
 }
 
-pub fn search_persisted_ann(
-    vectors: &BTreeMap<u32, Vec<i16>>,
-    graph: &HnswGraphIndex,
-    query: &[i16],
-    allowed: &BTreeSet<u32>,
-    limit: usize,
-) -> AnnSearchOutcome {
-    search_persisted_ann_with_policy(
-        vectors,
-        graph,
-        query,
-        allowed,
-        limit,
-        AnnSearchPolicy::default(),
-    )
-}
-
 /// A3.3: the recall step's mode. `Exact` recomputes exact recall on the query
 /// (the default / sampled path, byte-identical to pre-A3.3 behavior); `Windowed`
 /// serves an unsampled guarded query with the collection's windowed recall and
 /// skips the exact scan — the sampling perf win.
 #[derive(Clone, Copy, Debug)]
-pub(crate) enum RecallMode {
+pub enum RecallMode {
     Exact,
     Windowed(u16),
 }
@@ -89,6 +72,7 @@ pub fn search_persisted_ann_with_policy(
         limit,
         policy,
         RecallMode::Exact,
+        None,
     )
 }
 
@@ -111,9 +95,61 @@ pub fn search_persisted_ann_sampled(
         limit,
         policy,
         RecallMode::Windowed(windowed_recall_q16),
+        None,
     )
 }
 
+/// A3.3 perf: reuse a pre-built + verified `HnswIndex` (avoiding the per-query
+/// rebuild) for the persisted read path. `recall_mode` selects the exact
+/// (sampled) or windowed (unsampled) recall path.
+#[allow(clippy::too_many_arguments)]
+pub fn search_persisted_ann_cached(
+    vectors: &BTreeMap<u32, Vec<i16>>,
+    graph: &HnswGraphIndex,
+    query: &[i16],
+    allowed: &BTreeSet<u32>,
+    limit: usize,
+    policy: AnnSearchPolicy,
+    recall_mode: RecallMode,
+    cached_index: &HnswIndex,
+) -> AnnSearchOutcome {
+    search_persisted_ann_inner(
+        vectors,
+        graph,
+        query,
+        allowed,
+        limit,
+        policy,
+        recall_mode,
+        Some(cached_index),
+    )
+}
+
+/// A3.3 perf: build + integrity-verify the `HnswIndex` for a persisted (vectors,
+/// graph) using the SAME resolved runtime config as the per-query rebuild in
+/// `search_hnsw` (the `0 -> default` mapping in `hnsw_runtime_config`). Both the
+/// per-query None path and the cross-query cache go through this one builder, so a
+/// cached index is byte-identical to what a per-query rebuild would have produced.
+/// `None` means the graph failed the integrity walk (caller reports/handles it as
+/// the `InvalidGraph` fallback).
+pub fn build_verified_hnsw_index(
+    vectors: &BTreeMap<u32, Vec<i16>>,
+    graph: &HnswGraphIndex,
+) -> Option<HnswIndex> {
+    let config = hnsw_runtime_config(graph);
+    let index = HnswIndex::from_graph(
+        vectors.clone(),
+        graph.clone(),
+        config.max_neighbors,
+        config.ef_search,
+    );
+    if !index.verify_hnsw_integrity() {
+        return None;
+    }
+    Some(index)
+}
+
+#[allow(clippy::too_many_arguments)]
 fn search_persisted_ann_inner(
     vectors: &BTreeMap<u32, Vec<i16>>,
     graph: &HnswGraphIndex,
@@ -122,6 +158,7 @@ fn search_persisted_ann_inner(
     limit: usize,
     policy: AnnSearchPolicy,
     recall_mode: RecallMode,
+    cached_index: Option<&HnswIndex>,
 ) -> AnnSearchOutcome {
     let available = vectors
         .iter()
@@ -179,8 +216,8 @@ fn search_persisted_ann_inner(
         query,
         allowed,
         limit,
-        config,
         policy.max_visited_candidates,
+        cached_index,
     ) {
         Ok(value) => value,
         Err(reason) => {
@@ -378,21 +415,28 @@ pub(super) fn search_hnsw(
     query: &[i16],
     allowed: &BTreeSet<u32>,
     limit: usize,
-    config: HnswRuntimeConfig,
     max_visited_candidates: Option<usize>,
+    cached_index: Option<&HnswIndex>,
 ) -> Result<(Vec<ScoredCandidate>, usize, bool), AnnFallbackReason> {
     if graph.links.is_empty() {
         return Err(AnnFallbackReason::EmptyGraph);
     }
-    let index = HnswIndex::from_graph(
-        vectors.clone(),
-        graph.clone(),
-        config.max_neighbors,
-        config.ef_search,
-    );
-    if !index.verify_hnsw_integrity() {
-        return Err(AnnFallbackReason::InvalidGraph);
-    }
+    // A3.3 perf: a caller that already holds a built + verified HnswIndex for this
+    // (vectors, graph) generation passes it here, avoiding a per-query O(n)
+    // `from_graph` clone and an O(n·edges) integrity walk — the dominant cost of
+    // the persisted ANN query. `None` rebuilds + verifies as before (byte-identical
+    // behavior for every existing caller).
+    let built;
+    let index = match cached_index {
+        Some(index) => index,
+        None => {
+            built = match build_verified_hnsw_index(vectors, graph) {
+                Some(index) => index,
+                None => return Err(AnnFallbackReason::InvalidGraph),
+            };
+            &built
+        }
+    };
     let (results, visited, budget_exceeded) =
         index.search_allowed_with_budget(query, allowed, limit, max_visited_candidates);
     Ok((results, visited, budget_exceeded))
