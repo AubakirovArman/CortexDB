@@ -88,7 +88,8 @@ pub fn execute_retrieve<P: CandidateResolver>(
         cells,
         &plan.task,
         &plan.weights,
-        database.retrieval_recency_window_seconds,
+        plan.recency_window_seconds
+            .or(database.retrieval_recency_window_seconds),
     );
     let mut rank_op =
         MaterializedOp::new("RankOp", rank_input_count, ranked, elapsed_nanos(started));

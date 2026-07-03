@@ -33,6 +33,9 @@ pub struct BoundRetrievePlan {
     /// A4.2: per-query temporal supersession from `SUPPRESS SUPERSEDED`. `false`
     /// defers to the database default (off).
     pub suppress_superseded: bool,
+    /// A4.1: per-query recency window in seconds from `RECENCY WINDOW`. `None`
+    /// defers to the database default (off).
+    pub recency_window_seconds: Option<u64>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

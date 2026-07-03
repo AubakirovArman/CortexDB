@@ -57,6 +57,7 @@ pub(super) fn parse_retrieve_context(input: Span<'_>) -> PResult<'_, RawRetrieve
             diversity_lambda_q16: clauses.diversity_lambda_q16,
             rerank_weight_q16: clauses.rerank_weight_q16,
             suppress_superseded: clauses.suppress_superseded,
+            recency_window_seconds: clauses.recency_window_seconds,
             where_clause: clauses.where_clause,
             requirements: clauses.requirements,
             strategy: None,
@@ -72,6 +73,7 @@ struct RetrieveClauses<'a> {
     diversity_lambda_q16: Option<Spanned<u64>>,
     rerank_weight_q16: Option<Spanned<u64>>,
     suppress_superseded: bool,
+    recency_window_seconds: Option<Spanned<u64>>,
     where_clause: Option<Spanned<crate::ast::Condition<'a>>>,
     requirements: Vec<Spanned<Requirement<'a>>>,
 }
@@ -128,6 +130,14 @@ fn parse_next_clause<'a>(
             )));
         }
         clauses.suppress_superseded = true;
+        Ok(input)
+    } else if starts_with_keyword(input, "RECENCY") {
+        let (input, _) = kw("RECENCY")(input)?;
+        let (input, _) = ws1(input)?;
+        let (input, _) = kw("WINDOW")(input)?;
+        let (input, _) = ws1(input)?;
+        let (input, seconds) = parse_spanned_integer(input)?;
+        reject_duplicate(clauses.recency_window_seconds.replace(seconds), input)?;
         Ok(input)
     } else {
         Err(Err::Error(ParseFailure::new(

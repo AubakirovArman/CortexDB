@@ -201,6 +201,22 @@ fn suppress_superseded_binds_and_is_off_by_default() {
 }
 
 #[test]
+fn recency_window_binds_the_seconds() {
+    // A4.1: the temporal recency window is a per-query AQL option.
+    let raw = retrieve(
+        r#"RETRIEVE CONTEXT FOR TASK "x" IN BRAIN brain RECENCY WINDOW 86400 LIMIT 5 CANDIDATES;"#,
+    );
+    assert_eq!(raw.recency_window_seconds.as_ref().map(|s| s.node), Some(86_400));
+    let plan = Binder::new(&catalog(), &view(BTreeSet::from([ScopeId(10)]), true))
+        .bind_retrieve(&raw)
+        .unwrap();
+    assert_eq!(plan.recency_window_seconds, Some(86_400));
+
+    let plain = retrieve(r#"RETRIEVE CONTEXT FOR TASK "x" IN BRAIN brain;"#);
+    assert_eq!(plain.recency_window_seconds, None);
+}
+
+#[test]
 fn bind_where_scope_and_status_to_bitmap_program() {
     let raw = retrieve(
         r#"RETRIEVE CONTEXT FOR TASK "x" IN BRAIN brain USING MODE balanced BUDGET 100 TOKENS

@@ -159,6 +159,7 @@ impl<'a, C: AqlCatalog> Binder<'a, C> {
             diversity_lambda_q16: raw.diversity_lambda_q16.as_ref().map(|s| s.node),
             rerank_weight_q16: raw.rerank_weight_q16.as_ref().map(|s| s.node),
             suppress_superseded: raw.suppress_superseded,
+            recency_window_seconds: raw.recency_window_seconds.as_ref().map(|s| s.node),
         })
     }
 

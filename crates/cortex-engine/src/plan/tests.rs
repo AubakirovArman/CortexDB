@@ -74,6 +74,7 @@ fn bound_retrieve_plan_has_inspectable_logical_nodes_before_and_after_policy() {
         diversity_lambda_q16: None,
         rerank_weight_q16: None,
         suppress_superseded: false,
+        recency_window_seconds: None,
     }));
 
     let logical = LogicalPlan::from_bound_plan(&bound, Some("status = \"ready\""));

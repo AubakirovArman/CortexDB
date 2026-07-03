@@ -105,6 +105,9 @@ pub struct RawRetrieveContext<'a> {
     /// A4.2: per-query temporal supersession (`SUPPRESS SUPERSEDED`). `false`
     /// defers to the database default (off).
     pub suppress_superseded: bool,
+    /// A4.1: per-query recency window in seconds (`RECENCY WINDOW <n>`). `None`
+    /// defers to the database default (off).
+    pub recency_window_seconds: Option<Spanned<u64>>,
     pub where_clause: Option<Spanned<Condition<'a>>>,
     pub requirements: Vec<Spanned<Requirement<'a>>>,
     pub strategy: Option<Spanned<Strategy>>,
