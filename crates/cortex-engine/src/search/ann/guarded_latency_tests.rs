@@ -68,14 +68,24 @@ fn unsampled_guarded_query_p50_speedup_bench() {
         max_visited_candidates: None,
         require_slo: false,
     };
+    // Near-neighbour queries (actual corpus vectors) so the HNSW navigates
+    // straight to the target. NOTE: synthetic uniform vectors still produce a
+    // poorly-navigable graph (the traversal explores widely), which is precisely
+    // why the p50>=3x needs a realistic *clustered* embedding corpus at 50k scale
+    // — on real data the HNSW traversal is ~O(ef*deg) and the O(allowed) exact
+    // scan dominates. This bench reports the measured speedup on whatever corpus
+    // it is handed.
     let queries: Vec<Vec<i16>> = (0..200u32)
-        .map(|q| {
-            let v = (q * 37) % 251;
-            vec![v as i16, 3, 5, 7, 3, 5, 7, v as i16]
-        })
+        .map(|q| vectors[&((q * 23) % n + 1)].clone())
         .collect();
 
-    // Warm the caches equally.
+    // Warm the caches equally + confirm the skip-path actually serves via HNSW.
+    let probe =
+        search_persisted_ann_sampled(&vectors, &graph, &queries[0], &allowed, 10, policy, 60_000);
+    println!(
+        "A3.3 latency bench: ann-only path = {:?}",
+        probe.report.path
+    );
     for query in queries.iter().take(8) {
         let _ = search_persisted_ann_with_policy(&vectors, &graph, query, &allowed, 10, policy);
         let _ = search_persisted_ann_sampled(&vectors, &graph, query, &allowed, 10, policy, 60_000);
