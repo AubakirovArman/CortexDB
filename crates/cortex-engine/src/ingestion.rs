@@ -26,8 +26,9 @@ pub use adapters::{
 pub(crate) use backpressure::{default_ingestion_rate_state, IngestionRateState};
 pub use backpressure::{IngestionBackpressurePolicy, IngestionBackpressureRequest};
 pub use chunking::{
-    count_text_chunks, split_text_chunks, stable_chunk_id, JsonChunkPolicy, TableChunkPolicy,
-    TextChunk, TextChunkPolicy, TextOverlapPolicy,
+    count_text_chunks, split_text_chunks, split_text_chunks_structured, stable_chunk_id,
+    JsonChunkPolicy, StructuredChunk, StructuredChunkRole, TableChunkPolicy, TextChunk,
+    TextChunkPolicy, TextOverlapPolicy,
 };
 pub use dedup::{stable_ingestion_hash_hex, DuplicateContentGroup, IngestionUpdatePolicy};
 pub use formats::{count_csv_ingest_cells, count_json_ingest_cells};
