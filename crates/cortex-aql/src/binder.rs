@@ -156,6 +156,7 @@ impl<'a, C: AqlCatalog> Binder<'a, C> {
             context_policy,
             quality_thresholds: thresholds,
             weights: default_weights(mode),
+            diversity_lambda_q16: raw.diversity_lambda_q16.as_ref().map(|s| s.node),
         })
     }
 

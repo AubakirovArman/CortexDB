@@ -620,3 +620,54 @@ fn temporal_supersession_returns_only_the_newest_fact_when_enabled() {
         "only the newest fact (cell 2, as_of 2025-06-01) survives: {ids:?}"
     );
 }
+
+// --- A5/A7.3: USING DIVERSITY as a per-query AQL option ----------------------
+
+#[test]
+fn aql_using_diversity_demotes_near_duplicate_through_retrieve_aql() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = Database::open(dir.path()).unwrap();
+    // Cells 1 and 2 are near-identical vectors; cell 3 is orthogonal. All share
+    // "common", so all are retrieved; the default lexical rank keeps the
+    // near-duplicate (2) ahead of the orthogonal cell (3).
+    db.put_cell(
+        CellId(1),
+        b"scope=default\nstatus=ready\nvector=100,0\n\ncommon alpha".to_vec(),
+    )
+    .unwrap();
+    db.put_cell(
+        CellId(2),
+        b"scope=default\nstatus=ready\nvector=99,1\n\ncommon alpha near".to_vec(),
+    )
+    .unwrap();
+    db.put_cell(
+        CellId(3),
+        b"scope=default\nstatus=ready\nvector=0,100\n\ncommon".to_vec(),
+    )
+    .unwrap();
+    let view = test_view([RetrievalMode::Balanced]);
+
+    // Without the clause: pack is the plain ranked order (no diversification).
+    let base = db
+        .retrieve_aql(
+            r#"RETRIEVE CONTEXT FOR TASK "common alpha" IN BRAIN default LIMIT 10 CANDIDATES;"#,
+            &view,
+        )
+        .unwrap();
+    assert!(base.len() >= 3, "all three cells retrieved: {}", base.len());
+
+    // With `USING DIVERSITY`: the orthogonal cell 3 is promoted above the
+    // near-duplicate cell 2.
+    let diversified = db
+        .retrieve_aql(
+            r#"RETRIEVE CONTEXT FOR TASK "common alpha" IN BRAIN default USING DIVERSITY 20000 LIMIT 10 CANDIDATES;"#,
+            &view,
+        )
+        .unwrap();
+    let pos = |id: u64| diversified.iter().position(|c| c.cell_id.0 == id).unwrap();
+    assert!(
+        pos(3) < pos(2),
+        "USING DIVERSITY must demote the near-duplicate cell 2 below the orthogonal cell 3: {:?}",
+        diversified.iter().map(|c| c.cell_id.0).collect::<Vec<_>>()
+    );
+}

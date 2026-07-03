@@ -149,6 +149,27 @@ fn fast_mode_preserves_required_citations() {
 }
 
 #[test]
+fn using_diversity_binds_the_lambda_and_is_absent_by_default() {
+    // A5/A7.3: the clause parses and binds to a per-query Q16 lambda.
+    let raw = retrieve(
+        r#"RETRIEVE CONTEXT FOR TASK "x" IN BRAIN brain USING DIVERSITY 20000 LIMIT 5 CANDIDATES;"#,
+    );
+    assert_eq!(raw.diversity_lambda_q16.as_ref().map(|s| s.node), Some(20_000));
+    let plan = Binder::new(&catalog(), &view(BTreeSet::from([ScopeId(10)]), true))
+        .bind_retrieve(&raw)
+        .unwrap();
+    assert_eq!(plan.diversity_lambda_q16, Some(20_000));
+
+    // Absent by default (byte-identical to before the clause existed).
+    let plain = retrieve(r#"RETRIEVE CONTEXT FOR TASK "x" IN BRAIN brain;"#);
+    assert_eq!(plain.diversity_lambda_q16, None);
+    let plain_plan = Binder::new(&catalog(), &view(BTreeSet::from([ScopeId(10)]), true))
+        .bind_retrieve(&plain)
+        .unwrap();
+    assert_eq!(plain_plan.diversity_lambda_q16, None);
+}
+
+#[test]
 fn bind_where_scope_and_status_to_bitmap_program() {
     let raw = retrieve(
         r#"RETRIEVE CONTEXT FOR TASK "x" IN BRAIN brain USING MODE balanced BUDGET 100 TOKENS

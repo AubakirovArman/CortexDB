@@ -95,6 +95,10 @@ pub struct RawRetrieveContext<'a> {
     pub mode: Option<Spanned<crate::types::RetrievalMode>>,
     pub budget_tokens: Option<Spanned<u64>>,
     pub candidate_limit: Option<Spanned<u32>>,
+    /// A5/A7.3: optional per-query MMR diversification lambda in Q16 `[0, 65535]`
+    /// (`USING DIVERSITY <n>`). `None` leaves diversification to the database
+    /// default (off), so an absent clause is byte-identical to before.
+    pub diversity_lambda_q16: Option<Spanned<u64>>,
     pub where_clause: Option<Spanned<Condition<'a>>>,
     pub requirements: Vec<Spanned<Requirement<'a>>>,
     pub strategy: Option<Spanned<Strategy>>,

@@ -13,6 +13,11 @@ embedding-model-selection-check:
 	python3 scripts/embedding_model_eval.py --self-test
 	python3 scripts/embedding_model_eval.py --report "$(EMBEDDING_MODEL_SELECTION_REPORT)"
 
+.PHONY: aql-diversity-option-check
+aql-diversity-option-check:
+	cargo test -p cortex-aql --test binder_tests using_diversity
+	cargo test -p cortex-engine --lib aql_using_diversity
+
 .PHONY: retrieval-diversify-check
 retrieval-diversify-check:
 	cargo test -p cortex-engine --lib retrieval_rank::diversify

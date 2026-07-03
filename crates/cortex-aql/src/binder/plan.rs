@@ -23,6 +23,10 @@ pub struct BoundRetrievePlan {
     pub context_policy: ContextPolicy,
     pub quality_thresholds: QualityThresholds,
     pub weights: super::RetrievalWeights,
+    /// A5/A7.3: per-query MMR diversification lambda (Q16) from `USING DIVERSITY`.
+    /// `None` defers to the database default (off), so it does not appear in the
+    /// canonical pack unless the query asks for it.
+    pub diversity_lambda_q16: Option<u64>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

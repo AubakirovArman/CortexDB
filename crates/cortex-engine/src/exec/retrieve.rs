@@ -120,7 +120,10 @@ pub fn execute_retrieve<P: CandidateResolver>(
     // Optional MMR diversification (off by default; a no-op unless a Q16 lambda
     // < 65535 is configured on the database). Applied after ranking so the most
     // relevant cell stays first while near-duplicates are demoted.
-    let ranked = if let Some(lambda) = database.retrieval_diversify_lambda_q16 {
+    let ranked = if let Some(lambda) = plan
+        .diversity_lambda_q16
+        .or(database.retrieval_diversify_lambda_q16)
+    {
         let started = Instant::now();
         let input_count = ranked.len();
         let diversified = diversify_retrieved_cells(ranked, lambda);

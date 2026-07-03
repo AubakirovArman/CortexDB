@@ -54,6 +54,7 @@ pub(super) fn parse_retrieve_context(input: Span<'_>) -> PResult<'_, RawRetrieve
             mode: clauses.mode,
             budget_tokens: clauses.budget_tokens,
             candidate_limit: clauses.candidate_limit,
+            diversity_lambda_q16: clauses.diversity_lambda_q16,
             where_clause: clauses.where_clause,
             requirements: clauses.requirements,
             strategy: None,
@@ -66,6 +67,7 @@ struct RetrieveClauses<'a> {
     mode: Option<Spanned<RetrievalMode>>,
     budget_tokens: Option<Spanned<u64>>,
     candidate_limit: Option<Spanned<u32>>,
+    diversity_lambda_q16: Option<Spanned<u64>>,
     where_clause: Option<Spanned<crate::ast::Condition<'a>>>,
     requirements: Vec<Spanned<Requirement<'a>>>,
 }
@@ -75,9 +77,20 @@ fn parse_next_clause<'a>(
     clauses: &mut RetrieveClauses<'a>,
 ) -> Result<Span<'a>, nom::Err<ParseFailure<'a>>> {
     if starts_with_keyword(input, "USING") {
-        let (input, mode) = parse_using_mode(input)?;
-        reject_duplicate(clauses.mode.replace(mode), input)?;
-        Ok(input)
+        // USING MODE <mode> | USING DIVERSITY <lambda_q16>
+        let (after_using, _) = kw("USING")(input)?;
+        let (after_using, _) = ws1(after_using)?;
+        if starts_with_keyword(after_using, "DIVERSITY") {
+            let (rest, _) = kw("DIVERSITY")(after_using)?;
+            let (rest, _) = ws1(rest)?;
+            let (rest, lambda) = parse_spanned_integer(rest)?;
+            reject_duplicate(clauses.diversity_lambda_q16.replace(lambda), rest)?;
+            Ok(rest)
+        } else {
+            let (rest, mode) = parse_using_mode(input)?;
+            reject_duplicate(clauses.mode.replace(mode), rest)?;
+            Ok(rest)
+        }
     } else if starts_with_keyword(input, "BUDGET") {
         let (input, budget) = parse_budget(input)?;
         reject_duplicate(clauses.budget_tokens.replace(budget), input)?;
