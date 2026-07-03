@@ -188,8 +188,9 @@ pub use replication::*;
 pub use search::*;
 pub use search::{Language, TextAnalyzer, TextAnalyzerConfig};
 pub use semantic_compression::{
-    memory_class, MemoryClass, SemanticCompressionCandidate, SemanticCompressionCandidateGroup,
-    SemanticCompressionReport, SemanticCompressionRequest, SemanticCompressionSourceRef,
+    memory_class, CompressionSourcesReport, MemoryClass, SemanticCompressionCandidate,
+    SemanticCompressionCandidateGroup, SemanticCompressionReport, SemanticCompressionRequest,
+    SemanticCompressionSourceRef,
 };
 pub use session::{AgentSession, SessionMemory};
 pub use source_trust::{

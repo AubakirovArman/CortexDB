@@ -200,6 +200,86 @@ fn semantic_compression_candidates_are_deterministic_and_respect_max_groups() {
     assert!(none.is_empty());
 }
 
+#[test]
+fn compression_sources_requires_feature_flag() {
+    let dir = tempfile::tempdir().unwrap();
+    let db = Database::open(dir.path()).unwrap();
+
+    let error = db
+        .compression_sources(&view("project:alpha"), CellId(99))
+        .unwrap_err();
+
+    assert!(matches!(
+        error,
+        EngineError::FeatureDisabled("semantic_compression")
+    ));
+}
+
+#[test]
+fn compression_sources_resolves_present_and_missing() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = open_enabled(dir.path());
+    seed_source_memories(&mut db);
+    db.commit_semantic_memory_compression(&view("project:alpha"), request())
+        .unwrap();
+
+    let report = db
+        .compression_sources(&view("project:alpha"), CellId(99))
+        .unwrap();
+    assert_eq!(report.source_cell_ids, vec![CellId(1), CellId(2)]);
+    assert!(report.missing_source_cell_ids.is_empty());
+    assert!(report.all_sources_present);
+
+    // Removing a source reports it missing rather than silently dropping it.
+    db.forget_cell(CellId(1)).unwrap();
+    let report = db
+        .compression_sources(&view("project:alpha"), CellId(99))
+        .unwrap();
+    assert_eq!(report.source_cell_ids, vec![CellId(2)]);
+    assert_eq!(report.missing_source_cell_ids, vec![CellId(1)]);
+    assert!(!report.all_sources_present);
+}
+
+#[test]
+fn compression_sources_rejects_non_summary_cell() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = open_enabled(dir.path());
+    seed_source_memories(&mut db);
+
+    // CellId(1) is a plain source memory, not a semantic summary.
+    let error = db
+        .compression_sources(&view("project:alpha"), CellId(1))
+        .unwrap_err();
+
+    assert!(matches!(error, EngineError::InvalidSemanticCompression(_)));
+}
+
+#[test]
+fn compression_sources_fail_closed_on_unreadable_source() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut db = open_enabled(dir.path());
+    // A private source the alpha view cannot read.
+    db.put_cell(
+        CellId(50),
+        b"scope=tenant:private\nstatus=ready\ntype=memory\nmemory_type=observation\nsource=x\n\nprivate source"
+            .to_vec(),
+    )
+    .unwrap();
+    // A summary in the readable scope that references the unreadable source.
+    db.put_cell(
+        CellId(51),
+        b"scope=project:alpha\nstatus=ready\ntype=memory\nmemory_type=observation\ncompression_kind=semantic_summary\ncompression_source_cells=50\ncompression_answerability_q16=60000\ncompression_worker=w\nsource=w\n\nsummary"
+            .to_vec(),
+    )
+    .unwrap();
+
+    // The summary is readable but a source is not: fail closed.
+    let error = db
+        .compression_sources(&view("project:alpha"), CellId(51))
+        .unwrap_err();
+    assert!(matches!(error, EngineError::AqlBind(_)));
+}
+
 fn seed_consolidation_memories(db: &mut Database) {
     let mem = |cell: u64, memory_type: &str, created: u64, ttl: u64, body: &str| -> Vec<u8> {
         format!(

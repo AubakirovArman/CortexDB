@@ -74,6 +74,18 @@ pub struct SemanticCompressionCandidateGroup {
     pub candidates: Vec<SemanticCompressionCandidate>,
 }
 
+/// B4.5: the resolved provenance of a semantic-summary cell — which of its
+/// declared `compression_source_cells` are still present and readable.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CompressionSourcesReport {
+    pub summary_cell_id: CellId,
+    /// Sources that are still present in the store (declaration order).
+    pub source_cell_ids: Vec<CellId>,
+    /// Sources referenced by the summary but no longer present.
+    pub missing_source_cell_ids: Vec<CellId>,
+    pub all_sources_present: bool,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SemanticCompressionReport {
     pub agent_id: AgentId,
@@ -233,6 +245,58 @@ impl Database {
             .collect();
         groups.truncate(max_groups);
         Ok(groups)
+    }
+
+    /// B4.5 (unfold read): resolve a semantic summary's provenance — the source
+    /// cells it consolidated — fail-closed on readable scope. The summary itself
+    /// must be a readable `semantic_summary`; any source in a scope this view
+    /// cannot read is a hard `ScopeNotReadable` (never a silent drop). Sources
+    /// that have since been removed are reported as missing rather than an error.
+    /// Read-only and behind the default-off feature flag.
+    pub fn compression_sources(
+        &self,
+        view: &AgentView,
+        summary_cell_id: CellId,
+    ) -> EngineResult<CompressionSourcesReport> {
+        if !self.semantic_compression.enabled {
+            return Err(EngineError::FeatureDisabled("semantic_compression"));
+        }
+        let (payload, descriptor) = self
+            .get_latest_cell_with_descriptor(summary_cell_id)
+            .ok_or(cortex_core::CoreError::CellNotFound(summary_cell_id))?;
+        if !PolicyRewrite::allows_scope(view, scope_id(&descriptor.scope)) {
+            return Err(EngineError::AqlBind(BindError::PolicyDenied(
+                PolicyError::ScopeNotReadable,
+            )));
+        }
+        let metadata = CellMetadata::from_payload(&payload);
+        if metadata.compression_kind.as_deref() != Some("semantic_summary") {
+            return invalid("cell is not a semantic summary");
+        }
+
+        let mut present = Vec::new();
+        let mut missing = Vec::new();
+        for source in &metadata.compression_source_cells {
+            match self.get_latest_cell_descriptor(*source) {
+                Some(source_descriptor) => {
+                    // Fail-closed: an unreadable source scope aborts the resolve.
+                    if !PolicyRewrite::allows_scope(view, scope_id(&source_descriptor.scope)) {
+                        return Err(EngineError::AqlBind(BindError::PolicyDenied(
+                            PolicyError::ScopeNotReadable,
+                        )));
+                    }
+                    present.push(*source);
+                }
+                None => missing.push(*source),
+            }
+        }
+
+        Ok(CompressionSourcesReport {
+            summary_cell_id,
+            all_sources_present: missing.is_empty(),
+            source_cell_ids: present,
+            missing_source_cell_ids: missing,
+        })
     }
 
     fn validate_semantic_compression_request(
