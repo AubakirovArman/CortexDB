@@ -143,18 +143,26 @@ target/enterprise-rag-bench/embeddings/corpus_bge_m3.jsonl` (release build;
 ~2h — 20 min ingest + ~95 min checkpoint + retrieval). Scored with the same
 official `metrics_based_eval` used for the numbers above.
 
-**Honest read of the gap (60.34% engine vs 68.85% python).** The engine's
-`semantic_dot_score` (`retrieval_rank/semantic.rs`) is an *un-normalized integer
-dot* over i16-quantized vectors, with a `.max(0)` clamp; the python reranker uses
-float **cosine** (normalized by both norms). bge-m3 vectors are L2-normalized, so
-cosine ≈ dot only to the extent i16 quantization preserves equal magnitudes —
-which it does not exactly. So the engine's own reranker delivers a real,
-same-DB **+5.94** lift (and **+7.7** on the flagged `semantic` pool) but recovers
-less than the float-cosine reranker. Closing that residual is a concrete future
-A7.2 improvement: normalize to cosine (or preserve vector magnitude through
-quantization) in the dense-rerank score. The two small-pool regressions
+The engine's own reranker delivers a real, same-DB **+5.94** lift (and **+7.7**
+on the flagged `semantic` pool). The two small-pool regressions
 (`conflicting_info`, `completeness`, n=2 each) are single-question flips at that
 sample size.
+
+**A tested-and-rejected hypothesis for the gap (60.34% engine vs 68.85% python).**
+The engine's `semantic_dot_score` is an *un-normalized integer dot* over
+i16-quantized vectors; the python reranker uses float **cosine**. The natural
+hypothesis was that raw dot over-rewards large-magnitude vectors, so a
+cosine-normalized rerank (`dot/|doc|`) would recover the gap. That hypothesis was
+implemented (`semantic_cosine_score_q16` + `--rerank two-stage-cosine`) and
+measured — and it is **false here**: cosine produced a **byte-identical top-10 for
+all 50 questions**, so recall is unchanged at **60.34%**. bge-m3 vectors are
+L2-normalized *before* i16 quantization, which preserves near-equal magnitudes, so
+dot already ranks by direction and the normalization is a no-op. The residual gap
+to the float reranker is therefore **not** magnitude — it is the candidate pool
+(the float reranker scored the exported `candidates_top50` pool; engine-aql
+reranks its own BM25 top-64 shortlist, whose gold-doc coverage bounds the
+achievable recall) and **i16 quantization precision** vs float32. Those are the
+real levers, recorded here honestly rather than assumed.
 
 ## Exit-proof status
 
@@ -164,10 +172,11 @@ dense rerank measurably improves recall on the same full corpus:
 
 - Through the engine's own `two_stage_rerank` (integer dot, i16): **54.40% →
   60.34%** recall@10 (**+5.94**; `semantic` **+7.7**) — the honest engine-native
-  number.
-- Through a float-cosine reranker over the same candidates: **56.35% → 68.85%**
-  (`semantic` **+15.4**) — the ceiling the engine can reach once its dense score
-  normalizes to cosine.
+  number. The cosine variant lands identically (60.34%), so magnitude is not the
+  gap.
+- Through a float-cosine reranker over a different candidate pool: **56.35% →
+  68.85%** (`semantic` **+15.4**). The residual engine→float headroom is the
+  candidate-pool coverage + i16-vs-float precision, not the rerank formula.
 
 Neither reaches the retrieval exit bar (≥75% recall@10), and the answer-quality
 half of the exit-proof (Gemma answer + judge) is **not yet measured**. A6.4 is
