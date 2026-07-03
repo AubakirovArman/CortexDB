@@ -122,7 +122,7 @@ scorer), **F5.1** (machine-verifiable `RESULTS.md`), plus the phase-status map a
 the F3.2/C3-2 already-landed corrections. A8.1/A8.2/A5.1 are complete engine/
 tooling features; A1.2 is a golden-safe slice pending engine-path wiring.
 
-Extended sweep (27 phases this cycle) — added on top of the six above: **A5.1**
+Extended sweep (30 phases this cycle) — added on top of the six above: **A5.1**
 (LTR corpus builder), **A8.1/A8.2** (structure + table chunking), **F1.1/F4.1/F4.2**
 (benchmark + AAB schemas/scorer), and the **entire AQL-surface cluster golden-safe**
 — `USING DIVERSITY` (A5/A7.3), `USING RERANK` (A7.2), `SUPPRESS SUPERSEDED` (A4.2),
@@ -145,6 +145,27 @@ scheduled-but-unmapped, checked **bidirectionally** against the real
 `nightly.yml`. Every one of these is dependency-free, deterministic, and wired
 into the nightly `benchmark-validation` job.
 
+**Track-B agent-database cluster opened (30 phases this cycle).** Beyond the
+benchmark-honesty system, the golden-safe, default-off engine features of the
+F06/F08 tracks landed natively: **F06-B4.1** `memory_class` (pure Episodic/
+Semantic classifier), **F06-B4.2** `semantic_compression_candidates` (the
+read-only selection half the existing commit half consumes — deterministic,
+freshness-gated, subtype-grouped), **F06-B4.5-unfold** `compression_sources`
+(fail-closed provenance resolver, the `/v1/memory/cell/{id}/sources` core), and
+**F08-B6.2** `require_seq_visible` (read-after-seq enforcement with a typed
+`SequenceNotVisible` error). All behind default-off flags, so no default
+behaviour or goldens move; each gated (`memory-consolidation-check`,
+`read-after-seq-check`) with engine API-freeze + fmt + clippy clean.
+
+Correctly **not** rushed at the tail of this session (spawned as a focused
+task instead): **F04-B1.3** persistent idempotency ledger — its deterministic
+namespaced cell-id needs collision-safe derivation (a 32-bit key hash has
+birthday collisions ~77k keys) + cross-restart replay; a subtle bug there is a
+data-integrity bug, so it deserves fresh focused context, not an 80-commit-deep
+bolt-on. **F08-B6.1** (durable handoff-ledger) and the B4.5 retire half need
+*new canonical metadata fields* → golden-rebaseline, blocked on the same signed-
+golden regeneration tooling as A3.3/C3-5.
+
 **Key reclassification:** the AQL-surface bucket was *not* a golden-rebaseline. The
 canonical receipt hashes the *resulting pack* (`CONTEXT_PACK_HASHED_FIELDS`), not
 the query's option flags, so a default-off AQL option is byte-identical when unused
@@ -153,23 +174,32 @@ the query's option flags, so a default-off AQL option is byte-identical when unu
 
 ### Honest boundary of what genuinely remains
 
-1. **Run-dependent** — A6.3 (LME hybrid) needs a multi-hour embedded-index + A/B run.
-2. **A5.2 learned ranker** (+ F05/F07) — train/freeze a Q16 ranker on the A5.1
-   corpus and serve it as an **opt-in** profile (golden-safe when default-off, but a
-   substantial ML + serving feature — a focused effort, not a quick phase).
-3. **Signed-golden regen** (A3.3 receipt-visibility, C3-5 `embedding_ref`
-   byte-promotion) — these DO touch the *signed* receipt canonical set, and
-   regenerating a Merkle-signed golden needs regeneration tooling that is not
-   present; rewriting a signed golden by hand would be irresponsible.
-4. **Blocked-external** (15) — a working LLM chat endpoint (Gemma `VLLM_*` gone;
+1. **Focused engine feature (queued as a task)** — F04-B1.3 idempotency ledger:
+   completable and golden-safe (default-off), but correctness-critical
+   (collision-safe cell-id derivation + cross-restart replay); spawned for a fresh
+   session rather than rushed here.
+2. **Run-dependent** — A6.3 (LME hybrid) needs a multi-hour embedded-index + A/B
+   run; A5.2-serving needs a real corpus for non-degenerate weights.
+3. **Blocked on a factual decision (the user's)** — F2.0 judge-of-record: the plan
+   wants the leaderboard judge-of-record declared, but the committed evidence is
+   ambiguous (`RESULTS.md` says "Gemini judge of record" while the plan implies the
+   official ERB judge is gpt-5.4). Not fabricating the identity; needs the user to
+   confirm which judge is the record before it can be committed as policy.
+4. **Signed-golden regen** (A3.3 receipt-visibility, C3-5 `embedding_ref`
+   byte-promotion, F08-B6.1 durable handoff-ledger, the B4.5 retire half, the A4.x
+   receipt-option surfaces) — these DO touch canonical/signed cell bytes (new
+   metadata fields), so they need the C3-1/C3-5 regeneration tooling that is not
+   present; rewriting a Merkle-signed golden by hand would be irresponsible.
+5. **Blocked-external** (15) — a working LLM chat endpoint (Gemma `VLLM_*` gone;
    DeepSeek 401), a real KMS/HSM operator + published anchor, external compliance
    reviewers, ≥2 independent transparency witnesses/monitors. Operator/credential
    actions, **not code**.
-5. **Frozen / cut** (5) — F02/F03/F09 v1.0 non-goals; A8.3/F4.4 cut; F01 multi-week.
+6. **Frozen / cut** (5) — F02/F03/F09 v1.0 non-goals; A8.3/F4.4 cut; F01 multi-week.
 
-So the entire clean + golden-safe in-session bucket is complete. What is left needs
-a multi-hour run (1), a focused ML feature (2), regeneration tooling (3), external
-operators/credentials (4), or is a declared non-goal (5).
+So the clean + golden-safe in-session bucket is done (30 phases this cycle). What is
+left needs one focused engine session (1), a multi-hour run (2), a user decision
+(3), regeneration tooling (4), external operators/credentials (5), or is a declared
+non-goal (6).
 
 Corrections found while executing — several "completable" rows were **already
 landed** (the repo is far past the plan's baseline), so the true remaining count
