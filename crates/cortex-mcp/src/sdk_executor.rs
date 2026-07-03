@@ -1,8 +1,12 @@
-use cortex_sdk::{Aql, AqlRetrievalMode, CortexDbClient};
+use cortex_sdk::{
+    Aql, AqlRetrievalMode, ConsolidateCommitRequestBody, ConsolidatePlanRequestBody,
+    ConsolidateSourceRef, CortexDbClient,
+};
 
 use crate::config::McpConfig;
 use crate::tools::{
-    RememberArgs, RetrieveContextArgs, SearchArgs, ToolCallResult, ToolExecutor, VerifyFactArgs,
+    ConsolidateCommitArgs, ConsolidatePlanArgs, RememberArgs, RetrieveContextArgs, SearchArgs,
+    ToolCallResult, ToolExecutor, VerifyFactArgs,
 };
 
 #[derive(Clone, Debug)]
@@ -116,6 +120,45 @@ impl ToolExecutor for SdkToolExecutor {
             }
         };
         response
+            .and_then(|response| serde_json::to_string_pretty(&response).map_err(Into::into))
+            .map(ToolCallResult::text)
+            .map_err(|error| error.to_string())
+    }
+
+    fn consolidate_plan(&self, args: ConsolidatePlanArgs) -> Result<ToolCallResult, String> {
+        let request = ConsolidatePlanRequestBody {
+            scope: args.scope,
+            freshness_below_q16: args.freshness_below_q16,
+            max_groups: args.max_groups,
+            now_unix_seconds: None,
+        };
+        self.client
+            .consolidate_plan(&request)
+            .and_then(|response| serde_json::to_string_pretty(&response).map_err(Into::into))
+            .map(ToolCallResult::text)
+            .map_err(|error| error.to_string())
+    }
+
+    fn consolidate_commit(&self, args: ConsolidateCommitArgs) -> Result<ToolCallResult, String> {
+        let request = ConsolidateCommitRequestBody {
+            scope: args.scope,
+            summary_cell_id: args.summary_cell_id,
+            summary_payload: args.summary_payload,
+            source_refs: args
+                .source_refs
+                .into_iter()
+                .map(|source| ConsolidateSourceRef {
+                    source_cell_id: source.source_cell_id,
+                    source_byte_start: source.source_byte_start,
+                    source_byte_end: source.source_byte_end,
+                })
+                .collect(),
+            answerability_q16: args.answerability_q16,
+            external_worker: args.external_worker,
+            idempotency_key: args.idempotency_key,
+        };
+        self.client
+            .consolidate_commit(&request)
             .and_then(|response| serde_json::to_string_pretty(&response).map_err(Into::into))
             .map(ToolCallResult::text)
             .map_err(|error| error.to_string())

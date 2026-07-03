@@ -5,6 +5,8 @@ pub const TOOL_RETRIEVE_CONTEXT: &str = "retrieve_context";
 pub const TOOL_VERIFY_FACT: &str = "verify_fact";
 pub const TOOL_REMEMBER: &str = "remember";
 pub const TOOL_SEARCH: &str = "search";
+pub const TOOL_CONSOLIDATE_PLAN: &str = "consolidate_plan";
+pub const TOOL_CONSOLIDATE_COMMIT: &str = "consolidate_commit";
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 pub struct RetrieveContextArgs {
@@ -40,6 +42,37 @@ pub struct SearchArgs {
     pub scope: Option<String>,
     pub limit: Option<u32>,
     pub mode: Option<String>,
+}
+
+/// F04-B4.4: step 1 of the MCP consolidation protocol — which stale episodic
+/// groups in a scope to summarize.
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+pub struct ConsolidatePlanArgs {
+    pub scope: String,
+    pub freshness_below_q16: u16,
+    pub max_groups: u32,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+pub struct ConsolidateSourceRefArg {
+    pub source_cell_id: u64,
+    pub source_byte_start: u64,
+    pub source_byte_end: u64,
+}
+
+/// F04-B4.4: step 2 of the MCP consolidation protocol — commit the summary the
+/// agent generated over the planned group's source cells.
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+pub struct ConsolidateCommitArgs {
+    pub scope: String,
+    #[serde(default)]
+    pub summary_cell_id: Option<u64>,
+    pub summary_payload: String,
+    pub source_refs: Vec<ConsolidateSourceRefArg>,
+    pub answerability_q16: u16,
+    pub external_worker: String,
+    #[serde(default)]
+    pub idempotency_key: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, PartialEq, Eq)]
@@ -83,6 +116,8 @@ pub trait ToolExecutor {
     fn verify_fact(&self, args: VerifyFactArgs) -> Result<ToolCallResult, String>;
     fn remember(&self, args: RememberArgs) -> Result<ToolCallResult, String>;
     fn search(&self, args: SearchArgs) -> Result<ToolCallResult, String>;
+    fn consolidate_plan(&self, args: ConsolidatePlanArgs) -> Result<ToolCallResult, String>;
+    fn consolidate_commit(&self, args: ConsolidateCommitArgs) -> Result<ToolCallResult, String>;
 }
 
 pub fn tools_list_result() -> Value {
@@ -152,6 +187,49 @@ pub fn tools_list_result() -> Value {
                             "enum": ["keyword", "semantic", "hybrid", "auto"],
                             "description": "keyword (default, lexical); semantic (embed query, vector search); hybrid (lexical + vector); auto (server picks)."
                         }
+                    },
+                    "additionalProperties": false
+                }
+            },
+            {
+                "name": TOOL_CONSOLIDATE_PLAN,
+                "description": "Plan memory consolidation: list the stale episodic memory groups in a scope that are eligible for semantic summarization. Step 1 of the two-step consolidation protocol — the agent summarizes a returned group, then calls consolidate_commit. Requires the semantic_compression feature on the server.",
+                "inputSchema": {
+                    "type": "object",
+                    "required": ["scope", "freshness_below_q16", "max_groups"],
+                    "properties": {
+                        "scope": {"type": "string"},
+                        "freshness_below_q16": {"type": "integer", "minimum": 0, "maximum": 65535, "description": "Select episodic cells whose freshness (Q16) has decayed below this."},
+                        "max_groups": {"type": "integer", "minimum": 1}
+                    },
+                    "additionalProperties": false
+                }
+            },
+            {
+                "name": TOOL_CONSOLIDATE_COMMIT,
+                "description": "Commit a memory-consolidation summary over source cells. Step 2 of the two-step consolidation protocol: durably record the summary cell the agent generated plus the byte ranges of the source cells it consolidated. Requires the semantic_compression feature.",
+                "inputSchema": {
+                    "type": "object",
+                    "required": ["scope", "summary_payload", "source_refs", "answerability_q16", "external_worker"],
+                    "properties": {
+                        "scope": {"type": "string"},
+                        "summary_cell_id": {"type": "integer"},
+                        "summary_payload": {"type": "string", "description": "The summary cell payload (line-based UTF-8, compression_kind=semantic_summary)."},
+                        "source_refs": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "required": ["source_cell_id", "source_byte_start", "source_byte_end"],
+                                "properties": {
+                                    "source_cell_id": {"type": "integer"},
+                                    "source_byte_start": {"type": "integer"},
+                                    "source_byte_end": {"type": "integer"}
+                                }
+                            }
+                        },
+                        "answerability_q16": {"type": "integer", "minimum": 0, "maximum": 65535},
+                        "external_worker": {"type": "string"},
+                        "idempotency_key": {"type": "string"}
                     },
                     "additionalProperties": false
                 }

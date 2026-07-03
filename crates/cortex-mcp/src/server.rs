@@ -5,8 +5,8 @@ use serde_json::{json, Value};
 
 use crate::protocol::{empty_result, initialize_result, JsonRpcRequest, JsonRpcResponse};
 use crate::tools::{
-    tools_list_result, ToolCallResult, ToolExecutor, TOOL_REMEMBER, TOOL_RETRIEVE_CONTEXT,
-    TOOL_SEARCH, TOOL_VERIFY_FACT,
+    tools_list_result, ToolCallResult, ToolExecutor, TOOL_CONSOLIDATE_COMMIT,
+    TOOL_CONSOLIDATE_PLAN, TOOL_REMEMBER, TOOL_RETRIEVE_CONTEXT, TOOL_SEARCH, TOOL_VERIFY_FACT,
 };
 
 const PARSE_ERROR: i32 = -32700;
@@ -87,6 +87,12 @@ fn call_tool<E: ToolExecutor>(executor: &E, params: Option<Value>) -> Result<Val
         }
         TOOL_REMEMBER => parse_args(arguments).map(|args| tool_result(executor.remember(args))),
         TOOL_SEARCH => parse_args(arguments).map(|args| tool_result(executor.search(args))),
+        TOOL_CONSOLIDATE_PLAN => {
+            parse_args(arguments).map(|args| tool_result(executor.consolidate_plan(args)))
+        }
+        TOOL_CONSOLIDATE_COMMIT => {
+            parse_args(arguments).map(|args| tool_result(executor.consolidate_commit(args)))
+        }
         other => Err((INVALID_PARAMS, format!("unknown tool: {other}"))),
     }?;
     serde_json::to_value(result).map_err(|error| {
@@ -133,7 +139,8 @@ mod tests {
 
     use super::{handle_message, run_stdio};
     use crate::tools::{
-        RememberArgs, RetrieveContextArgs, SearchArgs, ToolCallResult, ToolExecutor, VerifyFactArgs,
+        ConsolidateCommitArgs, ConsolidatePlanArgs, RememberArgs, RetrieveContextArgs, SearchArgs,
+        ToolCallResult, ToolExecutor, VerifyFactArgs,
     };
 
     struct FakeExecutor;
@@ -154,17 +161,50 @@ mod tests {
         fn search(&self, args: SearchArgs) -> Result<ToolCallResult, String> {
             Ok(ToolCallResult::text(format!("search:{}", args.query)))
         }
+
+        fn consolidate_plan(&self, args: ConsolidatePlanArgs) -> Result<ToolCallResult, String> {
+            Ok(ToolCallResult::text(format!("plan:{}", args.scope)))
+        }
+
+        fn consolidate_commit(
+            &self,
+            args: ConsolidateCommitArgs,
+        ) -> Result<ToolCallResult, String> {
+            Ok(ToolCallResult::text(format!("commit:{}", args.scope)))
+        }
     }
 
     #[test]
-    fn lists_four_tools() {
+    fn lists_six_tools() {
         let response = handle_message(
             &FakeExecutor,
             r#"{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}"#,
         )
         .unwrap();
         let result = response.result.unwrap();
-        assert_eq!(result["tools"].as_array().unwrap().len(), 4);
+        assert_eq!(result["tools"].as_array().unwrap().len(), 6);
+    }
+
+    #[test]
+    fn calls_consolidate_tools() {
+        let plan = handle_message(
+            &FakeExecutor,
+            r#"{"jsonrpc":"2.0","id":"p","method":"tools/call","params":{"name":"consolidate_plan","arguments":{"scope":"agent:one","freshness_below_q16":32768,"max_groups":4}}}"#,
+        )
+        .unwrap();
+        assert!(plan.error.is_none());
+        assert_eq!(plan.result.unwrap()["content"][0]["text"], "plan:agent:one");
+
+        let commit = handle_message(
+            &FakeExecutor,
+            r#"{"jsonrpc":"2.0","id":"c","method":"tools/call","params":{"name":"consolidate_commit","arguments":{"scope":"agent:one","summary_payload":"x","source_refs":[],"answerability_q16":60000,"external_worker":"w"}}}"#,
+        )
+        .unwrap();
+        assert!(commit.error.is_none());
+        assert_eq!(
+            commit.result.unwrap()["content"][0]["text"],
+            "commit:agent:one"
+        );
     }
 
     #[test]
