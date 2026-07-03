@@ -46,6 +46,7 @@ jobs:
       - run: make benchmark-lane-audit-check
       - run: make benchmark-registry-check
       - run: make quick-retrieval-eval-check
+      - run: make benchmark-trend-check
       - run: make erb-compare-runs-check
       - run: make results-page-check
       - run: make aab-mini-score-check

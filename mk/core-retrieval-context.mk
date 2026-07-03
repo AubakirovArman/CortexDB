@@ -55,6 +55,10 @@ quick-retrieval-eval-check:
 	python3 scripts/benchmarks/quick_eval.py --bin target/debug/cortexdb
 	python3 scripts/benchmarks/quick_eval.py --degradation-check --bin target/debug/cortexdb
 
+.PHONY: benchmark-trend-check
+benchmark-trend-check:
+	python3 scripts/benchmark_trend_check.py --self-test
+
 .PHONY: erb-compare-runs-check
 erb-compare-runs-check:
 	python3 scripts/enterprise_rag_bench/compare_official_runs.py --self-test
