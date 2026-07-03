@@ -13,6 +13,7 @@
         {"target": "benchmark-floor-check", "purpose": "F5.2 headline metric never regresses below committed floor"},
         {"target": "benchmark-lane-audit-check", "purpose": "F1.3 this lane map agrees with the real workflow"},
         {"target": "benchmark-registry-check", "purpose": "F1.2 published benchmark numbers trace to committed evidence, no overclaim"},
+        {"target": "judge-of-record-check", "purpose": "F2.0 judge-of-record policy: docs declare gpt-5.4 official + gemini interim; no registry entry claims leaderboard-official without the judge of record"},
         {"target": "quick-retrieval-eval-check", "purpose": "F1.4 fast per-type retrieval-eval loop; real CLI retrieval scored vs registry baseline, degradation fixture caught"},
         {"target": "benchmark-trend-check", "purpose": "F5.2 latest-vs-previous benchmark trend gate; per-benchmark tolerances, ERB cross-judge trend refused (F2.2 rule)"},
         {"target": "longmemeval-per-type-regression-check", "purpose": "F3.1 LongMemEval per-type retrieval regression gate; fast mini-log replay + degraded-log catch"},

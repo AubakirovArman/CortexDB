@@ -59,6 +59,11 @@ quick-retrieval-eval-check:
 benchmark-trend-check:
 	python3 scripts/benchmark_trend_check.py --self-test
 
+.PHONY: judge-of-record-check
+judge-of-record-check:
+	python3 scripts/benchmarks/judge_of_record_check.py --self-test
+	python3 scripts/benchmarks/judge_of_record_check.py
+
 .PHONY: erb-compare-runs-check
 erb-compare-runs-check:
 	python3 scripts/enterprise_rag_bench/compare_official_runs.py --self-test

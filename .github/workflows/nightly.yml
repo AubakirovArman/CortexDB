@@ -45,6 +45,7 @@ jobs:
       # F1.3: every gate below is pinned to this lane in fixtures/benchmarks/lanes.v1.json.
       - run: make benchmark-lane-audit-check
       - run: make benchmark-registry-check
+      - run: make judge-of-record-check
       - run: make quick-retrieval-eval-check
       - run: make benchmark-trend-check
       - run: make longmemeval-per-type-regression-check
