@@ -55,6 +55,11 @@ jobs:
       - run: make retrieval-temporal-supersede-check
       - run: make aql-diversity-option-check
       - run: make structure-chunking-check
+      # C4-3: live anti-absorption proof (thin-wrapper reference fails >=3 axes).
+      - run: make aab-conformance-check
+      - run: make gce-spec-doc-check
+      - run: make receipt-threat-model-check
+      - run: make receipt-emission-budget-check
       - name: Upload validation reports
         if: always()
         uses: actions/upload-artifact@v7

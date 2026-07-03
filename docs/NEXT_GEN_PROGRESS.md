@@ -76,6 +76,8 @@ profile provenance in the manifest and the CLI-side query embedder.
 
 | C4-1 Receipt-emission p99 budget | Landed | `receipt_emission_p99_is_within_budget` (`accountability/receipt_sign_tests.rs`): measures the receipt emission hot path (canonicalize + Ed25519-sign the header) over 400 iterations and asserts p99 stays under a frozen budget (50 ms/emit). Release-build measured **p50 ≈ 146 µs, p99 ≈ 155 µs** — a 325× margin, so it never flakes on CI noise yet catches a catastrophic emission regression (which would tempt operators to flag the receipt off → moat gone). Writes a report for tracking. Gate `receipt-emission-budget-check`. | Add a per-machine history/trend as release runs accumulate. | `receipt-emission-budget-check` |
 
+| C4-3 Live anti-absorption proof in nightly | Landed | Wired the moat-proof gates into the nightly `benchmark-validation` job: `aab-conformance-check` (the thin Postgres+pgvector+OPA reference demonstrably fails ≥3 axes — equivocation, plan-bound access, dropped-conflict), `gce-spec-doc-check`, `receipt-threat-model-check`, and `receipt-emission-budget-check` (C4-1). All pass locally; YAML validated. So the category contract + its anti-absorption evidence run every night. | Live 4-competitor matrix (F4.3) needs a docker operator machine — out of critical path per the plan. | nightly `benchmark-validation` |
+
 ## Cross-cutting landings
 
 | Item | State | Notes | Gate |
