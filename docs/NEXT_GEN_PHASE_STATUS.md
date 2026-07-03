@@ -145,7 +145,7 @@ scheduled-but-unmapped, checked **bidirectionally** against the real
 `nightly.yml`. Every one of these is dependency-free, deterministic, and wired
 into the nightly `benchmark-validation` job.
 
-**Track-B agent-database cluster opened (30 phases this cycle).** Beyond the
+**Track-B agent-database cluster (32 phases this cycle).** Beyond the
 benchmark-honesty system, the golden-safe, default-off engine features of the
 F06/F08 tracks landed natively: **F06-B4.1** `memory_class` (pure Episodic/
 Semantic classifier), **F06-B4.2** `semantic_compression_candidates` (the
@@ -153,7 +153,10 @@ read-only selection half the existing commit half consumes — deterministic,
 freshness-gated, subtype-grouped), **F06-B4.5-unfold** `compression_sources`
 (fail-closed provenance resolver, the `/v1/memory/cell/{id}/sources` core), and
 **F08-B6.2** `require_seq_visible` (read-after-seq enforcement with a typed
-`SequenceNotVisible` error). All behind default-off flags, so no default
+`SequenceNotVisible` error), **F04-B1.3** the persistent idempotency ledger
+(reserved `0xb` cells, content-addressed with collision-safe linear probing,
+replay/reuse/cross-restart tested), and **F08-B6.1** the durable handoff-ledger
+(reserved `0xc` cells, auditable read-back). All behind default-off flags, so no default
 behaviour or goldens move; each gated (`memory-consolidation-check`,
 `read-after-seq-check`) with engine API-freeze + fmt + clippy clean.
 
@@ -162,9 +165,10 @@ task instead): **F04-B1.3** persistent idempotency ledger — its deterministic
 namespaced cell-id needs collision-safe derivation (a 32-bit key hash has
 birthday collisions ~77k keys) + cross-restart replay; a subtle bug there is a
 data-integrity bug, so it deserves fresh focused context, not an 80-commit-deep
-bolt-on. **F08-B6.1** (durable handoff-ledger) and the B4.5 retire half need
-*new canonical metadata fields* → golden-rebaseline, blocked on the same signed-
-golden regeneration tooling as A3.3/C3-5.
+bolt-on. The B4.5 retire half (TTL-demote) and the receipt-visible parts of A3.3/C3-5
+remain golden-rebaseline (signed canonical bytes). **Correction:** F08-B6.1
+turned out golden-safe after all — body-encoded in a reserved namespace like
+B1.3, no new canonical fields — and is now landed, not deferred.
 
 **Key reclassification:** the AQL-surface bucket was *not* a golden-rebaseline. The
 canonical receipt hashes the *resulting pack* (`CONTEXT_PACK_HASHED_FIELDS`), not
@@ -174,10 +178,11 @@ the query's option flags, so a default-off AQL option is byte-identical when unu
 
 ### Honest boundary of what genuinely remains
 
-1. **Focused engine feature (queued as a task)** — F04-B1.3 idempotency ledger:
-   completable and golden-safe (default-off), but correctness-critical
-   (collision-safe cell-id derivation + cross-restart replay); spawned for a fresh
-   session rather than rushed here.
+1. **Large cross-crate surface work** — B6.3 (`/v1/transactions` + `/v1/handoff`
+   HTTP/SDK surface over the now-durable B1.3/B6.1 engine ledgers) and B4.4 (the
+   reference MCP consolidation worker over B4.2/B4.5). Completable but span
+   server + api-types + 3 SDKs + OpenAPI (B6.3) or the MCP crate (B4.4) — best
+   done with fresh context, not at the tail of a long run.
 2. **Run-dependent** — A6.3 (LME hybrid) needs a multi-hour embedded-index + A/B
    run; A5.2-serving needs a real corpus for non-degenerate weights.
 3. **Blocked on a factual decision (the user's)** — F2.0 judge-of-record: the plan
