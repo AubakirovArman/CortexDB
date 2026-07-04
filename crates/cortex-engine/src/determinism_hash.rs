@@ -32,6 +32,14 @@ pub struct DeterminismHashInput<'a> {
     /// collection is under guarded sampling, so the epoch enters the signed
     /// determinism surface additively (no golden churn on the default path).
     pub serving_epoch: Option<u64>,
+    /// C3-5-embref: the store embedding *profile* identity
+    /// `emb1:<model>:<dimension>:<metric>`. `None` (the default, and every
+    /// keyword-only deployment) leaves the hash input byte-identical to
+    /// pre-C3-5-embref. `Some(ref)` only when receipt embedding-ref binding is
+    /// enabled and a profile is configured, so a verifier re-executing a
+    /// hybrid/semantic query reproduces the candidate set under the same profile
+    /// (see ADR-embedding-ref-receipt-visibility).
+    pub embedding_ref: Option<&'a str>,
 }
 
 pub fn frozen_ranking_weights_identity() -> FrozenWeightsIdentity {
@@ -80,6 +88,18 @@ pub fn determinism_hash_input_value(input: &DeterminismHashInput<'_>) -> Value {
             .expect("determinism input value is a JSON object")
             .insert("ann_serving_epoch".to_owned(), json!(epoch));
     }
+    // C3-5-embref: the embedding profile ref enters the signed surface ONLY when
+    // receipt embedding-ref binding is enabled with a profile present (`Some`).
+    // When absent (`None`, the default and every keyword deployment), the object
+    // is byte-identical to the pre-C3-5-embref goldens — additive, no churn. A
+    // verifier that sees an `embedding_ref` re-executes under that embedding
+    // profile; one that does not re-executes with no profile binding, as before.
+    if let Some(embedding_ref) = input.embedding_ref {
+        value
+            .as_object_mut()
+            .expect("determinism input value is a JSON object")
+            .insert("embedding_ref".to_owned(), json!(embedding_ref));
+    }
     value
 }
 
@@ -104,6 +124,7 @@ mod tests {
             frozen_weights_version: "ranking-frozen-weights-v1",
             frozen_weights_artifact_hash: "hash-a",
             serving_epoch: None,
+            embedding_ref: None,
         }
     }
 
@@ -155,6 +176,58 @@ mod tests {
             determinism_hash(&with_epoch),
             determinism_hash(&with_epoch_8)
         );
+    }
+
+    // C3-5-embref: the embedding profile ref is additive. `None` (the default and
+    // every keyword deployment) must reproduce the exact bytes the pre-C3-5-embref
+    // goldens were signed over — no `embedding_ref` key — so adding the field
+    // cannot churn any committed accountability golden. `Some` must both add the
+    // key and change the hash (so a verifier re-executes under that profile).
+    #[test]
+    fn embedding_ref_is_additive_and_golden_safe() {
+        let none = sample_input();
+        let value = determinism_hash_input_value(&none);
+        assert!(
+            value.as_object().unwrap().get("embedding_ref").is_none(),
+            "None embedding_ref must not add a key (golden-safety)"
+        );
+
+        let mut with_ref = sample_input();
+        with_ref.embedding_ref = Some("emb1:bge-m3:1024:cosine");
+        let ref_value = determinism_hash_input_value(&with_ref);
+        assert_eq!(
+            ref_value.as_object().unwrap().get("embedding_ref"),
+            Some(&serde_json::json!("emb1:bge-m3:1024:cosine")),
+        );
+        assert_ne!(
+            determinism_hash(&none),
+            determinism_hash(&with_ref),
+            "a bound embedding profile must change the determinism hash"
+        );
+
+        // A different profile hashes differently (a model/metric change is visible).
+        let mut with_other = sample_input();
+        with_other.embedding_ref = Some("emb1:bge-m3:1024:dot_product");
+        assert_ne!(determinism_hash(&with_ref), determinism_hash(&with_other));
+    }
+
+    // The two additive fields are independent: binding one must not mask the other.
+    #[test]
+    fn serving_epoch_and_embedding_ref_are_independently_additive() {
+        let mut both = sample_input();
+        both.serving_epoch = Some(3);
+        both.embedding_ref = Some("emb1:bge-m3:1024:cosine");
+        let obj = determinism_hash_input_value(&both);
+        let obj = obj.as_object().unwrap();
+        assert_eq!(obj.get("ann_serving_epoch"), Some(&serde_json::json!(3)));
+        assert_eq!(
+            obj.get("embedding_ref"),
+            Some(&serde_json::json!("emb1:bge-m3:1024:cosine"))
+        );
+
+        let mut epoch_only = sample_input();
+        epoch_only.serving_epoch = Some(3);
+        assert_ne!(determinism_hash(&epoch_only), determinism_hash(&both));
     }
 
     #[test]

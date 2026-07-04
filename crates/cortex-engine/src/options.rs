@@ -95,6 +95,18 @@ pub struct AnnGuardedSamplingOptions {
     pub enabled: bool,
 }
 
+/// C3-5-embref: when disabled (the default) the receipt determinism surface
+/// carries no embedding-profile ref, so it is byte-identical to
+/// pre-C3-5-embref (and every keyword deployment stays unchanged). When enabled
+/// **and** a store-wide `embedding_profile` is configured, the profile identity
+/// `emb1:<model>:<dimension>:<metric>` enters the signed determinism input, so a
+/// verifier re-executing a hybrid/semantic query reproduces the candidate set
+/// under the same embedding profile (see ADR-embedding-ref-receipt-visibility).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct EmbeddingRefReceiptOptions {
+    pub enabled: bool,
+}
+
 pub const DEFAULT_SEMANTIC_COMPRESSION_MIN_ANSWERABILITY_Q16: u16 = 32_768;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -200,6 +212,10 @@ pub struct DatabaseOptions {
     pub learned_ranking: LearnedRankingOptions,
     pub semantic_compression: SemanticCompressionOptions,
     pub ann_guarded_sampling: AnnGuardedSamplingOptions,
+    /// C3-5-embref: opt-in binding of the embedding profile into the receipt
+    /// determinism surface. Default-off, so the signed surface and every golden
+    /// stay byte-identical until an operator enables it.
+    pub embedding_ref_receipt: EmbeddingRefReceiptOptions,
     pub aql_query_cache_max_entries: usize,
     pub wal_archive_enabled: bool,
     pub wal_archive_max_files: usize,
@@ -251,6 +267,7 @@ impl Default for DatabaseOptions {
             learned_ranking: LearnedRankingOptions::default(),
             semantic_compression: SemanticCompressionOptions::default(),
             ann_guarded_sampling: AnnGuardedSamplingOptions::default(),
+            embedding_ref_receipt: EmbeddingRefReceiptOptions::default(),
             aql_query_cache_max_entries: DEFAULT_AQL_QUERY_CACHE_MAX_ENTRIES,
             wal_archive_enabled: false,
             wal_archive_max_files: DEFAULT_WAL_ARCHIVE_MAX_FILES,

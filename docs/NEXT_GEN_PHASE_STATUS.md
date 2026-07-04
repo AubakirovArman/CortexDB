@@ -112,7 +112,7 @@ Plan-visible changes (AQL/receipt options, new frozen weights) that alter canoni
 | A5.2 | Train, freeze, serve the Q16 learned ranker; unify with F07 | landed | `ranking-learned-lift-check` / `learned-ranking-calibration-check` / `weights-version-binding-check` | **Landed via the default-off opt-in pattern (no golden churn).** Training: `learned-ranker-train-check`. Freezing: committed `fixtures/enterprise_rag_bench/learned_ranking/learned_ranker_v2.json` + version-binding gate (green). Serving: `LearnedRankingOptions { enabled: bool }` (**default false**, options.rs:71) consumed in the engine rerank path (`search/database/ranking.rs:45,53`) via `FrozenRerankProfile`/`apply_profile`. The engine **reproduces the offline heldout lift** (`ranking_learned_lift.rs::engine_learned_ranking_reproduces_offline_heldout_lift`: +3750 bps MRR, 75% win rate) — training→serving parity proven. Because serving is opt-in default-off, the determinism goldens are unchanged, so no C3-1 frozen-weights re-baseline was needed. |
 | A7.2 | Two-stage retrieve: shortlist -> payload-rerank -> MMR -> pack | slice | high | Exposing the rerank knob as an AQL/plan option with explain visibility needs C3-1/C3-5 + golden re-baseline. |
 | A7.3 | MMR as an API/AQL option with parity gates | not-started | high | Surfacing RetrieveOptions.diversity on /v1/context and /v1/search (and USING DIVERSITY in AQL) is a plan-visible receipt field that requires the receipt minor-version agreed with Track C (C3-2) + golden re-baseline; the frozen v0.5 AQL gram |
-| C3-5-embref | Receipt embedding_ref byte-promotion (A2.1 deferred item, executed und | not-started | high | embedding_ref is currently payload-text only (grep finds it in NO canonical.rs / accountability receipt / schema / fixtures/canonical). To promote it into the signed canonical surface: follow the now-landed C3-5 procedure - bump canonical s |
+| C3-5-embref | Receipt embedding_ref byte-promotion (A2.1 deferred item) | landed (default-off, no golden churn) | `accountability-receipt-check` | **Landed 2026-07-04** via the **additive determinism-input `Option`** (the `serving_epoch` template), **not** a `context_pack.canonical` field-set bump — so no signed-golden regeneration. The store embedding *profile* identity `emb1:<model>:<dim>:<metric>` enters the determinism input as `embedding_ref: Option<String>`, gated by a default-off knob `EmbeddingRefReceiptOptions` (env `CORTEXDB_RECEIPT_EMBEDDING_REF`); `None` (default / keyword) → no key → committed goldens byte-identical (`embedding_ref_is_additive_and_golden_safe`). `EmbeddingProfile::profile_ref_string`, wired through `AccountabilityDeterminismInput`. Design: ADR-embedding-ref-receipt-visibility (Accepted). Gates green: accountability-receipt-check, canonical-jcs-cross-language-check (determinism input isn't cross-language-covered; `None` adds nothing), canonical-schema-field-binding-check, clippy, full engine lib suite. Also split the pre-existing 487-line receipt_tests.rs (move-only) into receipt_tests.rs + receipt_cross_language_tests.rs to satisfy the receipt determinism gate's 300-line bound. |
 | F05-A5.2 | F05 learned ranking — train/freeze/serve Q16 ranker (FrozenRankerV2),  | landed (== A5.2) | `ranking-learned-lift-check` | Duplicate of A5.2 (see above): landed via the default-off opt-in `LearnedRankingOptions.enabled` profile, so it did not need the C3-1 frozen-weights re-baseline (goldens unchanged). Engine reproduces the offline lift. |
 | F07 | F07 value-per-token — unify opt-in reorder with the additive Q16 score | slice | high | Folded into A5.2's unification clause and depends on the C3-1 frozen-weights protocol. Today value_per_token.rs is opt-in and re-orders an already-selected set, so the packed order can contradict the additive explain score (defect j / the r |
 
@@ -266,20 +266,21 @@ the query's option flags, so a default-off AQL option is byte-identical when unu
    interim are encoded in docs/PUBLIC_CLAIMS_POLICY.md + docs/BENCHMARK_EVIDENCE.md;
    the "Gemini judge of record" in RESULTS.md is the *interim* record. No open user
    decision here.
-4. **Signed-golden regen** — **mostly dissolved 2026-07-04**: the receipt-option
-   surfaces landed via the **default-off / additive-`Option` pattern** (like
-   **A5.2**), which is byte-identical when the knob is unused, so **no golden
-   re-baseline was needed** — **A3.3 receipt-visibility** (`serving_epoch: None`
-   default, `serving_epoch_is_additive_and_golden_safe` green), **F08-B6.1**
-   (durable handoff-ledger, reserved `0xc` cells), the **A4.x/A7.x receipt-option
-   surfaces** (default-off AQL options; the receipt hashes the *resulting pack*, not
-   the option flags — see the "Key reclassification" note). The **one** item that
-   genuinely still needs a canonical-byte change is **C3-5-embref** — promoting the
-   existing payload-only `embedding_ref` *into* the signed canonical surface is an
-   in-place field promotion, not an `Option`-gated add, so it does churn goldens and
-   needs the C3-5 minor-bump + re-baseline + C4-2 cross-language run. That is the sole
-   remaining signed-golden task, and it is a hardening of an already-manifest-recorded
-   field (A2.1 landed the manifest provenance), not a v1.0 blocker.
+4. ~~**Signed-golden regen**~~ — **FULLY DISSOLVED 2026-07-04**: every receipt-option
+   surface landed via the **default-off / additive-`Option` pattern** (like **A5.2**),
+   byte-identical when unused, so **no golden re-baseline was needed** — **A3.3
+   receipt-visibility** (`serving_epoch: None` default,
+   `serving_epoch_is_additive_and_golden_safe` green), **F08-B6.1** (durable
+   handoff-ledger, reserved `0xc` cells), the **A4.x/A7.x receipt-option surfaces**
+   (default-off AQL options; the receipt hashes the *resulting pack*, not the option
+   flags), and now **C3-5-embref** — the one item previously thought to need a
+   canonical-byte change. Rather than an in-place per-cell canonical bump, the store
+   embedding *profile* identity was promoted into the **determinism input** as an
+   additive `Option` (the `serving_epoch` template), gated default-off
+   (`EmbeddingRefReceiptOptions`) → `None` on the keyword/default path adds no key, so
+   committed goldens verify byte-for-byte (`embedding_ref_is_additive_and_golden_safe`,
+   accountability-receipt-check + canonical-jcs-cross-language-check green). **No
+   signed-golden task remains** — the whole "needs regeneration tooling" bucket is empty.
 5. **Blocked-external** (15) — **partially unblocked 2026-07-04**: a working LLM chat
    endpoint now exists (the LiteLLM proxy Gemma, `google/gemma-4-31B-it`, via
    `.env` `CORTEXDB_EMBEDDING_*`), so the **interim** LLM-judged halves are now done

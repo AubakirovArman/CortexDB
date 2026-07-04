@@ -3,6 +3,8 @@ use cortex_crypto::{blake3_256_domain, hex_lower};
 use serde_json::{json, Value};
 
 mod receipt;
+#[cfg(test)]
+mod receipt_cross_language_tests;
 mod receipt_header;
 mod receipt_leaves;
 #[cfg(test)]

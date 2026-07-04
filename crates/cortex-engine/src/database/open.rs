@@ -83,6 +83,19 @@ impl Database {
             .map(|state| state.serving_epoch())
     }
 
+    /// C3-5-embref: the store embedding *profile* ref for the receipt determinism
+    /// input, or `None` when receipt embedding-ref binding is off (default) or no
+    /// embedding profile is configured — keeping the signed surface byte-identical
+    /// to pre-C3-5-embref (see ADR-embedding-ref-receipt-visibility).
+    pub(crate) fn current_receipt_embedding_ref(&self) -> Option<String> {
+        if !self.embedding_ref_receipt.enabled {
+            return None;
+        }
+        self.embedding_profile
+            .as_ref()
+            .map(|profile| profile.profile_ref_string())
+    }
+
     /// A3.3: snapshot the guarded-recall state for manifest persistence, so the
     /// sampled-recall window survives a restart. `None` (guarded sampling off /
     /// unarmed) leaves the manifest section absent — byte-identical to pre-A3.3.
@@ -227,6 +240,7 @@ impl Database {
             learned_ranking: options.learned_ranking,
             semantic_compression: options.semantic_compression,
             ann_guarded_sampling: options.ann_guarded_sampling,
+            embedding_ref_receipt: options.embedding_ref_receipt,
             // A3.3: arm the per-database guarded-recall state only when opted in,
             // restoring the persisted window if the manifest carries one; `None`
             // keeps the ANN read path byte-identical to pre-A3.3.

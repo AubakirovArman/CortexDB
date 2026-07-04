@@ -59,6 +59,9 @@ impl EngineConfig {
             ann_guarded_sampling: crate::options::AnnGuardedSamplingOptions {
                 enabled: parse_bool_var(&vars, "CORTEXDB_ANN_GUARDED_SAMPLING", false)?,
             },
+            embedding_ref_receipt: crate::options::EmbeddingRefReceiptOptions {
+                enabled: parse_bool_var(&vars, "CORTEXDB_RECEIPT_EMBEDDING_REF", false)?,
+            },
             aql_query_cache_max_entries: parse_usize_var(
                 &vars,
                 "CORTEXDB_AQL_QUERY_CACHE_MAX_ENTRIES",

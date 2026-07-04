@@ -51,6 +51,7 @@ fn hash_for<'a>(version: &'a str, artifact_hash: &'a str) -> String {
         frozen_weights_version: version,
         frozen_weights_artifact_hash: artifact_hash,
         serving_epoch: None,
+        embedding_ref: None,
     })
 }
 

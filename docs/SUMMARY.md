@@ -104,6 +104,7 @@
 - [Ranking Change Protocol](RANKING_CHANGE_PROTOCOL.md)
 - [ADR: Agent Cell ID v2](ADR-agent-cell-id-v2.md)
 - [ADR: ANN Degradation Receipt Visibility](ADR-ann-degradation-receipt-visibility.md)
+- [ADR: Embedding Ref Receipt Visibility](ADR-embedding-ref-receipt-visibility.md)
 - [Next-Gen Master Plan](NEXT_GEN_MASTER_PLAN.md)
 - [Next-Gen Progress Ledger](NEXT_GEN_PROGRESS.md)
 - [Next-Gen Phase Status](NEXT_GEN_PHASE_STATUS.md)

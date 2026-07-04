@@ -74,6 +74,11 @@ pub struct AccountabilityDeterminismInput {
     /// `None` (the default) leaves the signed determinism surface byte-identical
     /// to pre-A3.3 (see `DeterminismHashInput::serving_epoch`).
     pub ann_serving_epoch: Option<u64>,
+    /// C3-5-embref: the store embedding profile identity when receipt
+    /// embedding-ref binding is enabled; `None` (the default, and every
+    /// keyword-only deployment) leaves the signed surface byte-identical to
+    /// pre-C3-5-embref (see `DeterminismHashInput::embedding_ref`).
+    pub embedding_ref: Option<String>,
 }
 
 impl AccountabilityDeterminismInput {
@@ -89,6 +94,10 @@ impl AccountabilityDeterminismInput {
             // existing receipts + goldens are byte-identical; `Some(epoch)` only for
             // collections under guarded sampling.
             serving_epoch: self.ann_serving_epoch,
+            // C3-5-embref: absent on the default (keyword / binding-off) path, so
+            // existing receipts + goldens are byte-identical; `Some(ref)` only when
+            // embedding-ref binding is enabled with a profile present.
+            embedding_ref: self.embedding_ref.as_deref(),
         }
     }
 }

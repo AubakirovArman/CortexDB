@@ -98,6 +98,7 @@ impl Database {
             frozen_weights_version: frozen_weights.version,
             frozen_weights_hash: frozen_weights.artifact_hash,
             ann_serving_epoch: self.current_ann_serving_epoch(),
+            embedding_ref: self.current_receipt_embedding_ref(),
         };
         Ok(ContextPackReceiptEvidence::new(
             pack,

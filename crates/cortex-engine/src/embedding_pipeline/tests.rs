@@ -384,3 +384,28 @@ fn test_embedding_config() -> EmbeddingCoverageConfig {
         expected_model: Some("bge-m3".to_owned()),
     }
 }
+
+// C3-5-embref: the profile ref is the per-cell ref without the content_hash and
+// with the metric name resolved — the identity a verifier binds a hybrid/semantic
+// receipt to. A `:` in the model is sanitized so the delimiter stays unambiguous.
+#[test]
+fn profile_ref_string_is_the_cell_ref_without_content_hash() {
+    let profile = EmbeddingProfile {
+        model: "bge-m3".to_owned(),
+        dimension: 1024,
+        metric: 1,
+    };
+    assert_eq!(profile.profile_ref_string(), "emb1:bge-m3:1024:cosine");
+    // It is exactly the per-cell ref prefix (drop the trailing `:<content_hash>`).
+    let cell_ref = profile.ref_string("abc123");
+    assert_eq!(cell_ref, "emb1:bge-m3:1024:cosine:abc123");
+    assert!(cell_ref.starts_with(&format!("{}:", profile.profile_ref_string())));
+
+    // A `:` in the model is replaced with `_` (delimiter safety), matching ref_string.
+    let colon = EmbeddingProfile {
+        model: "org:model".to_owned(),
+        dimension: 8,
+        metric: 0,
+    };
+    assert_eq!(colon.profile_ref_string(), "emb1:org_model:8:dot_product");
+}

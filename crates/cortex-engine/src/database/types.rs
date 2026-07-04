@@ -54,6 +54,10 @@ pub struct Database {
     pub(crate) learned_ranking: LearnedRankingOptions,
     pub(crate) semantic_compression: SemanticCompressionOptions,
     pub(crate) ann_guarded_sampling: crate::options::AnnGuardedSamplingOptions,
+    /// C3-5-embref: opt-in binding of the embedding profile into the receipt
+    /// determinism surface. Default-off, so the signed surface stays
+    /// byte-identical to pre-C3-5-embref.
+    pub(crate) embedding_ref_receipt: crate::options::EmbeddingRefReceiptOptions,
     /// A3.3: per-database sampled guarded-recall state, behind interior mutability
     /// (the read path is `&self`). `None` when the opt-in knob is off — in which
     /// case the ANN read path is byte-identical to pre-A3.3.

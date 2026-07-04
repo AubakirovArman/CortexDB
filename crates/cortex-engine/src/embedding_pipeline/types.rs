@@ -65,6 +65,16 @@ impl EmbeddingProfile {
     pub fn ref_string(&self, content_hash: &str) -> String {
         embedding_ref_string(&self.model, self.dimension, self.metric, content_hash)
     }
+
+    /// C3-5-embref: the pack-level *profile* identity `emb1:<model>:<dimension>:<metric>`
+    /// (the first four fields of the per-cell `ref_string`, without the per-cell
+    /// `content_hash`). This is what a verifier must re-execute a hybrid/semantic
+    /// query under to reproduce the candidate set; it enters the receipt
+    /// determinism surface additively (see ADR-embedding-ref-receipt-visibility).
+    pub fn profile_ref_string(&self) -> String {
+        let safe_model = self.model.replace(':', "_");
+        format!("emb1:{safe_model}:{}:{}", self.dimension, self.metric_str())
+    }
 }
 
 /// Maps a [`DistanceMetric`](crate::search::DistanceMetric) discriminant
