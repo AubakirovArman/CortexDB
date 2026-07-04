@@ -105,7 +105,7 @@ Plan-visible changes (AQL/receipt options, new frozen weights) that alter canoni
 | Phase | Title | State | Golden | Next action / blocker |
 | --- | --- | --- | --- | --- |
 | A3.2 | Scope-aware traversal + codified sparse-fallback ratio | slice | high | Recording the ratio/strategy in AnnSearchReport and adding filtered-traversal fields needs re-baselining the ANN report goldens. |
-| A3.3 | Sampled guarded-recall + persisted SLO window | slice | high | Making the degradation state receipt-visible is the C3-5 design-review gate, blocked on the receipt canonical-set change which needs signed-golden regeneration; also requires an explicit design review with Track C. |
+| A3.3 | Sampled guarded-recall + persisted SLO window | landed (default-off, no golden churn) | `ann-guarded-sampling-check` | **Landed via the default-off pattern — like A5.2, no golden re-baseline needed** (2026-07-04 audit). The Track-C design review is *done* (ADR-ann-degradation-receipt-visibility **Accepted**). Full chain green: `GuardedRecallState` state machine (10 tests incl. `state_machine_degrades_within_eight_sampled_queries`, `healthy_index_exact_scan_rate_under_15_percent`, `..._deterministic_on_replay`); read-path integration (`search/database/persisted.rs` + `sampled_path_serves_ann_with_windowed_recall` / `..._below_floor_falls_back_to_exact`); default-off `AnnGuardedSamplingOptions` knob (`options.rs:94`); `serving_epoch` threaded to the receipt **additively** (`serving_epoch: None` default → `serving_epoch_is_additive_and_golden_safe`: committed accountability goldens verify byte-identically); additive manifest persistence (`current_guarded_recall_manifest` → `ManifestGuardedRecallState`, `from_parts` round-trip, restored on open); and the 50k-vector p50 benchmark (`ann-guarded-sampling-latency-bench`, p50 4.26×). Because the signed surface only changes when the knob is enabled AND degradation fires, the default determinism goldens are unchanged — the "signed-golden regeneration" blocker never applied. |
 | A4.1 | Temporal windows from Date anchors (sole owner of derivation) | slice | high | Per-query AQL temporal window + explicit reference_time injection needs the C3-1/C3-5 plan-option protocol. |
 | A4.2 | Decomposition -> coverage-retrieval (bench proof -> engine option) | not-started | high | Phase 2 engine RetrieveOptions.coverage is plan-visible and requires agreeing the receipt minor-version with Track C (C3-2) before landing. |
 | A4.4 | MMR as an explicit search option (single implementation) | slice | high | Exposing SearchQuery.diversity / the AQL surface as a plan-visible option needs the C3-1/C3-5 canonical-set protocol + golden re-baseline (this is the same MMR the ledger landed as row 'A5'). |
@@ -266,11 +266,20 @@ the query's option flags, so a default-off AQL option is byte-identical when unu
    interim are encoded in docs/PUBLIC_CLAIMS_POLICY.md + docs/BENCHMARK_EVIDENCE.md;
    the "Gemini judge of record" in RESULTS.md is the *interim* record. No open user
    decision here.
-4. **Signed-golden regen** (A3.3 receipt-visibility, C3-5 `embedding_ref`
-   byte-promotion, F08-B6.1 durable handoff-ledger, the B4.5 retire half, the A4.x
-   receipt-option surfaces) — these DO touch canonical/signed cell bytes (new
-   metadata fields), so they need the C3-1/C3-5 regeneration tooling that is not
-   present; rewriting a Merkle-signed golden by hand would be irresponsible.
+4. **Signed-golden regen** — **mostly dissolved 2026-07-04**: the receipt-option
+   surfaces landed via the **default-off / additive-`Option` pattern** (like
+   **A5.2**), which is byte-identical when the knob is unused, so **no golden
+   re-baseline was needed** — **A3.3 receipt-visibility** (`serving_epoch: None`
+   default, `serving_epoch_is_additive_and_golden_safe` green), **F08-B6.1**
+   (durable handoff-ledger, reserved `0xc` cells), the **A4.x/A7.x receipt-option
+   surfaces** (default-off AQL options; the receipt hashes the *resulting pack*, not
+   the option flags — see the "Key reclassification" note). The **one** item that
+   genuinely still needs a canonical-byte change is **C3-5-embref** — promoting the
+   existing payload-only `embedding_ref` *into* the signed canonical surface is an
+   in-place field promotion, not an `Option`-gated add, so it does churn goldens and
+   needs the C3-5 minor-bump + re-baseline + C4-2 cross-language run. That is the sole
+   remaining signed-golden task, and it is a hardening of an already-manifest-recorded
+   field (A2.1 landed the manifest provenance), not a v1.0 blocker.
 5. **Blocked-external** (15) — **partially unblocked 2026-07-04**: a working LLM chat
    endpoint now exists (the LiteLLM proxy Gemma, `google/gemma-4-31B-it`, via
    `.env` `CORTEXDB_EMBEDDING_*`), so the **interim** LLM-judged halves are now done
