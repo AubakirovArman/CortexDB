@@ -144,11 +144,11 @@ F01 tiered-storage productization is multi-week; F02/F03 (replication/consensus)
 
 | Phase | Title | State | Golden | Next action / blocker |
 | --- | --- | --- | --- | --- |
-| A8.3 | Adapter conformance (PDF/OCR contracts) -- deferred post-v1.0 | not-started | none | Explicitly cut/deferred to post-v1.0 by the plan's cut-list; not in scope for this cycle. |
-| F4.4 | Signed leaderboard-pack (DEFERRED / cut) | not-started | none | Explicitly cut to the tail of Phase 4/5 by the plan (principle 7); non-critical, only on release-owner request. |
-| F01 | F01 tiered storage v2 — flag-prototype → production (zstd blocks, form | slice | low | No dedicated productization task exists anywhere in the master plan — F01 is described only in section 6 and the D5 current-state note. It is flag-gated with a `ZstdReserved` placeholder (options.rs:57-65); non-goals in docs/TIERED_STORAGE_ |
-| F02-F03 | F02 replication / F03 consensus — FROZEN (Raft = passive state machine | slice | low | Frozen by the project's own criteria. Raft is a full set of passive state machines (election/consensus/joint-consensus/snapshot/TCP transport) with NO driver: no election timer, no heartbeat loop; current_term/voted_for not persisted (real  |
-| F09 | F09 managed cloud — FROZEN | not-started | none | Frozen; explicitly a v1.0 non-goal. All reports keep managed_cloud_ready=false. |
+| A8.3 | Adapter conformance (PDF/OCR contracts) -- deferred post-v1.0 | closed: post-v1.0 non-goal | none | Explicitly cut/deferred to post-v1.0 by the plan's cut-list; not in scope for this cycle. Terminal disposition: won't-do for v1.0 (decision on record). |
+| F4.4 | Signed leaderboard-pack (DEFERRED / cut) | closed: cut (release-owner request only) | none | Explicitly cut to the tail of Phase 4/5 by the plan (principle 7); non-critical, only on release-owner request. Terminal disposition: won't-do unless a release owner asks. |
+| F01 | F01 tiered storage v2 — flag-prototype → production (zstd blocks, form | frozen v1.0 (flag-gated prototype exists; productization multi-week, out of scope) | low | No dedicated productization task exists anywhere in the master plan — F01 is described only in section 6 and the D5 current-state note. It is flag-gated with a `ZstdReserved` placeholder (options.rs:57-65); non-goals in docs/TIERED_STORAGE_ |
+| F02-F03 | F02 replication / F03 consensus — FROZEN (Raft = passive state machine | frozen v1.0 non-goal (state machines exist; no driver, by design — HA stays experimental per plan rule F02) | low | Frozen by the project's own criteria. Raft is a full set of passive state machines (election/consensus/joint-consensus/snapshot/TCP transport) with NO driver: no election timer, no heartbeat loop; current_term/voted_for not persisted (real  |
+| F09 | F09 managed cloud — FROZEN | closed: v1.0 non-goal | none | Frozen; explicitly a v1.0 non-goal. All reports keep managed_cloud_ready=false. Terminal disposition: won't-do for v1.0 (single-node scope). |
 
 ## Execution log + corrections (this cycle)
 
