@@ -1,0 +1,39 @@
+{
+  "judge_model": "google/gemma-4-31B-it",
+  "leaderboard_comparable": false,
+  "note": "INTERIM Gemma judge over official rubric; not the official GPT-4o judge",
+  "overall_accuracy": 0.64,
+  "total": 50,
+  "per_type": {
+    "knowledge-update": {
+      "correct": 7,
+      "count": 9,
+      "accuracy": 0.7778
+    },
+    "multi-session": {
+      "correct": 3,
+      "count": 9,
+      "accuracy": 0.3333
+    },
+    "single-session-assistant": {
+      "correct": 3,
+      "count": 8,
+      "accuracy": 0.375
+    },
+    "single-session-preference": {
+      "correct": 7,
+      "count": 8,
+      "accuracy": 0.875
+    },
+    "single-session-user": {
+      "correct": 4,
+      "count": 8,
+      "accuracy": 0.5
+    },
+    "temporal-reasoning": {
+      "correct": 8,
+      "count": 8,
+      "accuracy": 1.0
+    }
+  }
+}

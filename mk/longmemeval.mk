@@ -67,6 +67,14 @@ longmemeval-per-type-report-check:
 longmemeval-v1-typeaware-check:
 	python3 scripts/longmemeval/run_official_generation.py --self-test
 
+# Interim QA scorer (fast/offline): prove the verbatim official anscheck rubric
+# (per-type prompt selection) + the accuracy aggregation, with a stub judge and no
+# network. The metered scoring plugs an OpenAI-compatible judge (Gemma proxy) into
+# the same scorer; every result is stamped leaderboard_comparable=false.
+.PHONY: interim-gemma-qa-score-check
+interim-gemma-qa-score-check:
+	python3 scripts/benchmarks/interim_gemma_qa_score.py --self-test
+
 # A6.2 (real, metered): type-aware official generation over the retrieval log via
 # an OpenAI-compatible endpoint (GPT-4o official). Emits hypotheses for the
 # untouched official evaluate_qa.py (score with longmemeval-v1-official-qa-score

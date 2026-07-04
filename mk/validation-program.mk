@@ -20,7 +20,9 @@ validation-nightly:
 	$(MAKE) locomo-retrieval-adapter-check
 	$(MAKE) locomo-retrieval-regression-check
 	$(MAKE) locomo-qa-reader-check
+	$(MAKE) locomo-qa-input-check
 	$(MAKE) locomo-qa-evidence-check
+	$(MAKE) interim-gemma-qa-score-check
 	$(MAKE) erb-official-rejudge-ready-check
 	$(MAKE) aab-mini-score-check
 	$(MAKE) quick-retrieval-eval-check

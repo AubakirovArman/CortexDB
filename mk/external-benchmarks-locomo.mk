@@ -36,6 +36,20 @@ locomo-retrieval-regression-check:
 locomo-qa-reader-check:
 	python3 scripts/locomo/run_qa.py --self-test
 
+# F3.4 (QA input adapter, fast/offline): prove the retrieval-log -> run_qa input
+# reshape (category-code mapping + turn-text carry-through) over a committed fixture.
+.PHONY: locomo-qa-input-check
+locomo-qa-input-check:
+	python3 scripts/locomo/build_qa_input.py --self-test
+
+# F3.4 (QA input adapter, real): reshape the LoCoMo retrieval log into run_qa's
+# input schema (optionally a balanced --limit subset; repo rule: 50 first).
+locomo-qa-input:
+	python3 scripts/locomo/build_qa_input.py \
+	  --retrieval-log "$(LOCOMO_RETRIEVAL_OUTPUT)" \
+	  --output "$(LOCOMO_QA_INPUT_LOG_DEFAULT)" \
+	  $(if $(LOCOMO_QA_LIMIT),--limit $(LOCOMO_QA_LIMIT),)
+
 # F3.4 (QA reader half, real/metered): generate answers from the retrieved-with-text
 # log via an OpenAI-compatible reader (DeepSeek default; key via DEEPSEEK_KEY_FILE).
 # Repo rule: run the 50-question subset first, then the full set.

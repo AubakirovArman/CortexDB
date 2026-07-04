@@ -55,7 +55,9 @@ jobs:
       # JSONL schema + determinism (offline; the metered runs plug into the same
       # generators).
       - run: make longmemeval-v1-typeaware-check
+      - run: make interim-gemma-qa-score-check
       - run: make locomo-qa-reader-check
+      - run: make locomo-qa-input-check
       - run: make locomo-qa-evidence-check
       - run: make erb-official-rejudge-ready-check
       - run: make locomo-retrieval-regression-check
