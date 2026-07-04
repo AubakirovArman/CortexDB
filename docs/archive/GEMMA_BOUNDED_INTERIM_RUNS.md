@@ -14,18 +14,33 @@ the value here is the per-type *mechanism* signal.
 
 ## Full-scale results (headline)
 
-**A6.2 — LongMemEval type-aware, all 500 · overall 0.682**
+**A6.2 — LongMemEval type-aware, all 500 — TWO judges (Gemma-31B vs gpt-oss-120B)**
 
-| type | acc | | type | acc |
-|---|---|---|---|---|
-| **single-session-preference** | **0.767** (23/30) | | single-session-user | 0.657 |
-| temporal-reasoning | 0.737 | | multi-session | 0.624 |
-| knowledge-update | 0.731 | | single-session-assistant | 0.607 |
+Overall barely moves (Gemma **0.682** vs gpt-oss-120B **0.666**), and most slices
+are within ±0.02 — **except the load-bearing preference slice**:
 
-→ preference **0.767 vs the 0.2667 baseline** — the A6.2 type-aware hypothesis is
-confirmed **on all 500** (DoD narrative target preference ≥0.55 met). Overall 0.682
-is below the ≥0.80 target because Gemma-31B is both answerer and judge; the
-mechanism holds.
+| type | n | Gemma judge | gpt-oss-120B judge | Δ |
+|---|---:|---:|---:|---:|
+| **single-session-preference** | 30 | **0.767** (23/30) | **0.467** (14/30) | **−0.300** |
+| temporal-reasoning | — | 0.737 | 0.752 | +0.015 |
+| knowledge-update | — | 0.731 | 0.718 | −0.013 |
+| single-session-user | — | 0.657 | 0.643 | −0.014 |
+| single-session-assistant | — | 0.607 | 0.625 | +0.018 |
+| multi-session | — | 0.624 | 0.624 | 0.000 |
+
+→ **Honest correction to the headline claim.** The earlier "preference **0.767** →
+type-aware hypothesis confirmed, DoD target ≥0.55 met" was **judge-inflated**: under
+the far stronger gpt-oss-120B judge the same 30 preference answers score **0.467
+(14/30) — *below* the 0.55 DoD target**, a −0.300 collapse (by far the largest
+per-type gap; every other slice moves ≤0.02). **What survives:** type-aware prompting
+*does* lift preference well above the LongMemEval baseline **0.2667** (0.467 vs 0.267,
+≈ +0.20), so the *mechanism* holds — but the specific "**≥0.55 target met**" claim does
+**not** hold under a stronger judge. This is the same effect the F3.4 adversarial
+slice showed (0.960→0.637): the lenient interim judge systematically over-credits the
+*special-instruction* slices (preference, abstention) — exactly the ones used to claim
+success. DoD still needs the leaderboard-official GPT-4o (stronger still, likely
+similar-or-stricter). Raw:
+[`gemma_interim/longmemeval_typeaware_500_gptoss120b_interim.json`](gemma_interim/longmemeval_typeaware_500_gptoss120b_interim.json).
 
 **F3.4 — LoCoMo QA category-aware, all 1,986 — TWO judges (Gemma-31B vs gpt-oss-120B)**
 

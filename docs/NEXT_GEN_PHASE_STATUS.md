@@ -300,10 +300,15 @@ the query's option flags, so a default-off AQL option is byte-identical when unu
 5. **Blocked-external** (15) — **partially unblocked 2026-07-04**: a working LLM chat
    endpoint now exists (the LiteLLM proxy Gemma, `google/gemma-4-31B-it`, via
    `.env` `CORTEXDB_EMBEDDING_*`), so the **interim** LLM-judged halves are now done
-   at full scale — **A6.2** (LongMemEval type-aware, 500, overall 0.682 / preference
-   0.767), **F3.4-QA** (LoCoMo, 1,986, overall 0.592 / adversarial 0.960), **A6.1**
-   (ERB judge cross-check, 500, 46.71 vs gemini 47.74 — judge-agnostic), and
-   **A6.4**'s combined half is now measured (46.71, below the >=60 exit bar). What
+   at full scale, each cross-checked with a **second, stronger judge (gpt-oss-120B)**
+   that materially tempered the Gemma-judge headlines (the lenient interim judge
+   over-credits the special-instruction slices): **A6.2** (LongMemEval type-aware, 500,
+   overall 0.682→0.666; **preference 0.767→0.467 — *below* the 0.55 DoD target under the
+   stronger judge**, though still above the 0.267 baseline so the mechanism holds),
+   **F3.4-QA** (LoCoMo, 1,986, overall 0.592→0.485; **adversarial 0.960→0.637**),
+   **A6.1** (ERB, 500, three judges 47.74/46.71/**41.82** — combined band ~42–48, stronger
+   judge stricter), and **A6.4**'s combined half measured (46.71, below the >=60 exit bar;
+   no interim judge supports the ~62–68 projection). What
    genuinely remains external: the **leaderboard-official judge** (GPT-4o / gpt-5.4,
    no budget) to convert those interims to DoD numbers, plus a real KMS/HSM operator +
    published anchor, external compliance reviewers, and >=2 independent transparency
