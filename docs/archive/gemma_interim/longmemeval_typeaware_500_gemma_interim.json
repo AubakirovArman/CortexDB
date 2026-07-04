@@ -1,0 +1,39 @@
+{
+  "judge_model": "google/gemma-4-31B-it",
+  "leaderboard_comparable": false,
+  "note": "INTERIM judge over the official rubric; not the leaderboard-official judge",
+  "overall_accuracy": 0.682,
+  "per_type": {
+    "knowledge-update": {
+      "accuracy": 0.7308,
+      "correct": 57,
+      "count": 78
+    },
+    "multi-session": {
+      "accuracy": 0.6241,
+      "correct": 83,
+      "count": 133
+    },
+    "single-session-assistant": {
+      "accuracy": 0.6071,
+      "correct": 34,
+      "count": 56
+    },
+    "single-session-preference": {
+      "accuracy": 0.7667,
+      "correct": 23,
+      "count": 30
+    },
+    "single-session-user": {
+      "accuracy": 0.6571,
+      "correct": 46,
+      "count": 70
+    },
+    "temporal-reasoning": {
+      "accuracy": 0.7368,
+      "correct": 98,
+      "count": 133
+    }
+  },
+  "total": 500
+}

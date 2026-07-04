@@ -1,13 +1,43 @@
-# Bounded Gemma interim runs — A6.2 + F3.4 QA (end-to-end proof, not official)
+# Gemma interim runs — A6.2 + F3.4 QA (full-scale, not leaderboard-official)
 
 **Status: interim / diagnostic. `leaderboard_comparable: false`.** These numbers are
 **not** the official A6.2 / F3.4 DoD results — they use an **interim Gemma judge**
-(not the leaderboard-official GPT-4o for LongMemEval / gpt-5.4 for ERB) over a
-**50-question balanced subset** (not the full 500 / 1,986). They are recorded as
-honest evidence that the A6.2 and F3.4-QA harnesses run **end-to-end against a real
-LLM on real retrieval data**, and to surface the per-type signal. Public claims go
-only through the F5.1 page flow; these interim numbers are narrative, not a gate
-threshold (an LLM judge is outside the agent's control).
+(not the leaderboard-official GPT-4o for LongMemEval / gpt-5.4 for ERB). They now
+cover the **full sets** (A6.2 all 500 LongMemEval questions, F3.4 all 1,986 LoCoMo
+questions), after an initial 50-question bounded validation. Recorded as honest
+evidence that the A6.2 and F3.4-QA harnesses run **end-to-end against a real LLM on
+real retrieval data** at full scale. Public claims go only through the F5.1 page
+flow; these interim numbers are narrative, not a gate threshold (an LLM judge is
+outside the agent's control). Both answerer and judge are Gemma-31B, so the overall
+numbers understate what a stronger official answerer/judge (GPT-4o) would produce —
+the value here is the per-type *mechanism* signal.
+
+## Full-scale results (headline)
+
+**A6.2 — LongMemEval type-aware, all 500 · overall 0.682**
+
+| type | acc | | type | acc |
+|---|---|---|---|---|
+| **single-session-preference** | **0.767** (23/30) | | single-session-user | 0.657 |
+| temporal-reasoning | 0.737 | | multi-session | 0.624 |
+| knowledge-update | 0.731 | | single-session-assistant | 0.607 |
+
+→ preference **0.767 vs the 0.2667 baseline** — the A6.2 type-aware hypothesis is
+confirmed **on all 500** (DoD narrative target preference ≥0.55 met). Overall 0.682
+is below the ≥0.80 target because Gemma-31B is both answerer and judge; the
+mechanism holds.
+
+**F3.4 — LoCoMo QA category-aware, all 1,986 · overall 0.592**
+
+| category | acc | | category | acc |
+|---|---|---|---|---|
+| **adversarial** | **0.960** (428/446) | | single-hop | 0.564 |
+| temporal-reasoning | 0.573 | | multi-hop | 0.238 |
+| open-domain | 0.229 | | | |
+
+→ adversarial **0.960** on all 446 adversarial questions — the exact-abstention
+instruction works at full scale. multi-hop (0.238) and open-domain (0.229) are the
+weak slices.
 
 ## Setup (reproducible)
 
