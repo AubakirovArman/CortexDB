@@ -30,6 +30,7 @@
         {"target": "erb-compare-runs-check", "purpose": "F2.2 ERB run comparisons refuse across-judge deltas"},
         {"target": "results-page-check", "purpose": "F5.1 RESULTS.md figures trace to committed reports"},
         {"target": "aab-mini-score-check", "purpose": "F4.2 6-axis AAB mini-score (structural axes unranked)"},
+        {"target": "aab-snapshot-matrix-check", "purpose": "F4.3 pgvector+OPA snapshot matrix; re-scores the committed docker-captured thin-wrapper snapshot OFFLINE -- empirical axes 1-4 + structural axes UNRANKED (receipt/determinism), 0 conflicts surfaced, consistent with the GCE thin_wrapper_reference"},
         {"target": "ltr-corpus-check", "purpose": "A5.1 leak-free LTR corpus builder self-test"},
         {"target": "learned-ranker-train-check", "purpose": "A5.2-training held-out MRR lift vs uniform"},
         {"target": "retrieval-candidate-pool-check", "purpose": "A1.4 configurable ERB candidate pool"},

@@ -1,0 +1,22 @@
+# F4.3: pinned pgvector + OPA "thin wrapper" baseline for the AAB snapshot matrix.
+# Digests pinned so a captured snapshot is reproducible on any operator machine.
+services:
+  pgvector:
+    image: pgvector/pgvector:pg16@sha256:ad2e18408bf447f62092a8a5259e7df10505c5a0360bd1a1853ac8b8b0763da2
+    environment:
+      POSTGRES_PASSWORD: aab
+      POSTGRES_DB: aab
+    # No host port: the adapter talks to pgvector via `docker compose exec psql`,
+    # which avoids host-port conflicts and a psycopg dependency.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d aab"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  opa:
+    image: openpolicyagent/opa:latest-static@sha256:57f7d06808fff6de3ea1d698e6430990973ca1370be0e54975f0083d615521da
+    command: ["run", "--server", "--addr=0.0.0.0:8181", "/policies"]
+    volumes:
+      - ./policies:/policies:ro
+    ports:
+      - "58181:8181"

@@ -26,6 +26,7 @@ validation-nightly:
 	$(MAKE) interim-gemma-qa-score-check
 	$(MAKE) erb-official-rejudge-ready-check
 	$(MAKE) aab-mini-score-check
+	$(MAKE) aab-snapshot-matrix-check
 	$(MAKE) quick-retrieval-eval-check
 	$(MAKE) benchmark-trend-check
 	@echo "validation-nightly: benchmark validation program complete"

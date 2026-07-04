@@ -36,6 +36,14 @@ retrieval-two-stage-rerank-check:
 aab-mini-score-check:
 	python3 scripts/aab_mini_score.py --self-test
 
+# F4.3: re-score the committed pgvector+OPA snapshot fully OFFLINE (no docker/net)
+# and assert the anti-absorption matrix -- the captured thin wrapper is UNRANKED on
+# the structural axes (receipt/determinism) + surfaces 0 conflicts, while CortexDB
+# is RANKED on all six. Capture (one-time, docker): scripts/aab/capture_snapshot.py.
+.PHONY: aab-snapshot-matrix-check
+aab-snapshot-matrix-check:
+	python3 scripts/aab/score_snapshot.py --self-test
+
 .PHONY: benchmark-floor-check
 benchmark-floor-check:
 	python3 scripts/benchmark_floor_check.py --report "target/benchmark-floor/report.json"

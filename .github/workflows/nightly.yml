@@ -65,6 +65,7 @@ jobs:
       - run: make erb-compare-runs-check
       - run: make results-page-check
       - run: make aab-mini-score-check
+      - run: make aab-snapshot-matrix-check
       # Learned-ranking pipeline (deterministic corpus + trainer, held-out lift).
       - run: make ltr-corpus-check
       - run: make learned-ranker-train-check

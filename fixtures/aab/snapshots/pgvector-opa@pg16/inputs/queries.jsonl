@@ -1,0 +1,4 @@
+{"query_id": "q_scope", "axis": "scope_leak_at_budget", "text": "annual project budget in USD", "readable_scopes": ["project:alpha"], "budget": 3, "gold_in_scope": ["a2", "a3"]}
+{"query_id": "q_citation", "axis": "citation_pr", "text": "who signed off the Alpha security review", "readable_scopes": ["project:alpha"], "budget": 3, "gold_citation_cells": ["a4"]}
+{"query_id": "q_conflict", "axis": "conflict_recall", "text": "what is the Alpha annual budget amount", "readable_scopes": ["project:alpha"], "budget": 4, "gold_conflict_cells": ["a2", "a3"]}
+{"query_id": "q_efficiency", "axis": "tokens_to_answer", "text": "when was the Alpha kickoff meeting", "readable_scopes": ["project:alpha"], "budget": 3, "gold_answer_cell": "a1"}

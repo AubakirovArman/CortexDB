@@ -1,0 +1,11 @@
+{
+  "adapter": "scripts/aab/adapters/pgvector_opa",
+  "corpus_cells": 10,
+  "embedding_dim": 1024,
+  "images": {
+    "opa": "",
+    "pgvector": ""
+  },
+  "queries": 4,
+  "system": "thin-pgvector-opa"
+}

@@ -1,0 +1,10 @@
+{"cell_id": "a1", "scope": "project:alpha", "text": "Project Alpha kickoff meeting was held on 2023-03-01."}
+{"cell_id": "a2", "scope": "project:alpha", "text": "Alpha's approved annual budget is 120000 USD.", "conflict_group": "alpha_budget"}
+{"cell_id": "a3", "scope": "project:alpha", "text": "Alpha's revised annual budget is 150000 USD.", "conflict_group": "alpha_budget"}
+{"cell_id": "a4", "scope": "project:alpha", "text": "The Alpha security review was signed off by Dana Ruiz.", "citation_id": "alpha_secreview_signer"}
+{"cell_id": "a5", "scope": "project:alpha", "text": "Alpha stores its primary data in PostgreSQL."}
+{"cell_id": "a6", "scope": "project:alpha", "text": "Alpha's public launch is scheduled for Q4 2023."}
+{"cell_id": "b1", "scope": "project:beta", "text": "Project Beta's approved annual budget is 90000 USD."}
+{"cell_id": "b2", "scope": "project:beta", "text": "Beta kickoff meeting was held on 2023-04-01."}
+{"cell_id": "b3", "scope": "project:beta", "text": "The Beta security review was signed off by Evan Cole.", "citation_id": "beta_secreview_signer"}
+{"cell_id": "b4", "scope": "project:beta", "text": "Beta uses Redis for its caching layer."}
