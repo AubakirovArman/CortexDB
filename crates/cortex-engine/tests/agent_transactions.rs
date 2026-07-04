@@ -156,7 +156,11 @@ fn concurrent_agent_transactions_allow_disjoint_cells_and_read_your_writes() {
 
     assert_eq!(first.outcome, AgentTransactionOutcome::Committed);
     assert_eq!(second.outcome, AgentTransactionOutcome::Committed);
-    assert_eq!(second.committed_seq, Some(CommitSeq(2)));
+    // first: cell(11) at seq 1, then its idempotency-ledger entry at seq 2
+    // (F04-B1.3 records a durable ledger cell after each committed txn); so the
+    // second disjoint commit lands cell(12) at seq 3. The property under test is
+    // that both disjoint transactions commit (no false conflict) + read-your-writes.
+    assert_eq!(second.committed_seq, Some(CommitSeq(3)));
     assert_eq!(
         db.get_latest_cell(CellId(11)).unwrap(),
         payload("shared:project", "agent 1")

@@ -89,10 +89,24 @@ saturated there, so headroom is in ranking quality):
 | ndcg_any@10 | 0.9631 | **1.000** |
 
 Hybrid **improves ranking (recall@1 +0.10, ndcg +0.037) with zero regressions** —
-the A6.3 mechanism works end-to-end. The full-500 DoD (recall_all@10 >= 0.93 vs
-the 0.9021 keyword baseline, <=10 per-question regressions) needs the full metered
-embedding run (~25k `bge-m3` embeddings, cached per split) — `make
-longmemeval-v1-hybrid-retrieval` (optionally `LONGMEMEVAL_V1_HYBRID_LIMIT=N`).
+the A6.3 mechanism works end-to-end.
+
+### Full 500-question run — **A6.3 DoD MET**
+
+Ran the full split (24.5k `bge-m3` embeddings, cached) vs the matched keyword
+baseline (aggregate metrics, skips excluded, per the official
+`print_retrieval_metrics.py`):
+
+| metric | keyword | hybrid | DoD target |
+| --- | ---: | ---: | --- |
+| recall_all@10 | 0.8926 | **0.9523** | >= 0.93 ✓ |
+| ndcg_any@10 | 0.8733 | **0.9218** | >= 0.82 ✓ |
+
+Per-question over all 500: **1** recall_all@10 regression (gate: <=10 ✓), **26**
+improvements. Keyword default byte-identical (self-test). **All three A6.3
+acceptance criteria pass** — this is a real phase closure with a *deterministic*
+metric, no LLM judge. Reproduce: `make longmemeval-v1-hybrid-retrieval`
+(optionally `LONGMEMEVAL_V1_HYBRID_LIMIT=N`).
 
 ## What remains to close the phases officially
 
