@@ -21,6 +21,16 @@ The end-to-end product path (retrieve through `cortex_engine::Database` → gene
 | Answer completeness | 53.7% | same |
 | Questions scored | 500 | same |
 
+> **Judge caveat (read before citing 47.74).** This is an **interim** number, judged
+> by `gemini-3.5-flash` — **not** the leaderboard-official `gpt-5.4` ERB evaluator.
+> A three-judge cross-check of the *same* 500 answers shows the combined score is
+> judge-dependent and lands in a **~42–48 band**, with *stronger* judges scoring
+> *stricter*: gemini-3.5-flash **47.74**, Gemma-31B **46.71**, gpt-oss-120B **41.82**
+> (document recall is deterministic and identical at 55.71% across all three). So
+> 47.74 is best read as the **upper end** of the interim band; the official gpt-5.4
+> evaluator (stronger still) is likely to land at or below it. See
+> [`archive/GEMMA_BOUNDED_INTERIM_RUNS.md`](archive/GEMMA_BOUNDED_INTERIM_RUNS.md).
+
 <!-- verify: erb-submission/official_results.json :: aggregate_stats.combined_correctness_completeness_score == 47.74 -->
 <!-- verify: erb-submission/official_results.json :: aggregate_stats.average_recall_pct == 55.71 -->
 <!-- verify: erb-submission/official_results.json :: aggregate_stats.average_correctness_pct == 50.0 -->
