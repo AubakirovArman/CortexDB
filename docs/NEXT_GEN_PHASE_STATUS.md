@@ -48,6 +48,12 @@ the plan). Totals: 86 phases, 14 already landed **at the time this snapshot was 
 
 The executable backlog: bounded engine/test/doc/bench changes that can land under the existing gate culture.
 
+> **State-column caveat (2026-07-04 audit):** the `State` cells below **lag reality** —
+> ~20 rows still read `not-started`/`slice` that the Execution-log records as landed
+> and a spot-check confirmed implemented + gated (see the 2026-07-04 reconciliation
+> entry under "Execution log + corrections"). The Execution-log + Honest-boundary
+> sections are authoritative until a bulk State sync lands.
+
 | Phase | Title | State | Golden | Next action / blocker |
 | --- | --- | --- | --- | --- |
 | A1.2 | Corpus-wide BM25 statistics for the rerank path (Bm25StatsProvider) | not-started | low | IDF in retrieval_rank.rs (lines ~190-218) is still pool-local: doc_count = docs.len() and doc_frequency is rebuilt from the candidate pool each query. Add a Bm25StatsProvider {doc_count, doc_freq} trait over the persisted ACI4 index, thread |
@@ -55,7 +61,7 @@ The executable backlog: bounded engine/test/doc/bench changes that can land unde
 | A1.4 | Configurable ERB candidate pool (remove top_k.max(64)) | slice | none | A --candidate-limit arg exists (default 64) and question_retrieval.rs:121 uses top_k.max(args.candidate_limit); a depth sweep is already measured in A6.4/A7.2. Remaining plan scope: rename/raise the default to the plan's --candidate-pool=51 |
 | A2.2 | Auto-embedding at ingest + batched backfill | slice | low | Landed: engine ingest_text_chunks_with_embedder writes a vector= header via an injected Embedder (network-free engine); server HttpEmbedder + embedder_from_env(); opt-in POST /v1/ingest/text?embed=true; POST /v1/embedding/backfill drives th |
 | A5.1 | Offline LTR corpus from real traces | not-started | none | No erb/build_ltr_corpus.py, no fixtures/enterprise_rag_bench/learned_ranking/offline_v2/, and calibration.rs is still the v1 static per-type profile system (no LTR parsing). Build the deterministic JSONL corpus (per question,candidate pair: |
-| A6.3 | Hybrid dense retrieval in the LME harness | not-started | none | scripts/longmemeval/v1_cortexdb_retrieval.py is keyword-only (mode literal 'keyword' at line 139); no --retrieval-mode flag. Add --retrieval-mode {keyword,hybrid} (default keyword => byte-identical ranking, no flag = no change), embed sessi |
+| A6.3 | Hybrid dense retrieval in the LME harness | landed (DoD met) | `longmemeval-v1-hybrid-retrieval-check` | **Landed** (2026-07-04): `--retrieval-mode {keyword,hybrid}` added to scripts/longmemeval/v1_cortexdb_retrieval.py (keyword default byte-identical, self-tested); hybrid embeds each session `index_text` + question via bge-m3 (i16 Q15) and searches `--mode hybrid`. Full 500-question run: recall_all@10 **0.9523** (>=0.93 DoD ✓), ndcg_any@10 **0.9218** (>=0.82 ✓), 1 regression (<=10 ✓), 26 improvements — a deterministic-metric (no-LLM) closure. See docs/archive/GEMMA_BOUNDED_INTERIM_RUNS.md §A6.3. |
 | A8.1 | Structure-aware chunking with parent-child metadata | not-started | none | No structure-aware chunking in ingestion/chunking.rs: no chunk_role=parent/child, no parent_id, no heading breadcrumbs (only an unrelated chunk_role=table_row literal exists in adapters.rs). Implement heading-based splitting (code blocks an |
 | A8.2 | Table fidelity: row-scoped cells | not-started | none | Not started (depends on A8.1 + A7.1). For CSV/markdown tables: emit a table-summary parent (header + columns) plus row-group cells (20 rows, configurable) tokenized as 'header: value', through the existing /v1/ingest/csv without API change. |
 | C3-1 | Frozen-weights change protocol = mandatory landing path for A ranking  | slice | low | Gate machinery already landed & wired (mk/core.mk: ranking-frozen-weights-check, ranking-weights-drift-check, weights-version-binding-check, ranking-explain-faithfulness-check; fixture crates/cortex-engine/fixtures/ranking_frozen_weights_v1 |
@@ -146,6 +152,27 @@ F01 tiered-storage productization is multi-week; F02/F03 (replication/consensus)
 
 ## Execution log + corrections (this cycle)
 
+**2026-07-04 reconciliation audit + interim runs.** A code-vs-tracker audit found
+the top **"Completable now"** table's *State* column heavily **stale** — it still
+shows ~20 rows as `not-started` that this same Execution-log records as landed, and
+that a direct spot-check confirmed implemented + gated: **C4-2**
+(`canonical-jcs-cross-language-check` green), **F2.2** (`erb-compare-runs` self-test
+green), **F5.1** (`results-page-check` green), **F4.3** (`aab-snapshot-matrix` green),
+the 9-gate `validation-nightly` aggregate green, **A1.2**
+(`retrieval_rank::bm25_corpus_tests` 2/2, incl. `no_corpus_stats_is_byte_identical_to_pool_local`),
+**A8.1/A8.2** (`ingestion::chunking::structured_tests` 8/8), **F06**
+(`semantic_compression` 3/3), **C4-1** (`receipt-emission-budget-check` wired),
+**A5.1** (`build_ltr_corpus.py` present). Treat the Execution-log + Honest-boundary
+below as authoritative over the table's *State* cells until a bulk sync lands.
+Newly done **this session** (evidence committed): **A6.3** hybrid retrieval closed
+(recall_all@10 0.9523, DoD met — deterministic metric); and, using the now-working
+LiteLLM proxy Gemma, the full-scale **interim** LLM-judged runs — **A6.2** (500,
+overall 0.682), **F3.4-QA** (1,986, overall 0.592), **A6.1** (ERB judge cross-check,
+500 → 46.71 combined vs the recorded gemini 47.74, i.e. judge-agnostic), and **A6.4**'s
+combined half now measured (46.71, below the >=60 exit bar). All `leaderboard_comparable=false`
+(the official gpt-5.4/GPT-4o judge is budget-blocked). Artifacts under
+docs/archive/GEMMA_BOUNDED_INTERIM_RUNS.md + docs/archive/gemma_interim/.
+
 Landed this cycle under gates (14 phases): **A1.2** (corpus-BM25 IDF), **A1.3**
 (cosine-single-implementation allowlist), **A1.4** (`--candidate-pool` default
 512), **A5.1** (offline LTR corpus builder + leak-free split), **A8.1**
@@ -227,21 +254,30 @@ the query's option flags, so a default-off AQL option is byte-identical when unu
    reference MCP consolidation worker over B4.2/B4.5). Completable but span
    server + api-types + 3 SDKs + OpenAPI (B6.3) or the MCP crate (B4.4) — best
    done with fresh context, not at the tail of a long run.
-2. **Run-dependent** — A6.3 (LME hybrid) needs a multi-hour embedded-index + A/B
-   run; A5.2-serving needs a real corpus for non-degenerate weights.
-3. **Blocked on a factual decision (the user's)** — F2.0 judge-of-record: the plan
-   wants the leaderboard judge-of-record declared, but the committed evidence is
-   ambiguous (`RESULTS.md` says "Gemini judge of record" while the plan implies the
-   official ERB judge is gpt-5.4). Not fabricating the identity; needs the user to
-   confirm which judge is the record before it can be committed as policy.
+2. **Run-dependent** — ~~A6.3 (LME hybrid)~~ **DONE 2026-07-04** (full 500-question
+   run, recall_all@10 0.9523, DoD met — see the A6.3 table row). A5.2-serving still
+   needs a real corpus for non-degenerate weights.
+3. ~~**Blocked on a factual decision (the user's)** — F2.0 judge-of-record~~
+   **RESOLVED / landed** (`judge-of-record-check`): gpt-5.4 official + gemini-3.5-flash
+   interim are encoded in docs/PUBLIC_CLAIMS_POLICY.md + docs/BENCHMARK_EVIDENCE.md;
+   the "Gemini judge of record" in RESULTS.md is the *interim* record. No open user
+   decision here.
 4. **Signed-golden regen** (A3.3 receipt-visibility, C3-5 `embedding_ref`
    byte-promotion, F08-B6.1 durable handoff-ledger, the B4.5 retire half, the A4.x
    receipt-option surfaces) — these DO touch canonical/signed cell bytes (new
    metadata fields), so they need the C3-1/C3-5 regeneration tooling that is not
    present; rewriting a Merkle-signed golden by hand would be irresponsible.
-5. **Blocked-external** (15) — a working LLM chat endpoint (Gemma `VLLM_*` gone;
-   DeepSeek 401), a real KMS/HSM operator + published anchor, external compliance
-   reviewers, ≥2 independent transparency witnesses/monitors. Operator/credential
+5. **Blocked-external** (15) — **partially unblocked 2026-07-04**: a working LLM chat
+   endpoint now exists (the LiteLLM proxy Gemma, `google/gemma-4-31B-it`, via
+   `.env` `CORTEXDB_EMBEDDING_*`), so the **interim** LLM-judged halves are now done
+   at full scale — **A6.2** (LongMemEval type-aware, 500, overall 0.682 / preference
+   0.767), **F3.4-QA** (LoCoMo, 1,986, overall 0.592 / adversarial 0.960), **A6.1**
+   (ERB judge cross-check, 500, 46.71 vs gemini 47.74 — judge-agnostic), and
+   **A6.4**'s combined half is now measured (46.71, below the >=60 exit bar). What
+   genuinely remains external: the **leaderboard-official judge** (GPT-4o / gpt-5.4,
+   no budget) to convert those interims to DoD numbers, plus a real KMS/HSM operator +
+   published anchor, external compliance reviewers, and >=2 independent transparency
+   witnesses/monitors. The judge is budget-blocked; the rest are operator/credential
    actions, **not code**.
 6. **Frozen / cut** (5) — F02/F03/F09 v1.0 non-goals; A8.3/F4.4 cut; F01 multi-week.
 
