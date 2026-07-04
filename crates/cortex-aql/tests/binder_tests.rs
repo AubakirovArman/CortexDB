@@ -154,7 +154,10 @@ fn using_diversity_binds_the_lambda_and_is_absent_by_default() {
     let raw = retrieve(
         r#"RETRIEVE CONTEXT FOR TASK "x" IN BRAIN brain USING DIVERSITY 20000 LIMIT 5 CANDIDATES;"#,
     );
-    assert_eq!(raw.diversity_lambda_q16.as_ref().map(|s| s.node), Some(20_000));
+    assert_eq!(
+        raw.diversity_lambda_q16.as_ref().map(|s| s.node),
+        Some(20_000)
+    );
     let plan = Binder::new(&catalog(), &view(BTreeSet::from([ScopeId(10)]), true))
         .bind_retrieve(&raw)
         .unwrap();
@@ -206,7 +209,10 @@ fn recency_window_binds_the_seconds() {
     let raw = retrieve(
         r#"RETRIEVE CONTEXT FOR TASK "x" IN BRAIN brain RECENCY WINDOW 86400 LIMIT 5 CANDIDATES;"#,
     );
-    assert_eq!(raw.recency_window_seconds.as_ref().map(|s| s.node), Some(86_400));
+    assert_eq!(
+        raw.recency_window_seconds.as_ref().map(|s| s.node),
+        Some(86_400)
+    );
     let plan = Binder::new(&catalog(), &view(BTreeSet::from([ScopeId(10)]), true))
         .bind_retrieve(&raw)
         .unwrap();

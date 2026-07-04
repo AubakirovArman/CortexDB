@@ -150,10 +150,7 @@ pub(crate) fn retrieve_aql_questions(
             }
             _ => db.rerank_retrieved_cells_for_task(cells, &task, &default_weights(mode)),
         };
-        let results = ranked
-            .into_iter()
-            .take(args.top_k)
-            .collect::<Vec<_>>();
+        let results = ranked.into_iter().take(args.top_k).collect::<Vec<_>>();
         rows.push(retrieval_row(
             qid,
             query,

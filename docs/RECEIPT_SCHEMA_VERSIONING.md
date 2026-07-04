@@ -9,7 +9,7 @@ contract. This document defines the only allowed way to change it.
 
 ## What is bound
 
-Two field sets in [`canonical.rs`](../crates/cortex-engine/src/canonical.rs) are
+Two field sets in [`canonical.rs`](../crates/cortex-engine/src/canonical/mod.rs) are
 the canonical (hashed / receipt-signed) surface:
 
 - `CONTEXT_PACK_HASHED_FIELDS` → schema `context_pack.canonical.v1`

@@ -20,7 +20,9 @@ from receipt_production_component_origin import (
 
 
 REQUIRED_MARKERS = {
-    "crates/cortex-server/src/main.rs": [
+    # The receipt-signing key/env parsing lives in the server binary's config_env
+    # module (split out of main.rs for the file-size ratchet; move-only).
+    "crates/cortex-server/src/main/config_env.rs": [
         "CORTEXDB_RECEIPT_SIGNING_KEY_FILE",
         "CORTEXDB_RECEIPT_SIGNING_KEY_HEX",
         "CORTEXDB_RECEIPT_EXTERNAL_SIGNER_COMMAND",
@@ -112,6 +114,7 @@ def missing_markers(root: Path) -> tuple[dict[str, list[str]], list[str]]:
 def external_runtime_supported(root: Path) -> bool:
     source_files = [
         "crates/cortex-server/src/main.rs",
+        "crates/cortex-server/src/main/config_env.rs",
         "crates/cortex-server/src/config.rs",
         "crates/cortex-server/src/receipt.rs",
         "crates/cortex-server/src/receipt_signer.rs",
