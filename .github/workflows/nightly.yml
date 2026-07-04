@@ -56,6 +56,7 @@ jobs:
       # generators).
       - run: make longmemeval-v1-typeaware-check
       - run: make interim-gemma-qa-score-check
+      - run: make longmemeval-v1-hybrid-retrieval-check
       - run: make locomo-qa-reader-check
       - run: make locomo-qa-input-check
       - run: make locomo-qa-evidence-check

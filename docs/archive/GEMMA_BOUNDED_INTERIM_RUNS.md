@@ -69,6 +69,31 @@ weakest (chaining evidence across turns).
 
 Raw: [`gemma_interim/locomo_qa_50_gemma_interim.json`](gemma_interim/locomo_qa_50_gemma_interim.json).
 
+## A6.3 — LongMemEval hybrid dense retrieval (bounded, deterministic metric)
+
+Unlike A6.2/F3.4 (LLM-judged), A6.3 is **embedding-based with a deterministic
+offline metric** (recall/ndcg — no chat judge). Added `--retrieval-mode
+{keyword,hybrid}` to `scripts/longmemeval/v1_cortexdb_retrieval.py`: hybrid embeds
+each session's `index_text` + the question via the `bge-m3` embedding endpoint
+(the same LiteLLM proxy), unit-normalizes to i16 Q15, appends the `vector=` payload
+line, and searches `--mode hybrid`. **Keyword default is byte-identical** to the
+committed F3.1 baseline (self-test `longmemeval-v1-hybrid-retrieval-check`).
+
+Bounded run on the first **10** questions (keyword recall_all@10 is already
+saturated there, so headroom is in ranking quality):
+
+| metric | keyword | hybrid |
+| --- | ---: | ---: |
+| recall_all@10 | 1.000 | 1.000 |
+| recall_all@1 | 0.900 | **1.000** |
+| ndcg_any@10 | 0.9631 | **1.000** |
+
+Hybrid **improves ranking (recall@1 +0.10, ndcg +0.037) with zero regressions** —
+the A6.3 mechanism works end-to-end. The full-500 DoD (recall_all@10 >= 0.93 vs
+the 0.9021 keyword baseline, <=10 per-question regressions) needs the full metered
+embedding run (~25k `bge-m3` embeddings, cached per split) — `make
+longmemeval-v1-hybrid-retrieval` (optionally `LONGMEMEVAL_V1_HYBRID_LIMIT=N`).
+
 ## What remains to close the phases officially
 
 - **A6.2 DoD:** the official GPT-4o `evaluate_qa.py` over the full 500 questions

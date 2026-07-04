@@ -75,6 +75,26 @@ longmemeval-v1-typeaware-check:
 interim-gemma-qa-score-check:
 	python3 scripts/benchmarks/interim_gemma_qa_score.py --self-test
 
+# A6.3 (fast/offline): prove the hybrid-retrieval harness logic — keyword default
+# byte-identical to the F3.1 baseline, hybrid adds the dense `vector=` payload +
+# `--mode hybrid --vector=` search, Q15 scaling correct — with no endpoint.
+.PHONY: longmemeval-v1-hybrid-retrieval-check
+longmemeval-v1-hybrid-retrieval-check:
+	python3 scripts/longmemeval/hybrid_retrieval_check.py
+
+# A6.3 (real/metered): dense-hybrid retrieval over the official split via the
+# CORTEXDB_EMBEDDING_* endpoint (embeddings cached per split). Compare recall vs
+# the committed keyword baseline; repo rule: a small --limit subset first.
+LONGMEMEVAL_V1_HYBRID_OUTPUT ?= target/longmemeval-v1/cortexdb-hybrid
+CORTEXDB_BIN ?= ./target/release/cortexdb
+longmemeval-v1-hybrid-retrieval: longmemeval-v1-official-data
+	python3 scripts/longmemeval/v1_cortexdb_retrieval.py \
+	  --data-file "$(LONGMEMEVAL_V1_DATA_FILE)" \
+	  --cortexdb-bin "$(CORTEXDB_BIN)" \
+	  --output-dir "$(LONGMEMEVAL_V1_HYBRID_OUTPUT)" \
+	  --retrieval-mode hybrid \
+	  $(if $(LONGMEMEVAL_V1_HYBRID_LIMIT),--limit $(LONGMEMEVAL_V1_HYBRID_LIMIT),)
+
 # A6.2 (real, metered): type-aware official generation over the retrieval log via
 # an OpenAI-compatible endpoint (GPT-4o official). Emits hypotheses for the
 # untouched official evaluate_qa.py (score with longmemeval-v1-official-qa-score

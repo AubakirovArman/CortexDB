@@ -15,6 +15,7 @@ validation-nightly:
 	$(MAKE) longmemeval-per-type-regression-check
 	$(MAKE) longmemeval-per-type-report-check
 	$(MAKE) longmemeval-v1-typeaware-check
+	$(MAKE) longmemeval-v1-hybrid-retrieval-check
 	$(MAKE) erb-category-regression-check
 	$(MAKE) multihop-retrieval-regression-check
 	$(MAKE) locomo-retrieval-adapter-check
