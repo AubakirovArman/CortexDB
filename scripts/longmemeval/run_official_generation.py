@@ -240,8 +240,11 @@ def generate(
                 "hypothesis": hypothesis,
             }
             handle.write(json.dumps(entry, ensure_ascii=True, sort_keys=True) + "\n")
+            handle.flush()  # per-line flush: long metered runs stay monitorable + partial output survives an interrupt
             branch_counts[qtype] = branch_counts.get(qtype, 0) + 1
             written += 1
+            if not mock and written % 25 == 0:
+                print(f"  {written}/{len(rows)} generated", file=sys.stderr, flush=True)
     return {"written": written, "branch_counts": branch_counts}
 
 

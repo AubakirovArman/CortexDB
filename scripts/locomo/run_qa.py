@@ -184,8 +184,11 @@ def generate(
                 "hypothesis": hypothesis,
             }
             handle.write(json.dumps(entry, ensure_ascii=True, sort_keys=True) + "\n")
+            handle.flush()  # per-line flush: long metered runs stay monitorable + partial output survives an interrupt
             category_counts[category] = category_counts.get(category, 0) + 1
             written += 1
+            if not mock and written % 25 == 0:
+                print(f"  {written}/{len(selected)} generated", file=sys.stderr, flush=True)
     return {"written": written, "category_counts": category_counts}
 
 
