@@ -152,6 +152,22 @@ F01 tiered-storage productization is multi-week; F02/F03 (replication/consensus)
 
 ## Execution log + corrections (this cycle)
 
+**2026-07-04 readiness verification of the external-blocked set.** To confirm the
+"one run when the external resource arrives" claim is real (gates *ready*, not
+silently *broken*), every preflight/readiness gate for the blocked-external phases
+was executed. Result: **7 gates cleanly report ready/blocked (exit 0)** —
+`receipt-kms-hsm-custody-check` (C2-1), `compliance-boundary-check` (C2-2),
+`transparency-witness-check` / `-witness-quorum-check` / `-slo-check` /
+`-consistency-check` (C2-3), `erb-official-rejudge-ready-check` (F2.1/official
+judge). **2 gates correctly *strict-fail*** — `receipt-production-ready-check` +
+`receipt-production-evidence-preflight-check` demand real
+`COMPLIANCE_CERTIFICATION_EVIDENCE` / KMS-HSM custody and refuse to pass without
+it (`--require-production-ready`); they are **correctly excluded from CI** so the
+required lanes stay green. That refusal is the accountability design *working*: the
+strict production-claim gate (C2-4) **cannot be flipped without real external
+evidence** — the system structurally prevents fabricating production-readiness. No
+gate is broken; the remainder is verifiably external-only.
+
 **2026-07-04 reconciliation audit + interim runs.** A code-vs-tracker audit found
 the top **"Completable now"** table's *State* column heavily **stale** — it still
 shows ~20 rows as `not-started` that this same Execution-log records as landed, and
