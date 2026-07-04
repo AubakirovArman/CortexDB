@@ -54,7 +54,7 @@ def forbidden_terms(label: str, text: str, terms: list[str]) -> list[str]:
 
 
 def validate(root: Path) -> dict[str, Any]:
-    fact_claim = read_text(root / "crates/cortex-engine/src/verification/numeric/fact_claim.rs")
+    fact_claim = read_text(root / "crates/cortex-engine/src/verification/numeric/fact_claim/mod.rs")
     conflict_index = read_text(root / "crates/cortex-engine/src/verification/conflict_index/store.rs")
     tests = "\n".join(
         [

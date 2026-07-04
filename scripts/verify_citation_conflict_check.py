@@ -55,7 +55,7 @@ def validate(root: Path) -> dict[str, Any]:
     engine = "\n".join(
         [
             read_text(root / "crates/cortex-engine/src/verification/types.rs"),
-            read_text(root / "crates/cortex-engine/src/verification/numeric/fact_claim.rs"),
+            read_text(root / "crates/cortex-engine/src/verification/numeric/fact_claim/mod.rs"),
             read_text(root / "crates/cortex-engine/src/verification/guards.rs"),
         ]
     )

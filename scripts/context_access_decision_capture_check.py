@@ -107,7 +107,7 @@ def validate(root: Path) -> dict[str, Any]:
             "crates/cortex-engine/src/context/pack/access.rs",
             "crates/cortex-engine/src/context/pack/builder.rs",
             "crates/cortex-engine/src/context/export/json_export.rs",
-            "crates/cortex-engine/src/canonical.rs",
+            "crates/cortex-engine/src/canonical/mod.rs",
         ]
     )
     tests = "\n".join(

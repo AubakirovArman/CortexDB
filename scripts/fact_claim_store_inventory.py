@@ -88,7 +88,7 @@ def check_numeric_parser() -> Check:
 def check_typed_fact_body_shape() -> Check:
     paths = [
         "crates/cortex-engine/src/typed_body.rs",
-        "crates/cortex-engine/src/verification/numeric/fact_claim.rs",
+        "crates/cortex-engine/src/verification/numeric/fact_claim/mod.rs",
     ]
     needles = {
         "crates/cortex-engine/src/typed_body.rs": [
@@ -98,7 +98,7 @@ def check_typed_fact_body_shape() -> Check:
             "currency",
             "project",
         ],
-        "crates/cortex-engine/src/verification/numeric/fact_claim.rs": [
+        "crates/cortex-engine/src/verification/numeric/fact_claim/mod.rs": [
             "NumericFactRecord",
             "FactBody::parse",
             "single_numeric_value",
@@ -123,7 +123,7 @@ def check_typed_fact_body_shape() -> Check:
 def check_verify_numeric_scan_path() -> Check:
     guards_path = "crates/cortex-engine/src/verification/guards.rs"
     execution_path = "crates/cortex-engine/src/verification/execution.rs"
-    store_path = "crates/cortex-engine/src/verification/numeric/fact_claim.rs"
+    store_path = "crates/cortex-engine/src/verification/numeric/fact_claim/mod.rs"
     fallback_needles = [
         "numeric_mismatch_details",
         "CellMetadata::from_payload(payload)",
@@ -149,7 +149,7 @@ def check_verify_numeric_scan_path() -> Check:
 def check_support_numeric_scan_path() -> Check:
     support_path = "crates/cortex-engine/src/verification/support.rs"
     execution_path = "crates/cortex-engine/src/verification/execution.rs"
-    store_path = "crates/cortex-engine/src/verification/numeric/fact_claim.rs"
+    store_path = "crates/cortex-engine/src/verification/numeric/fact_claim/mod.rs"
     fallback_needles = [
         "numeric_entailment",
         "CellMetadata::from_payload(payload).body_text",
@@ -175,7 +175,7 @@ def check_support_numeric_scan_path() -> Check:
 def check_typed_fact_store() -> Check:
     paths = [
         "crates/cortex-engine/src/verification/numeric/mod.rs",
-        "crates/cortex-engine/src/verification/numeric/fact_claim.rs",
+        "crates/cortex-engine/src/verification/numeric/fact_claim/mod.rs",
         "crates/cortex-engine/src/database/stores.rs",
         "crates/cortex-engine/src/database/open.rs",
         "crates/cortex-engine/src/database/write.rs",

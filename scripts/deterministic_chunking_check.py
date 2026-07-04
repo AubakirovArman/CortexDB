@@ -14,17 +14,17 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 CHECKS = [
     (
         "text_overlap_policy",
-        "crates/cortex-engine/src/ingestion/chunking.rs",
+        "crates/cortex-engine/src/ingestion/chunking/mod.rs",
         ["TextOverlapPolicy", "FixedChars", "overlap_policy"],
     ),
     (
         "json_chunk_policy",
-        "crates/cortex-engine/src/ingestion/chunking.rs",
+        "crates/cortex-engine/src/ingestion/chunking/mod.rs",
         ["JsonChunkPolicy", "DEFAULT_JSON_CHUNK_PATH_SEPARATOR", "join_path"],
     ),
     (
         "table_chunk_policy",
-        "crates/cortex-engine/src/ingestion/chunking.rs",
+        "crates/cortex-engine/src/ingestion/chunking/mod.rs",
         ["TableChunkPolicy", "source_row_number", "cell_range"],
     ),
     (

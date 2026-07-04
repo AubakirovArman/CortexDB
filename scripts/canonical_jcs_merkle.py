@@ -23,7 +23,7 @@ MERKLE_FIXTURE = REPO / "fixtures" / "canonical" / "merkle_conformance_vectors.v
 
 
 def canonical_json_bytes(value: object) -> bytes:
-    """Mirror of crates/cortex-engine/src/canonical.rs::write_canonical_value:
+    """Mirror of crates/cortex-engine/src/canonical/mod.rs::write_canonical_value:
     sorted object keys, `,`/`:` separators with no spaces, standard JSON string
     escaping, non-ASCII preserved, integer numbers as-is."""
     return json.dumps(

@@ -77,7 +77,11 @@ def function_slice(text: str, name: str) -> str:
 
 
 def validate(root: Path) -> dict[str, Any]:
-    canonical = read_text(root / "crates/cortex-engine/src/canonical.rs")
+    # canonical.rs was split into canonical/{mod,tests}.rs; the unit-test markers
+    # live in tests.rs, so read both for the marker checks below.
+    canonical = read_text(root / "crates/cortex-engine/src/canonical/mod.rs") + "\n" + read_text(
+        root / "crates/cortex-engine/src/canonical/tests.rs"
+    )
     determinism_tests = read_text(root / "crates/cortex-engine/tests/determinism.rs")
     makefiles = "\n".join(
         path.read_text(encoding="utf-8") for path in sorted((root / "mk").glob("*.mk"))
