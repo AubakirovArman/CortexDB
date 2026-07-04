@@ -8,9 +8,31 @@ questions), after an initial 50-question bounded validation. Recorded as honest
 evidence that the A6.2 and F3.4-QA harnesses run **end-to-end against a real LLM on
 real retrieval data** at full scale. Public claims go only through the F5.1 page
 flow; these interim numbers are narrative, not a gate threshold (an LLM judge is
-outside the agent's control). Both answerer and judge are Gemma-31B, so the overall
-numbers understate what a stronger official answerer/judge (GPT-4o) would produce —
-the value here is the per-type *mechanism* signal.
+outside the agent's control). The value here is the per-type *mechanism* signal.
+
+## Meta-finding (read this before trusting any number below)
+
+Each of the three phases was re-judged by a **second, far stronger** interim judge
+(`gpt-oss-120B`, the largest model the proxy serves) over the **same** committed
+answers. That cross-check overturned an earlier assumption — a stronger judge does
+**not** raise these numbers, it **lowers** them, and it does so **selectively**:
+
+- **Overall** barely moves (A6.2 0.682→0.666, F3.4 0.592→0.485, ERB combined
+  47.74/46.71→41.82) — most per-type slices shift only ±0.02.
+- **But the "special-instruction success" slices collapse** under the stronger
+  judge: LongMemEval **preference 0.767→0.467** (now *below* the 0.55 DoD target),
+  LoCoMo **adversarial 0.960→0.637**. These are exactly the slices whose high scores
+  were used to claim the mechanism "works."
+
+**Interpretation:** the lenient interim judge systematically **over-credits** the
+preference/abstention slices (where the answer format is unusual — e.g. a bare
+"Not mentioned" or a restated preference). So **treat every interim number here as
+an upper bound, and the headline "DoD target met" claims as judge-inflated.** What
+robustly survives both judges: the *mechanisms* (type-aware prompting lifts
+preference above the 0.267 baseline; hybrid retrieval A6.3 recall 0.9523 is a
+deterministic no-judge metric) — **not** the specific threshold-met claims. The
+official GPT-4o/gpt-5.4 (stronger still) is likely to land **at or below** these
+interim bands, not above. Per-phase detail follows.
 
 ## Full-scale results (headline)
 
