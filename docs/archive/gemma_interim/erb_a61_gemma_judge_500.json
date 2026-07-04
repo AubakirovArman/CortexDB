@@ -1,0 +1,92 @@
+{
+  "aggregate": {
+    "average_completeness_pct": 53.4,
+    "average_correctness_pct": 49.2,
+    "average_invalid_extra_docs": 9.23,
+    "average_recall_pct": 55.71,
+    "combined_correctness_completeness_score": 46.71,
+    "completed_questions": 500,
+    "num_corrected_questions": 0,
+    "skipped_rows": 0,
+    "total_questions": 500
+  },
+  "answers": "erb-submission/answers.jsonl (500, google/gemma-4-31B-it answerer)",
+  "crosscheck_vs_recorded_gemini_3_5_flash": {
+    "completeness_pct": {
+      "gemini": 53.7,
+      "gemma": 53.4
+    },
+    "correctness_pct": {
+      "gemini": 50.0,
+      "gemma": 49.2
+    },
+    "document_recall_pct": {
+      "gemini": 55.71,
+      "gemma": 55.71,
+      "note": "deterministic doc metric, judge-independent -> identical expected"
+    },
+    "overall_combined": {
+      "abs_delta": 1.03,
+      "gemini": 47.74,
+      "gemma": 46.71
+    }
+  },
+  "date": "2026-07-04",
+  "judge_model": "google/gemma-4-31B-it (LiteLLM proxy)",
+  "leaderboard_comparable": false,
+  "per_question_type": {
+    "basic": {
+      "completeness_pct": 55.0,
+      "correctness_pct": 53.7,
+      "n": 175
+    },
+    "completeness": {
+      "completeness_pct": 41.7,
+      "correctness_pct": 25.0,
+      "n": 20
+    },
+    "conflicting_info": {
+      "completeness_pct": 70.8,
+      "correctness_pct": 75.0,
+      "n": 20
+    },
+    "constrained": {
+      "completeness_pct": 70.7,
+      "correctness_pct": 66.7,
+      "n": 30
+    },
+    "high_level": {
+      "completeness_pct": 33.8,
+      "correctness_pct": 30.0,
+      "n": 10
+    },
+    "info_not_found": {
+      "completeness_pct": 100.0,
+      "correctness_pct": 100.0,
+      "n": 20
+    },
+    "intra_document_reasoning": {
+      "completeness_pct": 71.5,
+      "correctness_pct": 67.5,
+      "n": 40
+    },
+    "miscellaneous": {
+      "completeness_pct": 79.0,
+      "correctness_pct": 85.0,
+      "n": 20
+    },
+    "project_related": {
+      "completeness_pct": 41.8,
+      "correctness_pct": 22.5,
+      "n": 40
+    },
+    "semantic": {
+      "completeness_pct": 34.1,
+      "correctness_pct": 28.8,
+      "n": 125
+    }
+  },
+  "phase": "A6.1 (interim cross-check)",
+  "rubric": "official-clean 2-axis (judge_metrics.prompts.build_prompt), unchanged",
+  "schema": "cortexdb.erb.interim_gemma_judge.v1"
+}

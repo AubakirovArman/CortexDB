@@ -1,4 +1,4 @@
-# Gemma interim runs — A6.2 + F3.4 QA (full-scale, not leaderboard-official)
+# Gemma interim runs — A6.1 + A6.2 + F3.4 QA (full-scale, not leaderboard-official)
 
 **Status: interim / diagnostic. `leaderboard_comparable: false`.** These numbers are
 **not** the official A6.2 / F3.4 DoD results — they use an **interim Gemma judge**
@@ -98,6 +98,66 @@ instruction works (LoCoMo's adversarial slice tests refusal). `multi-hop` is the
 weakest (chaining evidence across turns).
 
 Raw: [`gemma_interim/locomo_qa_50_gemma_interim.json`](gemma_interim/locomo_qa_50_gemma_interim.json).
+
+## A6.1 — EnterpriseRAG-Bench, all 500, judge cross-check (Gemma judge)
+
+Unlike A6.2/F3.4 (which generate *new* answers), A6.1 re-judges the **already
+committed** 500 ERB answers in [`erb-submission/answers.jsonl`](../../erb-submission/answers.jsonl)
+(answerer `google/gemma-4-31B-it`). Those answers were recorded with a
+**gemini-3.5-flash** interim judge (overall **47.74**; see
+[`erb-submission/REPRODUCE.md`](../../erb-submission/REPRODUCE.md)). Here we run
+the **exact same 2-axis official-clean rubric**
+(`judge_metrics.prompts.build_prompt`, unchanged) with a **second independent
+interim judge — Gemma-31B** — over all 500, to test whether the ~47 combined
+score is judge-agnostic or a single-judge artifact. **No new answerer tokens**
+(answers are fixed); only ~500 judge calls (~11.7k judge tokens, ~3.5 min).
+
+**Result — the two independent judges agree within ~1 point:**
+
+| metric | gemini-3.5-flash (recorded) | Gemma-31B (this run) | Δ |
+| --- | ---: | ---: | ---: |
+| overall combined correctness/completeness | 47.74 | **46.71** | 1.03 |
+| correctness | 50.0% | 49.2% | 0.8pp |
+| completeness | 53.7% | 53.4% | 0.3pp |
+| document recall (deterministic) | 55.71% | 55.71% | 0.00 |
+| invalid extra docs (deterministic) | 9.23 | 9.23 | 0.00 |
+
+Document recall / invalid-extra-docs are **deterministic** document-overlap
+metrics (judge-independent) — identical across judges, as expected, confirming
+the harness join is stable. The two LLM-judged axes land within a point. **The
+~47 combined ERB interim is judge-agnostic, not an artifact of one judge.** It is
+still **not** the A6.1 DoD number: that requires the leaderboard-official
+`gpt-5.4` evaluator (no budget), which would shift the absolute value — the
+finding here is *robustness across the two judges we can run*.
+
+Per-`question_type` (Gemma judge, all 500):
+
+| question_type | n | correctness | completeness |
+| --- | ---: | ---: | ---: |
+| info_not_found | 20 | **100.0%** | 100.0% |
+| miscellaneous | 20 | 85.0% | 79.0% |
+| conflicting_info | 20 | 75.0% | 70.8% |
+| intra_document_reasoning | 40 | 67.5% | 71.5% |
+| constrained | 30 | 66.7% | 70.7% |
+| basic | 175 | 53.7% | 55.0% |
+| high_level | 10 | 30.0% | 33.8% |
+| semantic | 125 | 28.8% | 34.1% |
+| completeness | 20 | 25.0% | 41.7% |
+| project_related | 40 | 22.5% | 41.8% |
+
+**Key signals:** `info_not_found` = **100%** — the abstention behaviour holds on
+ERB too (echoing LoCoMo adversarial 0.96 and the F4.3 abstention axis).
+`conflicting_info` = 75% (conflict handling), `intra_document_reasoning` = 67.5%.
+The weak slices are `semantic` (28.8%, the largest non-basic bucket) and
+`project_related` (22.5%) — cross-document semantic aggregation, the same
+weakness LongMemEval multi-session and LoCoMo multi-hop show.
+
+Raw: [`gemma_interim/erb_a61_gemma_judge_500.json`](gemma_interim/erb_a61_gemma_judge_500.json).
+Reproduce: the tested judge core `run_deepseek_answer_metrics.run` over
+`erb-submission/answers.jsonl` + the ERB master `questions.jsonl` (gold), pointed
+at the proxy Gemma (`make enterprise-rag-bench-official-clean-500-gemma
+ENTERPRISE_RAG_BENCH_OFFICIAL_CLEAN_STAGE=judge` once `.env`'s `VLLM_URL` points
+at the proxy).
 
 ## A6.3 — LongMemEval hybrid dense retrieval (bounded, deterministic metric)
 
