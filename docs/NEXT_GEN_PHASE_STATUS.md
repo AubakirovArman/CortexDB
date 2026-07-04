@@ -249,11 +249,15 @@ the query's option flags, so a default-off AQL option is byte-identical when unu
 
 ### Honest boundary of what genuinely remains
 
-1. **Large cross-crate surface work** — B6.3 (`/v1/transactions` + `/v1/handoff`
-   HTTP/SDK surface over the now-durable B1.3/B6.1 engine ledgers) and B4.4 (the
-   reference MCP consolidation worker over B4.2/B4.5). Completable but span
-   server + api-types + 3 SDKs + OpenAPI (B6.3) or the MCP crate (B4.4) — best
-   done with fresh context, not at the tail of a long run.
+1. ~~**Large cross-crate surface work** — B6.3 and B4.4~~ **BOTH DONE.** B6.3
+   (`/v1/transactions` + `/v1/handoff` HTTP/SDK) completed in-session (see the F04-B6.3
+   log entry). B4.4 (MCP consolidation worker) is **confirmed landed** (2026-07-04
+   audit): `consolidate_plan`/`consolidate_commit` MCP tools registered in
+   `cortex-mcp/src/server.rs`, wired through `sdk_executor` to the engine's
+   `commit_semantic_memory_compression` path, with a `/v1/memory/consolidate` server
+   route, the `calls_consolidate_tools` test, and gates `memory-consolidation-check`
+   + `memory-consolidate-route-check`. **No large cross-crate feature remains
+   implementable** — the completable-now backlog is exhausted.
 2. **Run-dependent** — ~~A6.3 (LME hybrid)~~ **DONE 2026-07-04** (full 500-question
    run, recall_all@10 0.9523, DoD met — see the A6.3 table row). A5.2-serving still
    needs a real corpus for non-degenerate weights.
