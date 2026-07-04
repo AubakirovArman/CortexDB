@@ -162,6 +162,11 @@ def main(argv=None) -> int:
     ap.add_argument("--base-url")
     ap.add_argument("--key-file")
     ap.add_argument("--output", default="")
+    # Reasoning judges (e.g. gpt-oss-120B) spend tokens on chain-of-thought before
+    # the yes/no verdict; 10 is enough for a plain model but starves a reasoner
+    # (empty content -> parsed as "no"). Raise for reasoning judges; default keeps
+    # the plain-model / self-test behaviour byte-identical.
+    ap.add_argument("--max-tokens", type=int, default=10)
     args = ap.parse_args(argv)
     if args.self_test:
         return run_self_test()
@@ -173,7 +178,7 @@ def main(argv=None) -> int:
     hyps = read_jsonl(args.hyp)
     refs = {r["question_id"]: r for r in read_jsonl(args.ref)} if args.ref else {}
     summary = score(hyps, refs, args.rubric, args.type_field, args.gold_field,
-                    lambda p: chat(url, key, args.model, p))
+                    lambda p: chat(url, key, args.model, p, args.max_tokens))
     summary["judge_model"] = args.model
     text = json.dumps(summary, indent=2, sort_keys=True)
     print(text)

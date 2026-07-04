@@ -27,17 +27,30 @@ confirmed **on all 500** (DoD narrative target preference ≥0.55 met). Overall 
 is below the ≥0.80 target because Gemma-31B is both answerer and judge; the
 mechanism holds.
 
-**F3.4 — LoCoMo QA category-aware, all 1,986 · overall 0.592**
+**F3.4 — LoCoMo QA category-aware, all 1,986 — TWO judges (Gemma-31B vs gpt-oss-120B)**
 
-| category | acc | | category | acc |
-|---|---|---|---|---|
-| **adversarial** | **0.960** (428/446) | | single-hop | 0.564 |
-| temporal-reasoning | 0.573 | | multi-hop | 0.238 |
-| open-domain | 0.229 | | | |
+Overall: **0.592 (Gemma judge)** vs **0.485 (gpt-oss-120B judge)** — the same
+"stronger judge is stricter" pattern the A6.1 ERB cross-check found (−0.107 overall).
 
-→ adversarial **0.960** on all 446 adversarial questions — the exact-abstention
-instruction works at full scale. multi-hop (0.238) and open-domain (0.229) are the
-weak slices.
+| category | n | Gemma judge | gpt-oss-120B judge | Δ |
+|---|---:|---:|---:|---:|
+| **adversarial** | 446 | **0.960** | **0.637** | **−0.323** |
+| single-hop | — | 0.564 | 0.524 | −0.039 |
+| temporal-reasoning | — | 0.573 | 0.530 | −0.044 |
+| multi-hop | — | 0.238 | 0.170 | −0.067 |
+| open-domain | — | 0.229 | 0.208 | −0.021 |
+
+→ **Honest correction:** the earlier headline "adversarial **0.960** — abstention
+works at full scale" was **substantially judge-inflated**. Under the far stronger
+gpt-oss-120B judge the same abstentions score only **0.637** (−0.323) — by far the
+largest cross-judge gap of any slice. The lenient Gemma judge over-credited "Not
+mentioned" answers; a stronger judge is much more critical of them. So the true
+abstention quality is "good but not near-perfect (~0.64)," not 0.96. Every other
+slice moves only −0.02…−0.07 (the ranking is stable; multi-hop/open-domain stay the
+weak slices). Raw gpt-oss numbers:
+[`gemma_interim/locomo_qa_1986_gptoss120b_interim.json`](gemma_interim/locomo_qa_1986_gptoss120b_interim.json).
+Both are `leaderboard_comparable=false`; the official snap-research/locomo F1 scorer
+is the DoD.
 
 ## Setup (reproducible)
 

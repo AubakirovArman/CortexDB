@@ -1,0 +1,37 @@
+{
+  "answerer": "google/gemma-4-31B-it",
+  "date": "2026-07-04",
+  "judge_model": "openai/gpt-oss-120b",
+  "leaderboard_comparable": false,
+  "overall_accuracy": 0.4849,
+  "per_type": {
+    "adversarial": {
+      "accuracy": 0.6368,
+      "correct": 284,
+      "count": 446
+    },
+    "multi-hop": {
+      "accuracy": 0.1702,
+      "correct": 48,
+      "count": 282
+    },
+    "open-domain": {
+      "accuracy": 0.2083,
+      "correct": 20,
+      "count": 96
+    },
+    "single-hop": {
+      "accuracy": 0.5244,
+      "correct": 441,
+      "count": 841
+    },
+    "temporal-reasoning": {
+      "accuracy": 0.5296,
+      "correct": 170,
+      "count": 321
+    }
+  },
+  "phase": "F3.4 (interim, gpt-oss-120B judge)",
+  "schema": "cortexdb.locomo.interim_judge.v1",
+  "total": 1986
+}
