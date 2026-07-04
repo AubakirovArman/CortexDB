@@ -107,30 +107,39 @@ committed** 500 ERB answers in [`erb-submission/answers.jsonl`](../../erb-submis
 **gemini-3.5-flash** interim judge (overall **47.74**; see
 [`erb-submission/REPRODUCE.md`](../../erb-submission/REPRODUCE.md)). Here we run
 the **exact same 2-axis official-clean rubric**
-(`judge_metrics.prompts.build_prompt`, unchanged) with a **second independent
-interim judge — Gemma-31B** — over all 500, to test whether the ~47 combined
-score is judge-agnostic or a single-judge artifact. **No new answerer tokens**
-(answers are fixed); only ~500 judge calls (~11.7k judge tokens, ~3.5 min).
+(`judge_metrics.prompts.build_prompt`, unchanged) with **two further independent
+interim judges** — **Gemma-31B** and **gpt-oss-120B** (the largest model the proxy
+serves) — over all 500, to test how judge-dependent the ~47 combined score is.
+**No new answerer tokens** (answers are fixed); only ~500 judge calls each.
 
-**Result — the two independent judges agree within ~1 point:**
+**Result — three independent judges span a ~42–48 band; the *stronger* model is
+the *stricter* judge:**
 
-| metric | gemini-3.5-flash (recorded) | Gemma-31B (this run) | Δ |
+| metric | gemini-3.5-flash (recorded) | Gemma-31B | **gpt-oss-120B** |
 | --- | ---: | ---: | ---: |
-| overall combined correctness/completeness | 47.74 | **46.71** | 1.03 |
-| correctness | 50.0% | 49.2% | 0.8pp |
-| completeness | 53.7% | 53.4% | 0.3pp |
-| document recall (deterministic) | 55.71% | 55.71% | 0.00 |
-| invalid extra docs (deterministic) | 9.23 | 9.23 | 0.00 |
+| overall combined correctness/completeness | 47.74 | 46.71 | **41.82** |
+| correctness | 50.0% | 49.2% | 45.2% |
+| completeness | 53.7% | 53.4% | 49.5% |
+| document recall (deterministic) | 55.71% | 55.71% | 55.71% |
+| invalid extra docs (deterministic) | 9.23 | 9.23 | 9.23 |
 
 Document recall / invalid-extra-docs are **deterministic** document-overlap
-metrics (judge-independent) — identical across judges, as expected, confirming
-the harness join is stable. The two LLM-judged axes land within a point. **The
-~47 combined ERB interim is judge-agnostic, not an artifact of one judge.** It is
-still **not** the A6.1 DoD number: that requires the leaderboard-official
-`gpt-5.4` evaluator (no budget), which would shift the absolute value — the
-finding here is *robustness across the two judges we can run*.
+metrics (judge-independent) — **identical across all three judges**, confirming the
+harness join is stable. The two LLM-judged axes are **judge-dependent within a
+~6-point band**: gemini-flash and Gemma-31B agree within ~1 point (~47), but the
+much larger **gpt-oss-120B judges ~5–6 points stricter (41.82)**. So the honest
+reading is **not** "judge-agnostic ~47" but "**combined is robustly ~42–48, and a
+stronger judge trends lower**." That materially tempers the DoD expectation: the
+leaderboard-official `gpt-5.4` / GPT-4o evaluator (no budget) is a *stronger* judge
+still, so it may well land **at or below** the interim band, **not above** it — the
+optimistic "~62–68 within days" A6.4 projection is not supported by any of the three
+interim judges. DoD still requires that official evaluator; this is the best
+multi-judge interim signal obtainable without budget.
 
-Per-`question_type` (Gemma judge, all 500):
+Per-`question_type` (Gemma judge, all 500; gpt-oss-120B in
+[`gemma_interim/erb_a61_gptoss120b_judge_500.json`](gemma_interim/erb_a61_gptoss120b_judge_500.json)
+follows the same relative shape — info_not_found ~95%, weak on
+semantic/project_related/high_level — uniformly ~5pp stricter):
 
 | question_type | n | correctness | completeness |
 | --- | ---: | ---: | ---: |
