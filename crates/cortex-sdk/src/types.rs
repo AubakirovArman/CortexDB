@@ -29,9 +29,9 @@ pub use context::{
     SourceRefResponse,
 };
 pub use core::{
-    CellLookupResponse, CellResponse, DeleteJobResponse, HealthResponse, PutCellResponse,
-    RememberResponse, StatsResponse, ValidationResponse, WriteBatchOperationRequest,
-    WriteBatchRequest, WriteBatchResponse,
+    CellLookupResponse, CellResponse, CheckpointResponse, DeleteJobResponse, HealthResponse,
+    PutCellResponse, RememberResponse, StatsResponse, ValidationResponse,
+    WriteBatchOperationRequest, WriteBatchRequest, WriteBatchResponse,
 };
 pub use error::{ErrorCode, ErrorResponse};
 pub use ingestion::{

@@ -2,8 +2,8 @@ use super::transport::decode_value;
 use super::AsyncCortexDbClient;
 use crate::http::path;
 use crate::{
-    CellLookupResponse, HealthResponse, PutCellResponse, SdkResult, StatsResponse,
-    ValidationResponse, WriteBatchRequest, WriteBatchResponse,
+    CellLookupResponse, CheckpointResponse, HealthResponse, PutCellResponse, SdkResult,
+    StatsResponse, ValidationResponse, WriteBatchRequest, WriteBatchResponse,
 };
 
 impl AsyncCortexDbClient {
@@ -73,11 +73,23 @@ impl AsyncCortexDbClient {
             .await
     }
 
+    pub async fn tombstone_cell_response(&self, cell_id: u64) -> SdkResult<PutCellResponse> {
+        decode_value(self.tombstone_cell(cell_id).await?)
+    }
+
     pub async fn flush(&self) -> SdkResult<serde_json::Value> {
         self.post("/v1/flush", "").await
     }
 
+    pub async fn flush_response(&self) -> SdkResult<CheckpointResponse> {
+        decode_value(self.flush().await?)
+    }
+
     pub async fn compact(&self) -> SdkResult<serde_json::Value> {
         self.post("/v1/compact", "").await
+    }
+
+    pub async fn compact_response(&self) -> SdkResult<CheckpointResponse> {
+        decode_value(self.compact().await?)
     }
 }

@@ -1,3 +1,5 @@
+#![cfg(feature = "experimental-replication")]
+
 use std::collections::{BTreeMap, BTreeSet};
 use std::io::{Read, Write};
 use std::net::TcpListener;

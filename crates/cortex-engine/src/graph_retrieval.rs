@@ -50,7 +50,8 @@ impl Database {
         max_hops: u32,
         visit_budget: usize,
     ) -> GraphRetrievalReport {
-        self.graph_index_store
+        self.derived_stores
+            .graph_index_store
             .index_ref()
             .retrieve_related_cells_with_budget(seed_entity, max_hops, visit_budget)
     }

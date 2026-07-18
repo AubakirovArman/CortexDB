@@ -1,3 +1,5 @@
+#![cfg(feature = "experimental-replication")]
+
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::{Arc, RwLock};
 use std::time::Duration;

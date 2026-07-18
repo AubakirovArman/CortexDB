@@ -44,6 +44,19 @@ fn dashboard_endpoint_returns_html() {
         response.contains("Content-Type: text/html"),
         "expected html content type"
     );
+    for header in [
+        "content-security-policy:",
+        "x-content-type-options: nosniff",
+        "x-frame-options: DENY",
+        "referrer-policy: no-referrer",
+    ] {
+        assert!(
+            response
+                .to_ascii_lowercase()
+                .contains(&header.to_ascii_lowercase()),
+            "missing dashboard security header {header}: {response}"
+        );
+    }
     assert!(
         response.contains("CortexDB Console"),
         "expected dashboard title in body"
@@ -218,7 +231,7 @@ fn dashboard_forms_have_accessible_labels_and_live_output() {
         "aria-label=\"Request history\"",
         "aria-label=\"Console pages\"",
         "aria-current=\"page\"",
-        "aria-live=\"polite\"",
+        "id=\"request-status\" class=\"request-status idle\" role=\"status\"",
         "id=\"output\" tabindex=\"0\"",
     ] {
         assert!(

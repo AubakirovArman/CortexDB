@@ -282,6 +282,7 @@ impl Database {
         Ok(cells)
     }
 
+    #[cfg(feature = "experimental-replication")]
     pub(crate) fn full_snapshot_cell_refs(&self) -> EngineResult<Vec<SegmentCellRef<'_>>> {
         self.memtable
             .visible_iter(self.read_txn())

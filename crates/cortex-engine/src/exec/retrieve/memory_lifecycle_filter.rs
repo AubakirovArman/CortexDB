@@ -17,7 +17,12 @@ pub(super) fn apply_memory_lifecycle_filter<P: CandidateResolver>(
         .filter(|candidate| {
             provider
                 .cell_id_for_candidate(*candidate)
-                .map(|cell_id| database.memory_lifecycle_store.is_active_at(cell_id, now))
+                .map(|cell_id| {
+                    database
+                        .derived_stores
+                        .memory_lifecycle_store
+                        .is_active_at(cell_id, now)
+                })
                 .unwrap_or(false)
         })
         .collect::<Vec<_>>();

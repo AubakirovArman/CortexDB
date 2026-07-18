@@ -94,7 +94,7 @@ pub(crate) fn route_database_with_auth<A: DatabaseAccess>(
     receipt_context: Option<&ReceiptEmissionContext>,
 ) -> Result<String, RouterError> {
     let (path, query) = target.split_once('?').unwrap_or((target, ""));
-    let mut authenticated_view = if is_agent_scoped_route(method, path) {
+    let mut authenticated_view = if crate::route_registry::route_spec(method, path).agent_scoped {
         authz::load_agent_view(&db, auth_context.agent_id.map(AgentId))?
     } else {
         None
@@ -247,38 +247,6 @@ pub(crate) fn route_database_with_auth<A: DatabaseAccess>(
     }
 
     Err(RouterError::NotFound("route not found".to_owned()))
-}
-
-fn is_agent_scoped_route(method: &str, path: &str) -> bool {
-    matches!(
-        (method, path),
-        ("GET", "/get")
-            | ("GET", "/v1/cell")
-            | ("POST", "/put")
-            | ("POST", "/v1/cell")
-            | ("POST", "/v1/batch")
-            | ("POST", "/tombstone")
-            | ("DELETE", "/v1/cell")
-            | ("POST", "/v1/context")
-            | ("POST", "/v1/context/trace")
-            | ("POST", "/v1/transactions")
-            | ("POST", "/v1/handoff")
-            | ("POST", "/v1/memory/consolidate/plan")
-            | ("POST", "/v1/memory/consolidate/commit")
-            | ("POST", "/v1/aql")
-            | ("POST", "/v1/search")
-            | ("POST", "/v1/search/explain")
-            | ("POST", "/v1/search/ann-evaluate")
-            | ("POST", "/v1/remember")
-            | ("POST", "/v1/forget")
-            | ("POST", "/v1/verify")
-            | ("POST", "/v1/feedback")
-            | ("GET", "/v1/feedback/stats")
-            | ("GET", "/v1/conflicts")
-            | ("POST", "/v1/ingest/text")
-            | ("POST", "/v1/ingest/json")
-            | ("POST", "/v1/ingest/csv")
-    )
 }
 
 /// Legacy/test compatibility wrapper that acquires a write lock and delegates to `route_database`.

@@ -1,6 +1,6 @@
 # Security Policy
 
-CortexDB is a Core Alpha project. The current security posture is suitable for
+CortexDB is a single-node beta project. The current security posture is suitable for
 local experiments and tightly controlled early integrations, not untrusted
 multi-user production deployment.
 
@@ -19,7 +19,7 @@ Do not open public issues for:
 
 ## Current Security Boundary
 
-CortexDB Core Alpha currently provides:
+CortexDB beta currently provides:
 
 - optional HTTP Bearer token authentication with `CORTEXDB_AUTH_TOKEN`,
   `CORTEXDB_AUTH_TOKENS`, or `CORTEXDB_AUTH_TOKENS_FILE`;
@@ -34,13 +34,14 @@ CortexDB Core Alpha currently provides:
 - CORS disabled by default with one exact trusted-origin allowlist when
   configured;
 - optional route-level audit events through `tracing` and a synced local JSONL
-  sink;
+  sink, with hash chaining, optional MAC protection, verification, and SIEM
+  export tooling;
 - local database lock files to prevent concurrent writers;
 - permission-safe AQL binding and runtime AgentView masks;
 - checksummed WAL, manifest, segment, bitmap, lexical, vector, and HNSW files;
 - strict and best-effort recovery modes with safe WAL truncate offsets;
 - validated local backup, restore, restore-drill, retention pruning, and
-  offsite-staging commands;
+  offsite-staging commands, including encrypted backup archives;
 - typed HTTP error codes that avoid exposing internal scope/brain names for
   policy denials.
 
@@ -52,18 +53,17 @@ See:
 - [`docs/SAFETY_INVARIANTS.md`](docs/archive/SAFETY_INVARIANTS.md)
 - [`docs/CORE_INVARIANTS.md`](docs/CORE_INVARIANTS.md)
 
-## Non-Goals In Core Alpha
+## Non-Goals In The Current Beta
 
 CortexDB Core Alpha does not yet provide:
 
 - TLS termination;
-- user accounts, sessions, dynamic RBAC policy stores, or external identity
-  providers;
+- production user-account lifecycle, enterprise IAM federation, or a
+  distributed authorization service; local file-backed principals and guarded
+  external-identity adapters do not make an enterprise IAM claim;
 - per-user or distributed quotas;
 - wildcard, multi-origin, or per-token CORS policy management;
-- tamper-evident audit logs or SIEM export;
 - at-rest encryption;
-- encrypted backups;
 - secure secret rotation workflow beyond local token file replacement;
 - production-grade multi-tenant isolation;
 - hardened distributed consensus security;
@@ -84,5 +84,5 @@ multi-user deployments.
 
 ## Supported Versions
 
-Only the current `main` branch and tagged Core Alpha releases receive security
-fixes. Older experimental commits are not supported.
+Only the current `main` branch and the latest tagged beta release receive
+security fixes. Older alpha and experimental commits are not supported.

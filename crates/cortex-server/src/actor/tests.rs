@@ -198,4 +198,13 @@ fn route_timeout_budget_classifies_admin_write_and_read_routes() {
     assert_eq!(route_timeout_ms(&options, "GET", "/v1/metrics"), 33);
     assert_eq!(route_timeout_ms(&options, "POST", "/v1/cell"), 22);
     assert_eq!(route_timeout_ms(&options, "POST", "/v1/search"), 11);
+    assert_eq!(
+        super::routing::actor_route_timeout_ms(&options, "POST", "/v1/cell"),
+        None,
+        "an admitted mutation must not be detached behind a timeout response"
+    );
+    assert_eq!(
+        super::routing::actor_route_timeout_ms(&options, "POST", "/v1/search"),
+        Some(11)
+    );
 }

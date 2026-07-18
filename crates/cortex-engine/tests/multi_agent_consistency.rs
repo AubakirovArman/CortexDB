@@ -7,6 +7,7 @@ use cortex_engine::{
     AgentTransactionOptions, AgentTransactionOutcome, AgentTransactionRequest, Database,
     DatabaseOptions, EngineError, MemoryConsistencyLevel, WriteBatch,
 };
+use cortex_storage::wal::{WalReader, WalRecordType};
 
 fn options() -> DatabaseOptions {
     DatabaseOptions {
@@ -579,6 +580,44 @@ fn idempotency_ledger_survives_restart() {
         "ledger must persist across restart"
     );
     assert_eq!(replay.committed_seq, Some(committed));
+}
+
+#[test]
+fn idempotency_ledger_and_mutation_share_one_wal_batch() {
+    let dir = tempfile::tempdir().unwrap();
+    let owner = view(1, &["agent:one"], &["agent:one"], Some("agent:one"));
+    let mut db = Database::open_with_options(dir.path(), options()).unwrap();
+    let report = db
+        .commit_agent_transaction(
+            &owner,
+            keyed_request(
+                1,
+                "agent:one",
+                CommitSeq(0),
+                WriteBatch::new().put_cell(CellId(1), payload("agent:one", "atomic")),
+                "atomic-key",
+            ),
+        )
+        .unwrap();
+    assert_eq!(report.committed_seq, Some(CommitSeq(1)));
+    db.close().unwrap();
+
+    let scan = WalReader::scan_path(dir.path().join("db.aclog")).unwrap();
+    let record_types = scan
+        .records
+        .iter()
+        .map(|record| record.record.record_type)
+        .collect::<Vec<_>>();
+    assert_eq!(
+        record_types,
+        vec![
+            WalRecordType::WriteBatchBegin,
+            WalRecordType::PutCellBatch,
+            WalRecordType::PutCellBatch,
+            WalRecordType::WriteBatchCommit,
+        ],
+        "the business mutation and ledger entry must be enclosed by one commit marker"
+    );
 }
 
 fn alpha_query() -> &'static str {

@@ -1,3 +1,5 @@
+#![cfg(feature = "experimental-replication")]
+
 #[path = "cluster_fail_closed/support.rs"]
 mod support;
 

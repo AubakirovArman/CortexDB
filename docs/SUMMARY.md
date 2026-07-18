@@ -25,6 +25,7 @@
 - [Engine API](ENGINE_API.md)
 - [Engine API Evidence](ENGINE_API_EVIDENCE.md)
 - [Engine Config](ENGINE_CONFIG.md)
+- [Engine Feature Boundaries](ENGINE_FEATURE_FLAGS.md)
 - [Module Ownership](MODULE_OWNERSHIP.md)
 - [Corruption Handling](CORRUPTION_HANDLING.md)
 - [Decode Fuzzing](DECODE_FUZZING.md)

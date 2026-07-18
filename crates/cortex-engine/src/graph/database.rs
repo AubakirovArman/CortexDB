@@ -65,6 +65,6 @@ impl Database {
     }
 
     fn graph_index_store_snapshot(&self) -> GraphIndexStore {
-        self.graph_index_store.clone()
+        self.derived_stores.graph_index_store.clone()
     }
 }

@@ -123,6 +123,23 @@ def validate(gate: str, evidence_paths: list[Path]) -> dict[str, Any]:
             failures.append(f"marker {marker!r} missing from {file_name}")
     checks["markers"] = not failures
 
+    if spec["make_test_suites"]:
+        makefile = read(Path("mk/core-security-ops.mk"))
+        missing_feature_commands = [
+            suite
+            for suite in spec["make_test_suites"]
+            if (
+                f"--features experimental-replication --test {suite}"
+                not in makefile
+            )
+        ]
+        if missing_feature_commands:
+            failures.append(
+                "direct replication suites are not feature-enabled: "
+                + ", ".join(missing_feature_commands)
+            )
+        checks["direct_suites_feature_enabled"] = not missing_feature_commands
+
     reports = [load_report(path) for path in evidence_paths]
     for path, report in zip(evidence_paths, reports):
         if report.get("status") not in {"ok", "passed"}:

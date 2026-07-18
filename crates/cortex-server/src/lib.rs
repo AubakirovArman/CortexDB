@@ -37,6 +37,7 @@ mod receipt_signer;
 mod request_audit;
 mod request_id;
 pub mod responses;
+mod route_registry;
 mod router;
 mod search;
 #[cfg(test)]

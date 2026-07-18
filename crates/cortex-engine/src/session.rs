@@ -127,7 +127,7 @@ impl Database {
         now_unix_seconds: u64,
     ) -> Vec<RetrievedCell> {
         let txn = self.read_txn();
-        let mut cells = self.session_index.retrieve(
+        let mut cells = self.derived_stores.session_index.retrieve(
             session_id,
             view,
             now_unix_seconds,

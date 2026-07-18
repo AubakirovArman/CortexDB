@@ -15,7 +15,7 @@ use cortex_engine::{Database, DatabaseOptions};
 use crate::responses::RouterError;
 use crate::DEFAULT_ACTOR_QUEUE_CAPACITY;
 
-pub(crate) use routing::{is_write_route, route_timeout_ms};
+pub(crate) use routing::{actor_route_timeout_ms, is_write_route, route_timeout_ms};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) struct TenantQuotaSnapshot {

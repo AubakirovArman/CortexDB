@@ -1,3 +1,5 @@
+#![cfg(feature = "experimental-replication")]
+
 use std::collections::{BTreeMap, BTreeSet};
 
 use cortex_engine::{ConsensusState, LogIndex, NodeId, Term};

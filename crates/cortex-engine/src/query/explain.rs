@@ -158,7 +158,11 @@ impl Database {
             let after_quality = bitmap_candidates
                 .iter()
                 .filter_map(|candidate| provider.cell_id_for_candidate(*candidate))
-                .filter(|cell_id| self.memory_lifecycle_store.is_active_at(*cell_id, now))
+                .filter(|cell_id| {
+                    self.derived_stores
+                        .memory_lifecycle_store
+                        .is_active_at(*cell_id, now)
+                })
                 .filter_map(|cell_id| self.memtable.read(txn, cell_id))
                 .filter(|version| {
                     cell_version_meets_quality_thresholds(version, &plan.quality_thresholds)

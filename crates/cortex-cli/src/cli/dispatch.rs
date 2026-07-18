@@ -24,6 +24,10 @@ impl DispatchContext<'_> {
     pub(super) fn resolve(&self, path: &str) -> std::path::PathBuf {
         resolve_path(path, self.tenant)
     }
+
+    pub(super) fn resolve_string(&self, path: &str) -> String {
+        self.resolve(path).to_string_lossy().into_owned()
+    }
 }
 
 pub fn run(args: Vec<String>) -> Result<String, String> {

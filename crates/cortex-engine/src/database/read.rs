@@ -134,7 +134,11 @@ impl Database {
                     .cell_id_for_candidate(candidate)
                     .map(|cell_id| (candidate, cell_id))
             })
-            .filter(|(_, cell_id)| self.memory_lifecycle_store.is_active_at(*cell_id, now))
+            .filter(|(_, cell_id)| {
+                self.derived_stores
+                    .memory_lifecycle_store
+                    .is_active_at(*cell_id, now)
+            })
             .filter_map(|(candidate, cell_id)| {
                 self.memtable
                     .read(txn, cell_id)

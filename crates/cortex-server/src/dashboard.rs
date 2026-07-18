@@ -3,6 +3,16 @@ pub struct DashboardAsset {
     pub body: &'static str,
 }
 
+pub const SECURITY_HEADERS: &[(&str, &str)] = &[
+    (
+        "content-security-policy",
+        "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'",
+    ),
+    ("x-content-type-options", "nosniff"),
+    ("x-frame-options", "DENY"),
+    ("referrer-policy", "no-referrer"),
+];
+
 pub const ROUTES: &[&str] = &[
     "overview",
     "permissions",

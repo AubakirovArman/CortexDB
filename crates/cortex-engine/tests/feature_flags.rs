@@ -100,6 +100,7 @@ fn experimental_hnsw_flag_persists_graph_profile() {
 }
 
 #[test]
+#[cfg(feature = "experimental-replication")]
 fn replication_database_surface_requires_feature_flag() {
     let dir = tempfile::tempdir().unwrap();
     let db = Database::open(dir.path()).unwrap();

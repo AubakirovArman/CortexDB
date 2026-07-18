@@ -1,12 +1,12 @@
 use super::AuthRole;
-use crate::audit::{self, AuditAction};
+use crate::audit;
 use crate::auth_capability::EffectiveAuthPolicy;
-use crate::dashboard;
+use crate::route_registry::{route_spec, RouteAccess};
 
 pub(crate) fn role_can_access(role: AuthRole, method: &str, path: &str) -> bool {
     match role {
         AuthRole::Admin => true,
-        AuthRole::Data => !matches!(route_class(method, path), RouteClass::Admin),
+        AuthRole::Data => route_spec(method, path).access != RouteAccess::Admin,
     }
 }
 
@@ -15,7 +15,7 @@ pub(super) fn capabilities_can_access(
     method: &str,
     path: &str,
 ) -> bool {
-    if matches!(route_class(method, path), RouteClass::Public) {
+    if route_spec(method, path).access == RouteAccess::Public {
         return true;
     }
     let Some(capabilities) = &policy.capabilities else {
@@ -25,22 +25,4 @@ pub(super) fn capabilities_can_access(
     capabilities
         .iter()
         .any(|capability| capability.allows(action))
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum RouteClass {
-    Public,
-    Data,
-    Admin,
-}
-
-fn route_class(method: &str, path: &str) -> RouteClass {
-    if dashboard::is_page(path) || path.starts_with("/dashboard/assets/") {
-        return RouteClass::Admin;
-    }
-    match audit::classify(method, path) {
-        AuditAction::Health => RouteClass::Public,
-        AuditAction::Admin | AuditAction::Metrics => RouteClass::Admin,
-        _ => RouteClass::Data,
-    }
 }

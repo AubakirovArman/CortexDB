@@ -1,3 +1,5 @@
+#![cfg(feature = "experimental-replication")]
+
 #[path = "multi_agent_cluster_consistency/support.rs"]
 mod support;
 

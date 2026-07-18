@@ -20,11 +20,7 @@ pub struct ClusterStatusResponse {
     pub distributed_enabled: bool,
 }
 
-#[derive(Serialize, Debug, Clone)]
-pub struct CheckpointResponse {
-    pub checkpoint_seq: u64,
-    pub cells_flushed: usize,
-}
+pub use cortex_api_types::CheckpointResponse;
 
 #[derive(Serialize, Debug, Clone)]
 pub struct CompactionResponse {

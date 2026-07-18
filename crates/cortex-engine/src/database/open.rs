@@ -15,10 +15,12 @@ use crate::database_files::find_wal_files;
 use crate::database_files::truncate_wal_tail;
 use crate::error::{EngineError, EngineResult};
 use crate::lock::DatabaseLock;
+#[cfg(feature = "experimental-replication")]
+use crate::options::EngineFeature;
 use crate::options::{
-    AgentTransactionOptions, DatabaseOptions, EngineFeature, EngineFeatureFlags,
-    LearnedRankingOptions, PayloadResidency, RecoveryMode, SemanticCompressionOptions,
-    StaleLockPolicy, TieredStorageOptions,
+    AgentTransactionOptions, DatabaseOptions, EngineFeatureFlags, LearnedRankingOptions,
+    PayloadResidency, RecoveryMode, SemanticCompressionOptions, StaleLockPolicy,
+    TieredStorageOptions,
 };
 use crate::query::cache::AqlQueryCache;
 use crate::query::AqlDeltaIndex;
@@ -156,6 +158,7 @@ impl Database {
         })
     }
 
+    #[cfg(feature = "experimental-replication")]
     pub(crate) fn require_feature(&self, feature: EngineFeature) -> EngineResult<()> {
         if self.feature_flags.is_enabled(feature) {
             Ok(())
@@ -274,18 +277,7 @@ impl Database {
             ingestion_rate_state: crate::ingestion::default_ingestion_rate_state(),
             aql_query_cache: Mutex::new(AqlQueryCache::new(options.aql_query_cache_max_entries)),
             aql_delta_index,
-            corpus_synonym_store: stores.corpus_synonym_store,
-            feedback_index: stores.feedback_index,
-            graph_index_store: stores.graph_index_store,
-            live_search_store: stores.live_search_store,
-            search_context_store: stores.search_context_store,
-            session_index: stores.session_index,
-            memory_lifecycle_store: stores.memory_lifecycle_store,
-            fact_claim_store: stores.fact_claim_store,
-            conflict_index_store: stores.conflict_index_store,
-            temporal_fact_store: stores.temporal_fact_store,
-            temporal_validity_store: stores.temporal_validity_store,
-            tool_index: stores.tool_index,
+            derived_stores: stores,
             persisted_index_cache: Mutex::new(None),
             active_read_pins: Arc::new(Mutex::new(BTreeMap::new())),
             compaction_policy: options.compaction_policy,

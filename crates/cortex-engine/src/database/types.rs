@@ -8,27 +8,16 @@ use cortex_storage::manifest::StorageManifest;
 use cortex_storage::wal::{DurabilityMode, WalWriterHandle};
 
 use super::payload_cache::SegmentPayloadCache;
+use super::stores::DerivedStores;
 
 use crate::checkpoint::PersistedIndexCache;
-use crate::feedback::FeedbackIndex;
-use crate::graph::GraphIndexStore;
 use crate::lock::DatabaseLock;
-use crate::memory::MemoryLifecycleStore;
 use crate::options::{
     AgentTransactionOptions, CompactionPolicy, EngineFeatureFlags, LearnedRankingOptions,
     PayloadResidency, SemanticCompressionOptions, TieredStorageOptions,
 };
 use crate::query::{cache::AqlQueryCache, AqlDeltaIndex, CellMetadata};
-use crate::retrieval_quality::TemporalValidityStore;
-use crate::search::{
-    CorpusSynonymStore, HnswBuildConfig, LiveSearchStore, SearchContextStore, TextAnalyzer,
-    TextAnalyzerConfig,
-};
-use crate::session::SessionIndex;
-use crate::tool_registry::ToolIndex;
-use crate::verification::{
-    numeric::fact_claim::FactClaimStore, ConflictIndexStore, TemporalFactStore,
-};
+use crate::search::{HnswBuildConfig, TextAnalyzer, TextAnalyzerConfig};
 
 /// A3.3 perf: a cached built HNSW index keyed by its live-segment fingerprint
 /// (`Vec<(segment id, generation, checkpoint_seq)>`). See `Database::hnsw_index_cache`.
@@ -82,18 +71,7 @@ pub struct Database {
     pub(crate) ingestion_rate_state: Mutex<crate::ingestion::IngestionRateState>,
     pub(crate) aql_query_cache: Mutex<AqlQueryCache>,
     pub(crate) aql_delta_index: AqlDeltaIndex,
-    pub(crate) corpus_synonym_store: CorpusSynonymStore,
-    pub(crate) feedback_index: FeedbackIndex,
-    pub(crate) graph_index_store: GraphIndexStore,
-    pub(crate) live_search_store: LiveSearchStore,
-    pub(crate) search_context_store: SearchContextStore,
-    pub(crate) session_index: SessionIndex,
-    pub(crate) memory_lifecycle_store: MemoryLifecycleStore,
-    pub(crate) fact_claim_store: FactClaimStore,
-    pub(crate) conflict_index_store: ConflictIndexStore,
-    pub(crate) temporal_fact_store: TemporalFactStore,
-    pub(crate) temporal_validity_store: TemporalValidityStore,
-    pub(crate) tool_index: ToolIndex,
+    pub(crate) derived_stores: DerivedStores,
     pub(crate) persisted_index_cache: Mutex<Option<PersistedIndexCache>>,
     pub(crate) active_read_pins: Arc<Mutex<BTreeMap<CommitSeq, usize>>>,
     pub(crate) compaction_policy: CompactionPolicy,

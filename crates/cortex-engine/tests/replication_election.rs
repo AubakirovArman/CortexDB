@@ -1,3 +1,5 @@
+#![cfg(feature = "experimental-replication")]
+
 use std::collections::BTreeSet;
 
 use cortex_engine::{ElectionRole, ElectionState, NodeId, Term};

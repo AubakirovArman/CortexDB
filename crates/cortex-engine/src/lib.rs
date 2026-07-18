@@ -44,6 +44,7 @@ pub mod database;
 mod database_files;
 #[doc(hidden)]
 pub mod determinism_hash;
+#[cfg(feature = "experimental-replication")]
 pub mod distributed;
 pub mod embedding_pipeline;
 pub mod error;
@@ -66,6 +67,7 @@ pub mod plan;
 pub mod query;
 pub mod repair;
 pub mod replay;
+#[cfg(feature = "experimental-replication")]
 pub mod replication;
 mod retrieval_quality;
 mod retrieval_rank;
@@ -109,6 +111,7 @@ pub use context::{
 pub use database::{
     CandidateResolver, CheckpointStats, Database, PayloadCacheStats, RetrievedCell,
 };
+#[cfg(feature = "experimental-replication")]
 pub use distributed::*;
 pub use embedding_pipeline::{
     embedding_coverage_report_from_expected_items, embedding_coverage_report_from_files,
@@ -185,6 +188,7 @@ pub use replay::{
     replay_wal, replay_wal_best_effort, replay_wal_best_effort_into, replay_wal_into,
     ReplayMetrics, ReplayResult,
 };
+#[cfg(feature = "experimental-replication")]
 pub use replication::*;
 pub use search::*;
 pub use search::{Language, TextAnalyzer, TextAnalyzerConfig};

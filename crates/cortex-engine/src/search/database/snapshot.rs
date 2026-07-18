@@ -144,7 +144,10 @@ impl Database {
         allowed_cells: Option<&BTreeSet<CellId>>,
     ) -> EngineResult<Vec<super::live_store::LiveSearchCandidate>> {
         if self.payload_residency != PayloadResidency::Lazy {
-            let mut records = self.live_search_store.visible_records(view, query.vector);
+            let mut records = self
+                .derived_stores
+                .live_search_store
+                .visible_records(view, query.vector);
             if let Some(allowed_cells) = allowed_cells {
                 records.retain(|record| allowed_cells.contains(&record.cell_id));
             }

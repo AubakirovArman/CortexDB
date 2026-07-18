@@ -12,54 +12,14 @@ use super::DatabaseActor;
 /// write lock. This classification must stay in sync with the route handlers in
 /// `router.rs`.
 pub(crate) fn is_write_route(method: &str, target: &str) -> bool {
-    let (path, _query) = target.split_once('?').unwrap_or((target, ""));
-    matches!(
-        (method, path),
-        ("POST", "/put")
-            | ("POST", "/v1/cell")
-            | ("POST", "/v1/batch")
-            | ("POST", "/v1/transactions")
-            | ("POST", "/v1/handoff")
-            | ("POST", "/v1/memory/consolidate/commit")
-            | ("POST", "/tombstone")
-            | ("DELETE", "/v1/cell")
-            | ("POST", "/flush")
-            | ("POST", "/v1/flush")
-            | ("POST", "/v1/compact")
-            | ("POST", "/v1/admin/compact/trigger")
-            | ("PUT", "/v1/admin/search/hnsw/no-fallback-profile")
-            | ("DELETE", "/v1/admin/search/hnsw/no-fallback-profile")
-            | ("POST", "/v1/remember")
-            | ("POST", "/v1/feedback")
-            | ("POST", "/v1/forget")
-            | ("POST", "/v1/ingest/text")
-            | ("POST", "/v1/ingest/json")
-            | ("POST", "/v1/ingest/csv")
-            | ("POST", "/v1/embedding/backfill")
-    ) || (method == "DELETE" && path.starts_with("/v1/ingest/jobs/"))
-        || (method == "POST"
-            && path.starts_with("/v1/ingest/jobs/")
-            && (path.ends_with("/cancel") || path.ends_with("/retry")))
+    crate::route_registry::route_spec(method, target).mutating
 }
 
 /// Returns `true` for local operational routes that should use the shorter
 /// admin timeout budget instead of the default read budget.
 pub(crate) fn is_admin_route(method: &str, target: &str) -> bool {
-    let (path, _query) = target.split_once('?').unwrap_or((target, ""));
-    matches!(
-        (method, path),
-        ("GET", "/v1/health")
-            | ("GET", "/v1/stats")
-            | ("GET", "/v1/metrics")
-            | ("GET", "/v1/ann/metrics")
-            | ("GET", "/v1/validate")
-            | ("GET", "/v1/cluster/status")
-            | ("POST", "/v1/backup")
-            | ("POST", "/v1/backup/verify")
-            | ("POST", "/v1/backup/drill")
-            | ("POST", "/v1/backup/offsite/stage")
-            | ("POST", "/v1/backup/prune")
-    )
+    crate::route_registry::route_spec(method, target).timeout
+        == crate::route_registry::RouteTimeoutClass::Admin
 }
 
 pub(crate) fn route_timeout_ms(options: &ServerOptions, method: &str, target: &str) -> u64 {
@@ -70,6 +30,16 @@ pub(crate) fn route_timeout_ms(options: &ServerOptions, method: &str, target: &s
     } else {
         options.read_route_timeout_ms()
     }
+}
+
+/// Returns an actor execution deadline only when abandoning the response
+/// cannot leave a mutation running with an unknown commit outcome.
+pub(crate) fn actor_route_timeout_ms(
+    options: &ServerOptions,
+    method: &str,
+    target: &str,
+) -> Option<u64> {
+    (!is_write_route(method, target)).then(|| route_timeout_ms(options, method, target))
 }
 
 impl DatabaseActor {

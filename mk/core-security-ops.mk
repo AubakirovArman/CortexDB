@@ -208,12 +208,12 @@ legal-verification-design-check:
 	python3 scripts/future_epic_design_check.py --epic legal-verification --report "$(FUTURE_EPIC_ROOT)/legal-verification.json"
 
 distributed-consensus-check:
-	cargo test -p cortex-engine --test replication_log
-	cargo test -p cortex-engine --test replication_log_matching
-	cargo test -p cortex-engine --test replication_commit
-	cargo test -p cortex-engine --test replication_election
-	cargo test -p cortex-engine --test replication_membership
-	cargo test -p cortex-engine --test replication_replay_apply
+	cargo test -p cortex-engine --features experimental-replication --test replication_log
+	cargo test -p cortex-engine --features experimental-replication --test replication_log_matching
+	cargo test -p cortex-engine --features experimental-replication --test replication_commit
+	cargo test -p cortex-engine --features experimental-replication --test replication_election
+	cargo test -p cortex-engine --features experimental-replication --test replication_membership
+	cargo test -p cortex-engine --features experimental-replication --test replication_replay_apply
 	python3 scripts/consensus_gate_check.py --gate distributed-consensus --report "$(CONSENSUS_CORE_REPORT)"
 
 consensus-partition-soak-check: replication-partition-check

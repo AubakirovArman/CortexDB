@@ -115,14 +115,34 @@ impl Database {
         let scope = request.scope.clone();
         let base_seq = request.base_seq;
         let idempotency_key = request.idempotency_key.clone();
-        let committed_seq = self.write_batch(request.batch)?;
+        let operation_count = u64::try_from(request.batch.len()).map_err(|_| {
+            EngineError::StorageInvariant("agent transaction batch is too large".to_owned())
+        })?;
+        let committed_seq = CommitSeq(
+            self.current_seq()
+                .0
+                .checked_add(operation_count)
+                .ok_or_else(|| {
+                    EngineError::StorageInvariant(
+                        "agent transaction commit sequence overflow".to_owned(),
+                    )
+                })?,
+        );
+        let mut operations = request.batch.into_operations();
 
-        // Record the ledger entry only after a successful commit, so a conflict or
-        // error never leaves a phantom entry that would replay a write that never
-        // happened.
+        // The ledger entry is the final operation in the SAME WAL batch as the
+        // guarded writes. Recovery therefore exposes both or neither; there is
+        // no crash window where a committed mutation can be retried as fresh.
         if let Some((key, digest, insert_cell_id)) = idempotency_insert {
-            self.record_idempotency_entry(insert_cell_id, agent_id, &key, &digest, committed_seq)?;
+            operations.push(crate::idempotency::idempotency_ledger_operation(
+                insert_cell_id,
+                agent_id,
+                &key,
+                &digest,
+                committed_seq,
+            ));
         }
+        self.write_batch(WriteBatch::from_operations(operations))?;
 
         Ok(AgentTransactionReport {
             outcome: AgentTransactionOutcome::Committed,

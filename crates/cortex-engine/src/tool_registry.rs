@@ -171,7 +171,7 @@ impl Database {
     }
 
     pub fn list_tools(&self, view: &AgentView) -> Vec<RegisteredTool> {
-        let mut tools = self.tool_index.list_tools(view);
+        let mut tools = self.derived_stores.tool_index.list_tools(view);
         tools.sort_by_key(|tool| tool.cell_id);
         tools
     }
@@ -185,7 +185,9 @@ impl Database {
         if limit == 0 {
             return Vec::new();
         }
-        self.tool_index.recommend_tools_for_task(view, task, limit)
+        self.derived_stores
+            .tool_index
+            .recommend_tools_for_task(view, task, limit)
     }
 }
 

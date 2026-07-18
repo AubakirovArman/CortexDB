@@ -128,6 +128,7 @@ read-after-seq-check:
 idempotency-ledger-check:
 	cargo test -p cortex-engine --lib idempotency
 	cargo test -p cortex-engine --test multi_agent_consistency idempoten --all-features
+	cargo test -p cortex-engine --test multi_agent_consistency idempotency_ledger_and_mutation_share_one_wal_batch --all-features
 
 .PHONY: handoff-ledger-check
 handoff-ledger-check:

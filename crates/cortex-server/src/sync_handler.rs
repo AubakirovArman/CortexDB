@@ -12,8 +12,9 @@ use crate::{
 
 fn serve_dashboard() -> String {
     let html = dashboard::html();
+    let security_headers = dashboard_security_headers();
     format!(
-        "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\n\r\n{}",
+        "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n{security_headers}Cache-Control: no-cache\r\nContent-Length: {}\r\n\r\n{}",
         html.len(),
         html
     )
@@ -21,12 +22,20 @@ fn serve_dashboard() -> String {
 
 fn serve_dashboard_asset(path: &str) -> Option<String> {
     let asset = dashboard::asset(path)?;
+    let security_headers = dashboard_security_headers();
     Some(format!(
-        "HTTP/1.1 200 OK\r\nContent-Type: {}\r\nContent-Length: {}\r\n\r\n{}",
+        "HTTP/1.1 200 OK\r\nContent-Type: {}\r\n{security_headers}Cache-Control: public, max-age=31536000, immutable\r\nContent-Length: {}\r\n\r\n{}",
         asset.content_type,
         asset.body.len(),
         asset.body
     ))
+}
+
+fn dashboard_security_headers() -> String {
+    dashboard::SECURITY_HEADERS
+        .iter()
+        .map(|(name, value)| format!("{name}: {value}\r\n"))
+        .collect()
 }
 
 /// ⚠️ TEST-ONLY / COMPATIBILITY-ONLY HARNESS

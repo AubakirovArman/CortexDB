@@ -11,7 +11,7 @@ pub(super) fn context(
     format: ContextOutputFormat,
 ) -> Result<String, String> {
     ops::context(
-        ctx.resolve(&path).to_str().unwrap(),
+        &ctx.resolve_string(&path),
         &scope,
         &aql,
         ctx.json,
@@ -26,13 +26,7 @@ pub(super) fn explain_cell(
     aql: String,
     cell_id: String,
 ) -> Result<String, String> {
-    ops::explain_cell(
-        ctx.resolve(&path).to_str().unwrap(),
-        &scope,
-        &aql,
-        &cell_id,
-        ctx.json,
-    )
+    ops::explain_cell(&ctx.resolve_string(&path), &scope, &aql, &cell_id, ctx.json)
 }
 
 pub(super) fn remember(
@@ -41,7 +35,7 @@ pub(super) fn remember(
     scope: String,
     aql: String,
 ) -> Result<String, String> {
-    ops::remember(ctx.resolve(&path).to_str().unwrap(), &scope, &aql, ctx.json)
+    ops::remember(&ctx.resolve_string(&path), &scope, &aql, ctx.json)
 }
 
 pub(super) fn forget(
@@ -49,7 +43,7 @@ pub(super) fn forget(
     path: String,
     cell_id: String,
 ) -> Result<String, String> {
-    ops::forget(ctx.resolve(&path).to_str().unwrap(), &cell_id, ctx.json)
+    ops::forget(&ctx.resolve_string(&path), &cell_id, ctx.json)
 }
 
 pub(super) fn verify(
@@ -60,7 +54,7 @@ pub(super) fn verify(
     format: VerificationOutputFormat,
 ) -> Result<String, String> {
     ops::verify(
-        ctx.resolve(&path).to_str().unwrap(),
+        &ctx.resolve_string(&path),
         &scope,
         &aql,
         ctx.json,
@@ -76,7 +70,7 @@ pub(super) fn aql(
     explain: Option<AqlExplainModeArg>,
 ) -> Result<String, String> {
     aql_cmd::aql(
-        ctx.resolve(&path).to_str().unwrap(),
+        &ctx.resolve_string(&path),
         &scope,
         &aql,
         ctx.json,

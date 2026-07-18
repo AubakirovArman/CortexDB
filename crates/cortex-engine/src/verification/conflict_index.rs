@@ -44,7 +44,7 @@ pub(super) struct ConflictFacets {
 
 impl Database {
     pub fn conflict_index(&self, view: &AgentView) -> Vec<ConflictRecord> {
-        self.conflict_index_store.records(view)
+        self.derived_stores.conflict_index_store.records(view)
     }
 
     pub fn conflicts_for_fact(&self, fact: &str, view: &AgentView) -> Vec<ConflictRecord> {

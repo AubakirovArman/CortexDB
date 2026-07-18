@@ -7,7 +7,7 @@ pub(super) fn load_fixture(
     path: String,
     fixture_path: String,
 ) -> Result<String, String> {
-    ingest::load_fixture(ctx.resolve(&path).to_str().unwrap(), &fixture_path)
+    ingest::load_fixture(&ctx.resolve_string(&path), &fixture_path)
 }
 
 pub(super) fn text(
@@ -16,7 +16,7 @@ pub(super) fn text(
     scope: String,
     file: String,
 ) -> Result<String, String> {
-    ingest::text(ctx.resolve(&path).to_str().unwrap(), &scope, &file)
+    ingest::text(&ctx.resolve_string(&path), &scope, &file)
 }
 
 pub(super) fn json(
@@ -25,7 +25,7 @@ pub(super) fn json(
     scope: String,
     file: String,
 ) -> Result<String, String> {
-    ingest::json(ctx.resolve(&path).to_str().unwrap(), &scope, &file)
+    ingest::json(&ctx.resolve_string(&path), &scope, &file)
 }
 
 pub(super) fn csv(
@@ -34,15 +34,15 @@ pub(super) fn csv(
     scope: String,
     file: String,
 ) -> Result<String, String> {
-    ingest::csv(ctx.resolve(&path).to_str().unwrap(), &scope, &file)
+    ingest::csv(&ctx.resolve_string(&path), &scope, &file)
 }
 
 pub(super) fn jobs(ctx: DispatchContext<'_>, path: String) -> Result<String, String> {
-    ingest::jobs(ctx.resolve(&path).to_str().unwrap(), ctx.json)
+    ingest::jobs(&ctx.resolve_string(&path), ctx.json)
 }
 
 pub(super) fn job(ctx: DispatchContext<'_>, path: String, job_id: u64) -> Result<String, String> {
-    ingest::job(ctx.resolve(&path).to_str().unwrap(), job_id, ctx.json)
+    ingest::job(&ctx.resolve_string(&path), job_id, ctx.json)
 }
 
 pub(super) fn cancel_job(
@@ -50,7 +50,7 @@ pub(super) fn cancel_job(
     path: String,
     job_id: u64,
 ) -> Result<String, String> {
-    ingest::cancel_job(ctx.resolve(&path).to_str().unwrap(), job_id, ctx.json)
+    ingest::cancel_job(&ctx.resolve_string(&path), job_id, ctx.json)
 }
 
 pub(super) fn retry_job(
@@ -58,7 +58,7 @@ pub(super) fn retry_job(
     path: String,
     job_id: u64,
 ) -> Result<String, String> {
-    ingest::retry_job(ctx.resolve(&path).to_str().unwrap(), job_id, ctx.json)
+    ingest::retry_job(&ctx.resolve_string(&path), job_id, ctx.json)
 }
 
 pub(super) fn delete_job(
@@ -66,5 +66,5 @@ pub(super) fn delete_job(
     path: String,
     job_id: u64,
 ) -> Result<String, String> {
-    ingest::delete_job(ctx.resolve(&path).to_str().unwrap(), job_id)
+    ingest::delete_job(&ctx.resolve_string(&path), job_id)
 }

@@ -29,7 +29,9 @@ impl Database {
     }
 
     pub fn expired_memory_cells(&self, now_unix_seconds: u64) -> Vec<ExpiredMemoryCell> {
-        self.memory_lifecycle_store.expired_cells(now_unix_seconds)
+        self.derived_stores
+            .memory_lifecycle_store
+            .expired_cells(now_unix_seconds)
     }
 
     pub fn expire_memory_cells(
@@ -44,6 +46,8 @@ impl Database {
     }
 
     pub fn memory_decay_scores(&self, now_unix_seconds: u64) -> Vec<MemoryDecayScore> {
-        self.memory_lifecycle_store.decay_scores(now_unix_seconds)
+        self.derived_stores
+            .memory_lifecycle_store
+            .decay_scores(now_unix_seconds)
     }
 }

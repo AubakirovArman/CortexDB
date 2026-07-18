@@ -5,6 +5,8 @@ license.workspace = true
 version.workspace = true
 
 [features]
+default = []
+experimental-replication = []
 accountability-receipt = [
     "dep:argon2",
     "dep:blake3",

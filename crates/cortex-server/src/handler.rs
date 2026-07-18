@@ -6,7 +6,7 @@ mod inference;
 
 use axum::{
     extract::{Request, State},
-    http::{header, StatusCode},
+    http::{header, HeaderName, HeaderValue, StatusCode},
     response::{Html, IntoResponse, Response},
     Json,
 };
@@ -365,26 +365,44 @@ fn dashboard_response(
 ) -> Option<Response> {
     if state.options.dashboard_enabled && method == "GET" && dashboard::is_page(path) {
         audit_http_response(state, audit_event, StatusCode::OK, None);
-        return Some(with_request_id(
-            Html(dashboard::html()).into_response(),
-            request_id,
-        ));
+        let response = dashboard_security_headers(Html(dashboard::html()).into_response(), false);
+        return Some(with_request_id(response, request_id));
     }
     if state.options.dashboard_enabled && method == "GET" {
         if let Some(asset) = dashboard::asset(path) {
             audit_http_response(state, audit_event, StatusCode::OK, None);
+            let response = (
+                StatusCode::OK,
+                [(header::CONTENT_TYPE, asset.content_type)],
+                asset.body,
+            )
+                .into_response();
             return Some(with_request_id(
-                (
-                    StatusCode::OK,
-                    [(header::CONTENT_TYPE, asset.content_type)],
-                    asset.body,
-                )
-                    .into_response(),
+                dashboard_security_headers(response, true),
                 request_id,
             ));
         }
     }
     None
+}
+
+fn dashboard_security_headers(mut response: Response, immutable_asset: bool) -> Response {
+    let headers = response.headers_mut();
+    for (name, value) in dashboard::SECURITY_HEADERS {
+        headers.insert(
+            HeaderName::from_static(name),
+            HeaderValue::from_static(value),
+        );
+    }
+    headers.insert(
+        header::CACHE_CONTROL,
+        if immutable_asset {
+            HeaderValue::from_static("public, max-age=31536000, immutable")
+        } else {
+            HeaderValue::from_static("no-cache")
+        },
+    );
+    response
 }
 
 fn rate_limit_response(

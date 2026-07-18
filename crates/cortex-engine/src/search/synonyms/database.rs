@@ -18,7 +18,7 @@ impl Database {
         if self.payload_residency == PayloadResidency::Lazy {
             return self.lazy_corpus_synonym_store().dictionary(options);
         }
-        self.corpus_synonym_store.dictionary(options)
+        self.derived_stores.corpus_synonym_store.dictionary(options)
     }
 
     fn lazy_corpus_synonym_store(&self) -> CorpusSynonymStore {

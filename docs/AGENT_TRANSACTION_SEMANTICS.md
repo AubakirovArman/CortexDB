@@ -19,8 +19,7 @@ commit is appended to the WAL.
 
 - No distributed transaction or consensus semantics.
 - No long-lived transaction manager.
-- No persisted idempotency ledger in this phase.
-- No HTTP/API schema surface in this phase.
+- No cross-node idempotency or distributed transaction coordinator.
 
 ## Prototype Flag
 
@@ -41,7 +40,7 @@ When disabled, `Database::commit_agent_transaction` returns
   must match this scope.
 - `base_seq`: the read snapshot sequence the agent planned from.
 - `batch`: existing `WriteBatch` operations.
-- `idempotency_key`: carried in reports for clients, but not persisted yet.
+- `idempotency_key`: persisted in a reserved, non-retrievable ledger cell.
 
 The write path commits through the existing atomic batch WAL path. If the report
 is `Committed`, the returned `committed_seq` is visible to later reads, so
@@ -66,9 +65,11 @@ This is deterministic because every decision uses the current committed
 ## Retry And Idempotency
 
 Clients retry a conflict by reading a new snapshot, rebuilding the batch, and
-submitting with the new `base_seq`. `idempotency_key` is returned in the report
-so clients can correlate retries. A future persisted idempotency ledger can be
-added without changing the conflict rules.
+submitting with the new `base_seq`. For a committed request, the user mutations
+and its idempotency-ledger entry are written inside one WAL batch, so recovery
+exposes both or neither. Repeating the same `(agent_id, idempotency_key)` with
+the same request digest returns the original `committed_seq` without rewriting;
+reusing the key for a different digest is rejected.
 
 ## Verification
 
@@ -80,4 +81,3 @@ make agent-transaction-semantics-check
 
 The gate validates this document, the prototype flag, public request/report
 types, and the regression tests in `crates/cortex-engine/tests/agent_transactions.rs`.
-

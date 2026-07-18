@@ -62,7 +62,7 @@
                 <li><a class="tab" href="/dashboard/cluster" data-route="cluster" data-access="data">Cluster</a></li>
             </ul>
         </nav>
-        <section class="workspace" aria-live="polite">
+        <section class="workspace">
             <div id="session-status" class="notice" role="status">Tenant: default</div>
             <div id="session-role" class="notice" role="status">Access level: limited</div>
             <div id="permission-report" class="notice permission-report" role="status">
@@ -87,7 +87,7 @@
                     <p class="panel-note">
                         Health, stats, validation, backup/restore posture, and request error state are shown together for operator triage.
                     </p>
-                    <div id="status-report" class="report-stack" aria-live="polite">
+                    <div id="status-report" class="report-stack">
                         <div class="metric"><span>Status</span><strong>Refresh Status</strong></div>
                     </div>
                 </section>
@@ -96,7 +96,7 @@
                     <p class="panel-note">
                         Availability, latency, backup freshness, validation status, and error budget are summarized from the same status checks.
                     </p>
-                    <div id="slo-report" class="report-stack" aria-live="polite">
+                    <div id="slo-report" class="report-stack">
                         <div class="metric"><span>Status</span><strong>Refresh Status</strong></div>
                     </div>
                 </section>
@@ -123,7 +123,7 @@
                             </select>
                         </div>
                     </form>
-                    <div id="audit-report" class="report-stack" aria-live="polite">
+                    <div id="audit-report" class="report-stack">
                         <div class="metric"><span>Status</span><strong>Audit</strong></div>
                     </div>
                 </section>
@@ -133,7 +133,7 @@
                 <p class="panel-note">
                     This view shows the active local session, effective role, and client-side safety guard.
                 </p>
-                <div id="permissions-report" class="report-stack" aria-live="polite">
+                <div id="permissions-report" class="report-stack">
                     <div class="metric"><span>Status</span><strong>Detecting session</strong></div>
                 </div>
             </section>
@@ -158,7 +158,7 @@ Solar budget note</textarea></div>
                 </form>
                 <section class="report-panel" aria-labelledby="cell-report-title">
                     <h3 id="cell-report-title">Cell report</h3>
-                    <div id="cell-report" class="report-stack" aria-live="polite">
+                    <div id="cell-report" class="report-stack">
                         <div class="metric"><span>Status</span><strong>Run Cell Operation</strong></div>
                     </div>
                 </section>
@@ -184,7 +184,7 @@ Solar budget note</textarea></div>
             </form>
                 <section class="report-panel" aria-labelledby="search-report-title">
                     <h3 id="search-report-title">Search report</h3>
-                    <div id="search-report" class="report-stack" aria-live="polite">
+                    <div id="search-report" class="report-stack">
                         <div class="metric"><span>Status</span><strong>Run Search</strong></div>
                     </div>
                 </section>
@@ -208,7 +208,7 @@ Solar budget note</textarea></div>
             </form>
                 <section class="report-panel" aria-labelledby="ann-report-title">
                     <h3 id="ann-report-title">ANN report</h3>
-                    <div id="ann-report" class="report-grid" aria-live="polite">
+                    <div id="ann-report" class="report-grid">
                         <div class="metric"><span>Status</span><strong>Run evaluation</strong></div>
                     </div>
                 </section>
@@ -222,7 +222,7 @@ Solar budget note</textarea></div>
                 </form>
                 <section class="report-panel" aria-labelledby="aql-report-title">
                     <h3 id="aql-report-title">AQL report</h3>
-                    <div id="aql-report" class="report-stack" aria-live="polite">
+                    <div id="aql-report" class="report-stack">
                         <div class="metric"><span>Status</span><strong>Run AQL</strong></div>
                     </div>
                 </section>
@@ -236,7 +236,7 @@ Solar budget note</textarea></div>
                 </form>
                 <section class="report-panel" aria-labelledby="context-report-title">
                     <h3 id="context-report-title">Context Pack report</h3>
-                    <div id="context-report" class="report-stack" aria-live="polite">
+                    <div id="context-report" class="report-stack">
                         <div class="metric"><span>Status</span><strong>Build Context Pack</strong></div>
                     </div>
                 </section>
@@ -250,7 +250,7 @@ Solar budget note</textarea></div>
                 </form>
                 <section class="report-panel" aria-labelledby="verify-report-title">
                     <h3 id="verify-report-title">Verification report</h3>
-                    <div id="verify-report" class="report-stack" aria-live="polite">
+                    <div id="verify-report" class="report-stack">
                         <div class="metric"><span>Status</span><strong>Verify Fact</strong></div>
                     </div>
                 </section>
@@ -280,7 +280,7 @@ Wind Farm status ready.</textarea></div>
                 </form>
                 <section class="report-panel" aria-labelledby="ingest-report-title">
                     <h3 id="ingest-report-title">Ingest report</h3>
-                    <div id="ingest-report" class="report-grid" aria-live="polite">
+                    <div id="ingest-report" class="report-grid">
                         <div class="metric"><span>Status</span><strong>Run Ingest</strong></div>
                     </div>
                 </section>
@@ -296,7 +296,7 @@ Wind Farm status ready.</textarea></div>
                 </div>
                 <section class="report-panel" aria-labelledby="storage-report-title">
                     <h3 id="storage-report-title">Storage validation report</h3>
-                    <div id="storage-report" class="report-stack" aria-live="polite">
+                    <div id="storage-report" class="report-stack">
                         <div class="metric"><span>Status</span><strong>Run Validate</strong></div>
                     </div>
                 </section>
@@ -309,7 +309,7 @@ Wind Farm status ready.</textarea></div>
                 </div>
                 <section class="report-panel" aria-labelledby="cluster-report-title">
                     <h3 id="cluster-report-title">Cluster report</h3>
-                    <div id="cluster-report" class="report-stack" aria-live="polite">
+                    <div id="cluster-report" class="report-stack">
                         <div class="metric"><span>Status</span><strong>Load Cluster Status</strong></div>
                     </div>
                 </section>
@@ -317,14 +317,14 @@ Wind Farm status ready.</textarea></div>
         </section>
         <aside>
             <h2>Response</h2>
-            <div id="request-status" class="request-status idle" role="status" aria-live="polite">Ready</div>
+            <div id="request-status" class="request-status idle" role="status">Ready</div>
             <section class="report-panel request-issue-panel" aria-labelledby="request-issue-title">
                 <h3 id="request-issue-title">Request issue</h3>
-                <div id="error-report" class="report-grid" aria-live="polite">
+                <div id="error-report" class="report-grid">
                     <div class="metric good"><span>Status</span><strong>No request issue</strong></div>
                 </div>
             </section>
-            <pre id="output" tabindex="0" aria-live="polite" aria-describedby="request-status">{"status":"ready"}</pre>
+            <pre id="output" tabindex="0" aria-describedby="request-status">{"status":"ready"}</pre>
             <h2>History</h2>
             <ol id="history" class="history" aria-label="Request history"></ol>
         </aside>

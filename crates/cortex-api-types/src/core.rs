@@ -168,6 +168,12 @@ pub struct PutCellResponse {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CheckpointResponse {
+    pub checkpoint_seq: u64,
+    pub cells_flushed: usize,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct WriteBatchRequest {
     pub operations: Vec<WriteBatchOperationRequest>,
 }

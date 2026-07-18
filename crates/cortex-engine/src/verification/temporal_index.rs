@@ -36,7 +36,7 @@ pub struct TemporalFactIndex {
 
 impl Database {
     pub fn temporal_fact_index(&self, view: &AgentView) -> TemporalFactIndex {
-        self.temporal_fact_store.fact_index(view)
+        self.derived_stores.temporal_fact_store.fact_index(view)
     }
 
     pub fn latest_temporal_facts(&self, view: &AgentView) -> Vec<TemporalFactRecord> {

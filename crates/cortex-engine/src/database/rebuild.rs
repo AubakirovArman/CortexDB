@@ -47,9 +47,9 @@ impl Database {
                 );
             }
         }
-        self.conflict_index_store = conflict_store;
-        self.graph_index_store = graph_index_store;
-        self.temporal_fact_store = temporal_store;
-        self.tool_index = tool_index;
+        self.derived_stores.conflict_index_store = conflict_store;
+        self.derived_stores.graph_index_store = graph_index_store;
+        self.derived_stores.temporal_fact_store = temporal_store;
+        self.derived_stores.tool_index = tool_index;
     }
 }

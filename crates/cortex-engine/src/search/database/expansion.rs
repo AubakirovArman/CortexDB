@@ -159,7 +159,7 @@ impl Database {
 
     fn search_context_store_snapshot(&self) -> SearchContextStore {
         if self.payload_residency != PayloadResidency::Lazy {
-            return self.search_context_store.clone();
+            return self.derived_stores.search_context_store.clone();
         }
 
         let records = self

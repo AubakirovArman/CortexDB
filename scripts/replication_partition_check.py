@@ -81,6 +81,8 @@ def run_suite(repo: Path, root: Path, suite: dict[str, object]) -> dict[str, obj
         "test",
         "-p",
         "cortex-engine",
+        "--features",
+        "experimental-replication",
         "--test",
         str(suite["test"]),
         "--",
@@ -95,12 +97,13 @@ def run_suite(repo: Path, root: Path, suite: dict[str, object]) -> dict[str, obj
     )
     log_path.write_text(result.stdout, encoding="utf-8")
     passed = parse_passed_count(result.stdout)
+    suite_ok = result.returncode == 0 and passed is not None and passed > 0
     return {
         "name": suite["name"],
         "test": suite["test"],
         "command": command,
         "coverage": suite["coverage"],
-        "status": "ok" if result.returncode == 0 else "failed",
+        "status": "ok" if suite_ok else "failed",
         "exit_code": result.returncode,
         "passed_tests": passed,
         "log": str(log_path),

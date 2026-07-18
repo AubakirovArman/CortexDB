@@ -270,7 +270,13 @@ fn multivalue_index_tracks_patch_tombstone_and_reopen() {
                 .to_vec(),
         )
         .unwrap();
-        assert_eq!(db.fact_claim_store.visible_records(&view()).len(), 1);
+        assert_eq!(
+            db.derived_stores
+                .fact_claim_store
+                .visible_records(&view())
+                .len(),
+            1
+        );
 
         db.patch_cell(
             CellId(21),
@@ -278,7 +284,7 @@ fn multivalue_index_tracks_patch_tombstone_and_reopen() {
                 .to_vec(),
         )
         .unwrap();
-        let records = db.fact_claim_store.visible_records(&view());
+        let records = db.derived_stores.fact_claim_store.visible_records(&view());
         assert_eq!(records.len(), 2);
         assert_eq!(
             records
@@ -293,9 +299,19 @@ fn multivalue_index_tracks_patch_tombstone_and_reopen() {
 
     {
         let mut db = Database::open(dir.path()).unwrap();
-        assert_eq!(db.fact_claim_store.visible_records(&view()).len(), 2);
+        assert_eq!(
+            db.derived_stores
+                .fact_claim_store
+                .visible_records(&view())
+                .len(),
+            2
+        );
         db.tombstone_cell(CellId(21)).unwrap();
-        assert!(db.fact_claim_store.visible_records(&view()).is_empty());
+        assert!(db
+            .derived_stores
+            .fact_claim_store
+            .visible_records(&view())
+            .is_empty());
     }
 }
 
@@ -352,7 +368,7 @@ fn database_fact_claim_store_tracks_write_patch_tombstone_and_reopen() {
         )
         .unwrap();
 
-        let records = db.fact_claim_store.visible_records(&view());
+        let records = db.derived_stores.fact_claim_store.visible_records(&view());
         assert_eq!(records.len(), 1);
         assert_eq!(records[0].value.scaled_value, 12);
 
@@ -361,7 +377,7 @@ fn database_fact_claim_store_tracks_write_patch_tombstone_and_reopen() {
             b"scope=public\nmetric=budget\nvalue=14 KZT\nproject=Solar\n\nSolar budget.".to_vec(),
         )
         .unwrap();
-        let records = db.fact_claim_store.visible_records(&view());
+        let records = db.derived_stores.fact_claim_store.visible_records(&view());
         assert_eq!(records.len(), 1);
         assert_eq!(records[0].value.scaled_value, 14);
 
@@ -370,12 +386,16 @@ fn database_fact_claim_store_tracks_write_patch_tombstone_and_reopen() {
 
     {
         let mut db = Database::open(dir.path()).unwrap();
-        let records = db.fact_claim_store.visible_records(&view());
+        let records = db.derived_stores.fact_claim_store.visible_records(&view());
         assert_eq!(records.len(), 1);
         assert_eq!(records[0].value.scaled_value, 14);
 
         db.tombstone_cell(CellId(11)).unwrap();
-        assert!(db.fact_claim_store.visible_records(&view()).is_empty());
+        assert!(db
+            .derived_stores
+            .fact_claim_store
+            .visible_records(&view())
+            .is_empty());
     }
 }
 

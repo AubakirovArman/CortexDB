@@ -46,9 +46,13 @@ def main() -> int:
         errors,
     )
     contains(
-        "crates/cortex-engine/src/database.rs",
+        "crates/cortex-engine/src/database/types.rs",
+        ["pub(crate) feature_flags: EngineFeatureFlags"],
+        errors,
+    )
+    contains(
+        "crates/cortex-engine/src/database/open.rs",
         [
-            "pub(crate) feature_flags: EngineFeatureFlags",
             "pub fn feature_flags(&self) -> EngineFeatureFlags",
             "pub(crate) fn require_feature(&self, feature: EngineFeature)",
             "EngineError::FeatureDisabled(feature.as_str())",
@@ -56,7 +60,7 @@ def main() -> int:
         errors,
     )
     contains(
-        "crates/cortex-engine/src/checkpoint.rs",
+        "crates/cortex-engine/src/checkpoint/database.rs",
         [
             "feature_flags",
             "experimental_hnsw",
@@ -65,9 +69,15 @@ def main() -> int:
         errors,
     )
     contains(
-        "crates/cortex-engine/src/search/database.rs",
+        "crates/cortex-engine/src/search/database/persisted.rs",
         [
             "!self.feature_flags.experimental_hnsw",
+        ],
+        errors,
+    )
+    contains(
+        "crates/cortex-engine/src/search/database/ann_reports.rs",
+        [
             "persisted_exact_fallback_report",
             "AnnSearchPath::ExactFallback",
         ],
@@ -82,9 +92,27 @@ def main() -> int:
         errors,
     )
     contains(
-        "crates/cortex-server/src/lib.rs",
+        "crates/cortex-engine/Cargo.toml",
+        ['experimental-replication = []'],
+        errors,
+    )
+    contains(
+        "crates/cortex-engine/src/lib.rs",
         [
-            "pub dashboard_enabled: bool",
+            '#[cfg(feature = "experimental-replication")]',
+            "pub mod replication;",
+            "pub mod distributed;",
+        ],
+        errors,
+    )
+    contains(
+        "crates/cortex-server/src/config.rs",
+        ["pub dashboard_enabled: bool"],
+        errors,
+    )
+    contains(
+        "crates/cortex-server/src/handler.rs",
+        [
             "state.options.dashboard_enabled",
         ],
         errors,

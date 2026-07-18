@@ -173,11 +173,8 @@ pub(super) async fn handle_database_route(
         }
     };
     let parent_span = tracing::Span::current();
-    let route_timeout = Duration::from_millis(crate::actor::route_timeout_ms(
-        &state.options,
-        method,
-        &target,
-    ));
+    let actor_route_timeout = crate::actor::actor_route_timeout_ms(&state.options, method, &target)
+        .map(Duration::from_millis);
 
     let actor_task = tokio::task::spawn_blocking(move || {
         let _parent = parent_span.enter();
@@ -208,13 +205,26 @@ pub(super) async fn handle_database_route(
             queue_wait_ms,
         )
     });
-    let res = match tokio::time::timeout(route_timeout, actor_task).await {
-        Ok(Ok((result, queue_wait_ms))) => {
+    // A blocking task cannot be cancelled after it starts. Timing out a
+    // mutation here would therefore tell the client that the request failed
+    // while the detached task could still commit it later. Once a write route
+    // is admitted, wait for its definitive outcome. The configured write
+    // timeout still bounds request-body admission in `axum_handler`.
+    let actor_result = if let Some(route_timeout) = actor_route_timeout {
+        match tokio::time::timeout(route_timeout, actor_task).await {
+            Ok(result) => result.map(Some),
+            Err(_) => Ok(None),
+        }
+    } else {
+        actor_task.await.map(Some)
+    };
+    let res = match actor_result {
+        Ok(Some((result, queue_wait_ms))) => {
             state.actor_queue_wait_latency_ms.observe_ms(queue_wait_ms);
             result
         }
-        Ok(Err(_)) => Err(RouterError::Internal("internal server error".to_owned())),
-        Err(_) => {
+        Err(_) => Err(RouterError::Internal("internal server error".to_owned())),
+        Ok(None) => {
             let duration_ms = start.elapsed().as_millis() as u64;
             state.request_count.fetch_add(1, Ordering::Relaxed);
             state

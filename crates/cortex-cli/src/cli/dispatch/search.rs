@@ -27,7 +27,7 @@ pub(super) fn search(
     algorithm: String,
 ) -> Result<String, String> {
     ops::search(
-        ctx.resolve(&path).to_str().unwrap(),
+        &ctx.resolve_string(&path),
         &scope,
         &query,
         ctx.json,
@@ -53,7 +53,7 @@ pub(super) fn search_vector(
         input.no_fallback_min_recall,
     )?;
     ops::search_vector(ops::SearchVectorOptions {
-        path: ctx.resolve(&input.path).to_str().unwrap(),
+        path: &ctx.resolve_string(&input.path),
         scope: &input.scope,
         vector: &input.vector,
         exact: false,
@@ -71,7 +71,7 @@ pub(super) fn search_vector_exact(
     vector: String,
 ) -> Result<String, String> {
     ops::search_vector(ops::SearchVectorOptions {
-        path: ctx.resolve(&path).to_str().unwrap(),
+        path: &ctx.resolve_string(&path),
         scope: &scope,
         vector: &vector,
         exact: true,
@@ -98,7 +98,7 @@ pub(super) fn search_vector_eval(
         input.no_fallback_min_recall,
     )?;
     ann::search_vector_eval(ann::SearchVectorEvalOptions {
-        path: ctx.resolve(&input.path).to_str().unwrap(),
+        path: &ctx.resolve_string(&input.path),
         scope: &input.scope,
         vector: &input.vector,
         json: ctx.json,
@@ -118,7 +118,7 @@ pub(super) fn search_explain(
     vector: Option<String>,
 ) -> Result<String, String> {
     ops::search_explain(
-        ctx.resolve(&path).to_str().unwrap(),
+        &ctx.resolve_string(&path),
         &scope,
         &query,
         &mode,

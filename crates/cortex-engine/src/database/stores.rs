@@ -14,20 +14,20 @@ use crate::verification::{ConflictIndexStore, TemporalFactStore};
 
 mod derived_apply;
 
-#[derive(Default)]
-pub(super) struct DerivedStores {
-    pub(super) corpus_synonym_store: CorpusSynonymStore,
-    pub(super) feedback_index: FeedbackIndex,
-    pub(super) graph_index_store: GraphIndexStore,
-    pub(super) live_search_store: LiveSearchStore,
-    pub(super) search_context_store: SearchContextStore,
-    pub(super) session_index: SessionIndex,
-    pub(super) memory_lifecycle_store: MemoryLifecycleStore,
-    pub(super) fact_claim_store: FactClaimStore,
-    pub(super) conflict_index_store: ConflictIndexStore,
-    pub(super) temporal_fact_store: TemporalFactStore,
-    pub(super) temporal_validity_store: TemporalValidityStore,
-    pub(super) tool_index: ToolIndex,
+#[derive(Debug, Default)]
+pub(crate) struct DerivedStores {
+    pub(crate) corpus_synonym_store: CorpusSynonymStore,
+    pub(crate) feedback_index: FeedbackIndex,
+    pub(crate) graph_index_store: GraphIndexStore,
+    pub(crate) live_search_store: LiveSearchStore,
+    pub(crate) search_context_store: SearchContextStore,
+    pub(crate) session_index: SessionIndex,
+    pub(crate) memory_lifecycle_store: MemoryLifecycleStore,
+    pub(crate) fact_claim_store: FactClaimStore,
+    pub(crate) conflict_index_store: ConflictIndexStore,
+    pub(crate) temporal_fact_store: TemporalFactStore,
+    pub(crate) temporal_validity_store: TemporalValidityStore,
+    pub(crate) tool_index: ToolIndex,
 }
 
 impl DerivedStores {
@@ -127,5 +127,20 @@ impl DerivedStores {
             cell_id,
             ToolIndex::record_from_payload(cell_id, seq, payload, descriptor),
         );
+    }
+
+    fn apply_tombstone(&mut self, cell_id: CellId) {
+        self.corpus_synonym_store.apply_tombstone(cell_id);
+        self.feedback_index.apply_tombstone(cell_id);
+        self.graph_index_store.apply_tombstone(cell_id);
+        self.live_search_store.apply_tombstone(cell_id);
+        self.search_context_store.apply_tombstone(cell_id);
+        self.session_index.apply_tombstone(cell_id);
+        self.memory_lifecycle_store.apply_tombstone(cell_id);
+        self.fact_claim_store.apply_tombstone(cell_id);
+        self.conflict_index_store.apply_tombstone(cell_id);
+        self.temporal_fact_store.apply_tombstone(cell_id);
+        self.temporal_validity_store.apply_tombstone(cell_id);
+        self.tool_index.apply_tombstone(cell_id);
     }
 }

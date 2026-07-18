@@ -90,8 +90,8 @@ impl Database {
         }
     }
 
-    /// Durably record a ledger entry at the cell id returned by a prior
-    /// [`LedgerResolution::Fresh`].
+    /// Test helper for planting collision fixtures outside the transaction path.
+    #[cfg(test)]
     pub(crate) fn record_idempotency_entry(
         &mut self,
         insert_cell_id: CellId,
@@ -100,23 +100,45 @@ impl Database {
         digest: &str,
         committed_seq: CommitSeq,
     ) -> EngineResult<()> {
-        let cell = KnowledgeCell::new(
-            KnowledgeCellMetadata {
-                scope: IDEMPOTENCY_LEDGER_SCOPE.to_owned(),
-                status: "ready".to_owned(),
-                cell_type: KnowledgeCellType::Feedback,
-                memory_type: None,
-                ttl_seconds: None,
-                // No wall clock: the entry's identity is its key + digest, not a time.
-                created_unix_seconds: None,
-                source_trust_q16: None,
-                source: None,
-            },
-            ledger_payload(agent_id, key, digest, committed_seq),
-        );
+        let cell = ledger_cell(agent_id, key, digest, committed_seq);
         self.put_knowledge_cell(insert_cell_id, cell)?;
         Ok(())
     }
+}
+
+pub(crate) fn idempotency_ledger_operation(
+    insert_cell_id: CellId,
+    agent_id: AgentId,
+    key: &str,
+    digest: &str,
+    committed_seq: CommitSeq,
+) -> WriteBatchOperation {
+    WriteBatchOperation::PutCell {
+        cell_id: insert_cell_id,
+        payload: ledger_cell(agent_id, key, digest, committed_seq).encode_payload(),
+    }
+}
+
+fn ledger_cell(
+    agent_id: AgentId,
+    key: &str,
+    digest: &str,
+    committed_seq: CommitSeq,
+) -> KnowledgeCell {
+    KnowledgeCell::new(
+        KnowledgeCellMetadata {
+            scope: IDEMPOTENCY_LEDGER_SCOPE.to_owned(),
+            status: "ready".to_owned(),
+            cell_type: KnowledgeCellType::Feedback,
+            memory_type: None,
+            ttl_seconds: None,
+            // No wall clock: the entry's identity is its key + digest, not a time.
+            created_unix_seconds: None,
+            source_trust_q16: None,
+            source: None,
+        },
+        ledger_payload(agent_id, key, digest, committed_seq),
+    )
 }
 
 /// Deterministic digest of an agent transaction request (no wall clock). Reused

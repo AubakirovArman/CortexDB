@@ -13,6 +13,18 @@ env:
   RUSTFLAGS: -D warnings
 
 jobs:
+  miri-concurrency:
+    name: Miri concurrency safety
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly-2026-07-01
+          components: miri
+      - run: cargo +nightly-2026-07-01 miri test -p cortex-engine concurrency::tests::multiple_readers_hold_lock_concurrently
+
   beta-toolchain:
     name: Beta toolchain
     runs-on: ubuntu-latest

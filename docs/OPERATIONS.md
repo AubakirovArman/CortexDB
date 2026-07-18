@@ -157,7 +157,12 @@ route work:
 
 - `CORTEXDB_READ_ROUTE_TIMEOUT_MS` controls read/search/context routes.
   Default: `30000`.
-- `CORTEXDB_WRITE_ROUTE_TIMEOUT_MS` controls write/ingest/mutation routes.
+- `CORTEXDB_WRITE_ROUTE_TIMEOUT_MS` controls body-read admission for
+  write/ingest/mutation routes. Once a mutation has been admitted to the
+  blocking database worker, the server waits for its definitive result: Rust
+  blocking tasks cannot be cancelled safely after they may have appended to
+  the WAL, so returning a timeout while the write continued would make the
+  commit outcome ambiguous to clients.
   Default: `30000`.
 - `CORTEXDB_ADMIN_ROUTE_TIMEOUT_MS` controls local admin/health/metrics routes.
   Default: `10000`.

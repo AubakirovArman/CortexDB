@@ -8,7 +8,7 @@ pub(super) fn backup(
     path: String,
     backup_path: String,
 ) -> Result<String, String> {
-    ops::backup(ctx.resolve(&path).to_str().unwrap(), &backup_path)
+    ops::backup(&ctx.resolve_string(&path), &backup_path)
 }
 
 pub(super) fn backup_encrypted(
@@ -19,11 +19,7 @@ pub(super) fn backup_encrypted(
     passphrase_env: Option<String>,
 ) -> Result<String, String> {
     let passphrase = resolve_backup_passphrase(passphrase, passphrase_env)?;
-    ops::backup_encrypted(
-        ctx.resolve(&path).to_str().unwrap(),
-        &archive_path,
-        &passphrase,
-    )
+    ops::backup_encrypted(&ctx.resolve_string(&path), &archive_path, &passphrase)
 }
 
 pub(super) fn backup_drill(
@@ -32,11 +28,7 @@ pub(super) fn backup_drill(
     backup_path: String,
     restore_path: String,
 ) -> Result<String, String> {
-    ops::backup_drill(
-        ctx.resolve(&path).to_str().unwrap(),
-        &backup_path,
-        &restore_path,
-    )
+    ops::backup_drill(&ctx.resolve_string(&path), &backup_path, &restore_path)
 }
 
 pub(super) fn backup_verify(backup_path: String) -> Result<String, String> {
@@ -67,12 +59,7 @@ pub(super) fn restore(
     dry_run: bool,
     to_seq: Option<u64>,
 ) -> Result<String, String> {
-    ops::restore(
-        &backup_path,
-        ctx.resolve(&path).to_str().unwrap(),
-        dry_run,
-        to_seq,
-    )
+    ops::restore(&backup_path, &ctx.resolve_string(&path), dry_run, to_seq)
 }
 
 pub(super) fn restore_encrypted(
@@ -83,9 +70,5 @@ pub(super) fn restore_encrypted(
     passphrase_env: Option<String>,
 ) -> Result<String, String> {
     let passphrase = resolve_backup_passphrase(passphrase, passphrase_env)?;
-    ops::restore_encrypted(
-        &archive_path,
-        ctx.resolve(&path).to_str().unwrap(),
-        &passphrase,
-    )
+    ops::restore_encrypted(&archive_path, &ctx.resolve_string(&path), &passphrase)
 }

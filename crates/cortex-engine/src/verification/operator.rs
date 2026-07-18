@@ -46,7 +46,11 @@ impl Database {
         let started = Instant::now();
         let temporal_query = extract_temporal_query_range(&plan.fact);
         let indexed_stale_cell_ids = temporal_query
-            .map(|query| self.temporal_validity_store.stale_cell_ids_for_range(query))
+            .map(|query| {
+                self.derived_stores
+                    .temporal_validity_store
+                    .stale_cell_ids_for_range(query)
+            })
             .unwrap_or_default();
         if temporal_query.is_some() {
             operators.push(trace(
@@ -59,6 +63,7 @@ impl Database {
 
         let started = Instant::now();
         let indexed_numeric_cell_ids = self
+            .derived_stores
             .fact_claim_store
             .indexed_cell_ids_for_fact(&plan.fact, view);
         let mut candidate_versions = if indexed_numeric_cell_ids.is_empty() {
@@ -105,7 +110,8 @@ impl Database {
             let payload = candidate.payload.as_slice();
             let indexed_stale_reason = temporal_query.and_then(|query| {
                 indexed_stale_cell_ids.contains(&version.cell_id).then(|| {
-                    self.temporal_validity_store
+                    self.derived_stores
+                        .temporal_validity_store
                         .stale_reason_for_cell(version.cell_id, query)
                 })?
             });
@@ -138,7 +144,7 @@ impl Database {
             view,
             &mut contradicting_evidence,
         );
-        self.fact_claim_store.add_verify_matches(
+        self.derived_stores.fact_claim_store.add_verify_matches(
             &plan.fact,
             view,
             &mut evidence,

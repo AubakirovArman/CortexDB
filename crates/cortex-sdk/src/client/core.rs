@@ -2,8 +2,8 @@ use super::transport::decode_value;
 use super::CortexDbClient;
 use crate::http::path;
 use crate::{
-    CellLookupResponse, HealthResponse, PutCellResponse, SdkResult, StatsResponse,
-    ValidationResponse, WriteBatchRequest, WriteBatchResponse,
+    CellLookupResponse, CheckpointResponse, HealthResponse, PutCellResponse, SdkResult,
+    StatsResponse, ValidationResponse, WriteBatchRequest, WriteBatchResponse,
 };
 
 impl CortexDbClient {
@@ -66,11 +66,23 @@ impl CortexDbClient {
         self.delete(&path("/v1/cell", &[("cell_id", &cell_id.to_string())]))
     }
 
+    pub fn tombstone_cell_response(&self, cell_id: u64) -> SdkResult<PutCellResponse> {
+        decode_value(self.tombstone_cell(cell_id)?)
+    }
+
     pub fn flush(&self) -> SdkResult<serde_json::Value> {
         self.post("/v1/flush", "")
     }
 
+    pub fn flush_response(&self) -> SdkResult<CheckpointResponse> {
+        decode_value(self.flush()?)
+    }
+
     pub fn compact(&self) -> SdkResult<serde_json::Value> {
         self.post("/v1/compact", "")
+    }
+
+    pub fn compact_response(&self) -> SdkResult<CheckpointResponse> {
+        decode_value(self.compact()?)
     }
 }

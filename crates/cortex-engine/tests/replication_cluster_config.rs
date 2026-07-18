@@ -1,3 +1,5 @@
+#![cfg(feature = "experimental-replication")]
+
 use cortex_engine::{
     ClusterConfig, ClusterNode, EngineError, NodeId, ReplicationFollowerProgressStore,
     ReplicationPathConfig,
