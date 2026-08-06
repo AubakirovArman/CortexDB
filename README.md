@@ -1,5 +1,7 @@
 # CortexDB-KZ
 
+<img src="docs/assets/cortexdb-kz-app-icon.png" alt="CortexDB-KZ application icon" width="160">
+
 [![Rust](https://github.com/AubakirovArman/CortexDB/actions/workflows/rust.yml/badge.svg)](https://github.com/AubakirovArman/CortexDB/actions/workflows/rust.yml)
 
 **CortexDB-KZ is a single-node agent-native database beta (`v0.2.0-beta.2`).**
