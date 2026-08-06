@@ -92,7 +92,7 @@ WAL → MVCC MemTable → checkpoint/compact → durable indexes
 | Token-budgeted context как типизированный ответ | собирается приложением | обычно нет | нет | **ContextPack** |
 | Citations, anomalies и explain в одном контракте | собирается приложением | частично | частично | **да** |
 | Детерминированная проверка факта и числовых конфликтов | custom logic/LLM | нет | custom logic | **VERIFY FACT** |
-| Managed cloud / production HA | зависит от стека | часто да | часто да | **пока нет** |
+| Managed cloud / production HA | зависит от стека | часто да | часто да | **нет (not available in beta)** |
 
 Главная формулировка: **векторные базы оптимизируют поиск ближайших объектов;
 CortexDB оптимизирует подготовку управляемого контекста для решения агента.**

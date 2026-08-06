@@ -1,8 +1,13 @@
-# CortexDB
+# CortexDB-KZ
 
 [![Rust](https://github.com/AubakirovArman/CortexDB/actions/workflows/rust.yml/badge.svg)](https://github.com/AubakirovArman/CortexDB/actions/workflows/rust.yml)
 
-**CortexDB is a single-node agent-native database beta (`v0.2.0-beta.2`).**
+**CortexDB-KZ is a single-node agent-native database beta (`v0.2.0-beta.2`).**
+
+> **Project identity:** **CortexDB-KZ** is the public project and leaderboard
+> submission name. It distinguishes this project from other products named
+> CortexDB. Existing crate, binary, API, and namespace names remain `CortexDB`
+> or `cortexdb` for backward compatibility.
 
 > ⚠️ **Warning:** CortexDB is suitable for local experiments, research,
 > architecture validation, early contributors, and beta API evaluation. It is
